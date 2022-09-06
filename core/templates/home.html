@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<script src="{% static 'js/ol.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
+
+<!-- Banner -->
+<section id="banner">
+    <div class="content">
+        <header>
+            <h1>geoBoundary Tracker</h1>
+            <p>Open-source community-driven database for tracking changes to political administrative
+                boundaries.</p>
+        </header>
+
+        <p>Built by the <a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community</a> and <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the geoBoundary Tracker
+            is an online tool and database tracking and reconstructing how boundaries (i.e., state, county)
+            change over time for every country in the world. We currently track approximately 1 million boundaries within over 200 entities,
+            including all 195 UN member states. All boundaries are available to view or download in
+            common file formats, including
+            shapefiles;
+            the only requirement for use is <a href="index.html#citation">acknowledgement</a>.
+        </p>
+
+        <div id="map">
+        </div>
+        
+        <div style="height:400px; overflow:auto; margin-top:50px">
+            <table style="width:100%">
+                <thead>
+                    <th>Country</th>
+                    <th>Admin Level</th>
+                    <th>Sources</th>
+                    <th>Time Period</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    {% for countrylevels in countries %}
+                        <tr>
+                            <td>
+                                {% for countrylevel in countrylevels %}
+                                    {% if countrylevel.level == 0 %}{{ countrylevel.name }}{% endif %}
+                                {% endfor %}
+                                <br>
+                            </td>
+                            <td>
+                                {% for countrylevel in countrylevels %}
+                                    ADM{{ countrylevel.level }}
+                                    <br>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for countrylevel in countrylevels %}
+                                    {{ countrylevel.sources }}
+                                    <br>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for countrylevel in countrylevels %}
+                                    {{ countrylevel.mindate }} &#x2192; {{ countrylevel.maxdate }}
+                                    <br>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for countrylevel in countrylevels %}
+                                    <a class="button small" href="{% url 'build' %}?country={{ countrylevel.name }}&level={{ countrylevel.level }}" target="_blank">Build</a>
+                                    <br>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</section>
+
+
+<style>
+    #map {
+        width: 100%;
+        height: 400px;
+    }
+</style>
+
+
+<script>
+    /////////////
+    // main country map
+
+    // layer
+    var countryStyle = new ol.style.Style({
+        fill: new ol.style.Fill({
+            color: 'rgb(6,75,52)'
+        }),
+        stroke: new ol.style.Stroke({
+            color: 'white',
+            width: 0.5,
+        }),
+    });
+    var countryLayer = new ol.layer.Vector({
+        source: new ol.source.Vector(),
+        style: countryStyle,
+    });
+
+    // labelling
+    var countryLabelStyle = new ol.style.Style({
+        geometry: function(feature) {
+            // create a geometry that defines where the label will be display
+            var geom = feature.getGeometry();
+            if (geom.getType() == 'Polygon') {
+                // polygon
+                // place label at the bbox/center of the polygon
+                var extent = feature.getGeometry().getExtent();
+                var newGeom = ol.geom.Polygon.fromExtent(extent);
+            } else {
+                // multi polygon
+                // place label at the bbox/center of the largest polygon
+                var largestGeom = null;
+                var largestArea = null;
+                for (poly of geom.getPolygons()) {
+                    var extent = poly.getExtent();
+                    var extentGeom = ol.geom.Polygon.fromExtent(extent);
+                    var extentArea = extentGeom.getArea();
+                    if (extentArea > largestArea) {
+                        largestGeom = extentGeom;
+                        largestArea = extentArea;
+                    };
+                };
+                var newGeom = largestGeom;
+                
+            };
+            return newGeom;
+        },
+        text: new ol.style.Text({
+            //font: '12px Calibri,sans-serif',
+            fill: new ol.style.Fill({ color: '#000' }),
+            stroke: new ol.style.Stroke({
+                color: '#fff', width: 2
+            }),
+            overflow: true,
+        }),
+    });
+
+    // map
+    var map = new ol.Map({
+        target: 'map',
+        controls: ol.control.defaults().extend([new ol.control.FullScreen(),
+                                                new ol.control.ScaleLine({units: 'metric'}),
+                                                ]),
+        layers: [
+        new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                attributions: 'Satellite Imagery from Google',
+                url:
+                'http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}',
+                maxZoom: 20,
+                crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
+            })}),
+            countryLayer
+        ],
+        view: new ol.View({
+            center: ol.proj.fromLonLat([0,0]),
+            zoom: 1
+        })
+    });
+
+    map.on('pointermove', function(evt) {
+        // get feat at pointer
+        let cursorFeat = null;
+        map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+            cursorFeat = feature;
+        });
+        // if any feat was found
+        if (cursorFeat != null) {
+            // clear any existing feature text
+            countryLayer.getSource().forEachFeature(function (feature) {
+                feature.setStyle([countryStyle]);
+            });
+            // update the text style for the found feature
+            var label = cursorFeat.get('name');
+            var labelStyle = countryLabelStyle.clone();
+            labelStyle.getText().setText(label);
+            cursorFeat.setStyle([countryStyle,labelStyle]);
+        } else {
+            // clear any existing feature text
+            countryLayer.getSource().forEachFeature(function (feature) {
+                feature.setStyle([countryStyle]);
+            });
+        };
+    });
+
+    function loadCountries() {
+        url = "{% static 'data/gb-countries-simple.json' %}";
+        fetch(url).then(resp=>resp.json()).then(data=>addCountriesToMap(data));
+    };
+
+    function addCountriesToMap(data) {
+        feats = new ol.format.GeoJSON().readFeatures(data, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+        countryLayer.getSource().addFeatures(feats);
+        //map.getView().fit(countryLayer.getSource().getExtent());
+    };
+
+    loadCountries();
+
+</script>
+
+
+
+
+
+<!-- Sponsors -->
+<section id="banner">
+    <div class="content" id="sponsors">
+        <header>
+            <h1>Partners, Sponsors & Contributors</h1>
+            <p>Thanks to our partners, sponsors, and <a
+                    href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community of
+                    contributors</a> for making geoBoundaries possible. </p>
+        </header>
+
+            <span style="width:300px !important; float:left; text-align:center;"><img style="max-height:80px;max-width:300px;height:auto;width:auto;vertical-align:middle;margin:10px 10px 10px 10px;"
+                        src="{% static 'images/wm.png' %}" alt=""></span>
+
+    </div>
+</section>
+
+{% endblock %}
