@@ -6,75 +6,84 @@
 
 <script src="{% static 'js/ol.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'css/home.css' %}" type="text/css">
 
 <!-- Banner -->
 <section id="banner">
     <div class="content">
         <header>
-            <h1>geoBoundary Tracker</h1>
-            <p>Open-source community-driven database for tracking changes to political administrative
-                boundaries.</p>
+            <h1>Administrative Boundary Geocoder</h1>
+            <p>A tool for geocoding text input to political administrative boundaries.</p>
         </header>
 
-        <p>Built by the <a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community</a> and <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the geoBoundary Tracker
-            is an online tool and database tracking and reconstructing how boundaries (i.e., state, county)
-            change over time for every country in the world. We currently track approximately 1 million boundaries within over 200 entities,
+        <div id="map-search-div">
+
+            <div id="map">
+            </div>
+            
+            <div id="search-pane" class="box">
+                <div id="search-bar">
+                    <input type="text" class="form-control">
+                    <button type="submit">Geocode</button>
+                </div>
+                <table id="search-results">
+                    <thead>
+                        <th>Country</th>
+                        <th>Admin Level</th>
+                        <th>Sources</th>
+                        <th>Time Period</th>
+                        <th></th>
+                    </thead>
+                    <tbody>
+                        {% for countrylevels in countries %}
+                            <tr>
+                                <td>
+                                    {% for countrylevel in countrylevels %}
+                                        {% if countrylevel.level == 0 %}{{ countrylevel.name }}{% endif %}
+                                    {% endfor %}
+                                    <br>
+                                </td>
+                                <td>
+                                    {% for countrylevel in countrylevels %}
+                                        ADM{{ countrylevel.level }}
+                                        <br>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for countrylevel in countrylevels %}
+                                        {{ countrylevel.sources }}
+                                        <br>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for countrylevel in countrylevels %}
+                                        {{ countrylevel.mindate }} &#x2192; {{ countrylevel.maxdate }}
+                                        <br>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for countrylevel in countrylevels %}
+                                        <a class="button small" href="{% url 'build' %}?country={{ countrylevel.name }}&level={{ countrylevel.level }}" target="_blank">Build</a>
+                                        <br>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <p>Built by the <a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community</a> and <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the Admin Geocoder
+            is an online tool and database for geocoding textual name references to administrative boundaries (i.e., state, county)
+            to their spatial representation in any country in the world. We currently search administrative unit names against a database of 
+            approximately 1 million boundaries within over 200 entities,
             including all 195 UN member states. All boundaries are available to view or download in
             common file formats, including
             shapefiles;
             the only requirement for use is <a href="index.html#citation">acknowledgement</a>.
         </p>
-
-        <div id="map">
-        </div>
-        
-        <div style="height:400px; overflow:auto; margin-top:50px">
-            <table style="width:100%">
-                <thead>
-                    <th>Country</th>
-                    <th>Admin Level</th>
-                    <th>Sources</th>
-                    <th>Time Period</th>
-                    <th></th>
-                </thead>
-                <tbody>
-                    {% for countrylevels in countries %}
-                        <tr>
-                            <td>
-                                {% for countrylevel in countrylevels %}
-                                    {% if countrylevel.level == 0 %}{{ countrylevel.name }}{% endif %}
-                                {% endfor %}
-                                <br>
-                            </td>
-                            <td>
-                                {% for countrylevel in countrylevels %}
-                                    ADM{{ countrylevel.level }}
-                                    <br>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for countrylevel in countrylevels %}
-                                    {{ countrylevel.sources }}
-                                    <br>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for countrylevel in countrylevels %}
-                                    {{ countrylevel.mindate }} &#x2192; {{ countrylevel.maxdate }}
-                                    <br>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for countrylevel in countrylevels %}
-                                    <a class="button small" href="{% url 'build' %}?country={{ countrylevel.name }}&level={{ countrylevel.level }}" target="_blank">Build</a>
-                                    <br>
-                                {% endfor %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
 
     </div>
 </section>

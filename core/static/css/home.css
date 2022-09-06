@@ -1,0 +1,22 @@
+#map-search-div {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 30px;
+}
+
+#map {
+}
+
+#search-pane {
+    width: 80%;
+    margin: 0;
+}
+
+#search-bar {
+    display: flex;
+}
+
+#search-results {
+    width: 100%;
+    margin: 15px 0px;
+}
