@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'djangowkb',
 
     # apps
-    #'adminManager',
+    'adminManager',
     #'adminImporter',
     #'adminDigitizer',
     #'adminCoder',
