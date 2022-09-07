@@ -1,5 +1,6 @@
 django==3.*
-mysqlclient==1.4.6
+#mysqlclient==1.4.6
+pymysql==1.0.2
 dj-database-url
 python-decouple
 requests

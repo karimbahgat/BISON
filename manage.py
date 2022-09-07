@@ -4,6 +4,11 @@ import os
 import sys
 
 
+# hack to allow using pymysql as the mysql driver
+import pymysql
+pymysql.install_as_MySQLdb()
+
+
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')

@@ -85,11 +85,27 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default=config('DATABASE_URL'),
-                                        #conn_max_age=600, ssl_require=True,
-                                        )
+    'default': dj_database_url.config(default=config('DATABASE_URL'))
 }
 
+if 'mysql' in DATABASES['default']['ENGINE']:
+    # add remote ssl certificate for azure mysql
+    SSL_CA_PATH = BASE_DIR / 'data/azure-mysql-DigiCertGlobalRootCA.crt.pem'
+    DATABASES['default']['OPTIONS'] = {'ssl_ca':SSL_CA_PATH, 
+                                        'ssl_disabled':False,}
+
+# for troubleshooting, uncomment to test that direct db connection works
+# import pymysql
+# getconf = lambda x: DATABASES['default'][x]
+# db = pymysql.connect(host=getconf('HOST'),
+#                     port=getconf('PORT'), 
+#                     user=getconf('USER'),
+#                     password=getconf('PASSWORD'),
+#                     ssl_ca=SSL_CA_PATH, 
+#                     ssl_disabled=False,
+#                     database=getconf('NAME'),
+#                     )
+# print(db)
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
