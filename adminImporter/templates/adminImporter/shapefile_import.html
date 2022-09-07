@@ -1,0 +1,232 @@
+{% extends "templates/base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<script src="{% static 'js/jszip.js' %}"></script>
+<script src="{% static 'js/jszip-utils.js' %}"></script>
+<script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+
+<!-- Form -->
+<section>
+    <div class="content">
+        <header>
+            <h1>Import from Shapefile</h1>
+            <p>Upload a shapefile to register a temporal boundary snapshot.</p>
+        </header>
+        <div>
+            <form method="post" action="{% url 'import_shapefile' %}" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <h2>Date represented:</h2>
+                <div class="box">
+                    <label>Date format YYYY, YYYY-MM, or YYYY-MM-DD</label>
+                    <input type="text" name="date">
+                </div>
+
+                <h2>File upload:</h2>
+                <div class="box">
+                    <label>Zipfile containing a shapefile</label>
+                    <div style="display:flexbox; flex-direction:row; width:100%">
+                        <div id="zipfile-select-div" style="float:right; display:none">
+                            <select id="zipfile-select" name="zipfile_file" type="file" style="margin:5px 0px" onchange="zipfileDropdownChanged()">
+                            </select>
+                        </div>
+                        <input id="file-input" name="file" type="file" style="margin:5px 0px" onchange="handleFileUpload()">
+                    </div>
+                </div>
+
+                <h2>Source:</h2>
+                <div class="box">
+                    <label>Name of the source dataset</label>
+                    <input type="text" name="source_name">
+                    <label>Source citation</label>
+                    <input type="text" name="source_citation">
+                    <label>Source note</label>
+                    <input type="text" name="source_note">
+                    <label>Source URL</label>
+                    <input type="text" name="source_url">
+                </div>
+
+                <div>
+                    <select id="admin-level-select" style="float:right; width:30%" onchange="updateAdminLevels()">
+                        <option value=0>ADM0</option>
+                        <option value=1 selected>ADM1</option>
+                        <option value=2>ADM2</option>
+                        <option value=3>ADM3</option>
+                    </select>
+                    <h2>Administrative levels:</h2>
+
+                    <div id="admin-levels-div">
+                        Initializing
+                    </div>
+                
+                </div>
+
+                <div style="text-align:right">
+                    <button type="submit">Import</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Some dynamic javascript functionality -->
+
+<script type="text/javascript">
+
+    document.geojsonData = null;
+    
+    function handleFileUpload() {
+        // get file contents as a base64 encoded url string
+        var file = document.getElementById('file-input').files[0];
+        fileExtension = file.name.split('.').pop();
+        //alert('local file selected: '+file.name+' - '+fileExtension);
+        
+        if (fileExtension == 'zip') {
+            // experiment with zipfile reading
+            // https://stuk.github.io/jszip/documentation/examples/read-local-file-api.html
+            reader = new FileReader();
+            reader.onload = function(e) {
+                // use reader results to create new source
+                var raw = reader.result;
+                var zip = new JSZip(raw);
+                var paths = [];
+                for (filename in zip.files) {
+                    if (filename.endsWith('.shp')) {
+                        var path = file.name + '/' + filename;
+                        var displayName = filename;
+                        paths.push([path,displayName]);
+                    };
+                };
+                updateZipfileDropdown(paths);
+            };
+            reader.readAsBinaryString(file);
+        };
+    };
+    
+    function updateZipfileDropdown(paths) {
+        // show and clear the dropdown
+        document.getElementById('zipfile-select-div').style.display = 'block';
+        var select = document.getElementById('zipfile-select');
+        select.innerHTML = '';
+        // populate the dropdown
+        for ([path,displayName] of paths) {
+            var opt = document.createElement('option');
+            opt.value = path;
+            opt.innerText = displayName;
+            select.appendChild(opt);
+        };
+        // force change
+        zipfileDropdownChanged();
+    };
+    
+    function zipfileDropdownChanged() {
+        // get file info
+        var file = document.getElementById('file-input').files[0];
+        var path = document.getElementById('zipfile-select').value;
+        var subPath = path.split('.zip/')[1]; // only the relative path inside the zipfile
+        // load
+        reader = new FileReader();
+        reader.onload = function(e) {
+            // open zipfile
+            var raw = reader.result;
+            var zip = new JSZip(raw);
+            // prep args
+            var shpString = subPath;
+            var dbfString = subPath.replace('.shp', '.dbf');
+            // note, below args are only relevant if using shp2geojson
+            var encoding = 'utf8';
+            var URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+            
+            function processData(geojson) {
+                document.geojsonData = geojson; // make available globally
+                updateAdminLevels();
+            };
+    
+            // load dbf and shp, calling returnData once both are loaded
+            // ALT1: shp2geojson
+            //SHPParser.load(URL.createObjectURL(new Blob([zip.file(shpString).asArrayBuffer()])), shpLoader, processData);
+            //DBFParser.load(URL.createObjectURL(new Blob([zip.file(dbfString).asArrayBuffer()])), encoding, dbfLoader, processData);        
+            // ALT2: shapefile-js
+            // https://github.com/calvinmetcalf/shapefile-js
+            var waiting = Promise.all([shp.parseShp(zip.file(shpString).asArrayBuffer()), 
+                                        shp.parseDbf(zip.file(dbfString).asArrayBuffer())
+                                        ])
+            waiting.then(function(result){
+                            var geoj = shp.combine(result);
+                            processData(geoj);
+                        });
+        };
+        reader.readAsBinaryString(file);
+    };
+    
+    function updateAdminLevels() {
+        console.log('updating admin levels');
+        // load fields
+        var fields = [];
+        let geojsonData = document.geojsonData;
+        if (geojsonData !== null) {
+            for (key in geojsonData.features[0].properties) {
+                fields.push(key);
+            };
+        };
+        console.log(fields);
+        // get and clear the admin levels
+        var div = document.getElementById('admin-levels-div');
+        div.innerHTML = '';
+        // add admin levels
+        var select = document.getElementById('admin-level-select');
+        console.log(select.value);
+        for (let level = 0; level <= select.value; level++) {
+            console.log('ADM'+level);
+            /*
+            <div class="box">
+                <h3>ADM1</h3>
+                <table><tr>
+                    <td><label>Name field</label></td>
+                    <td><input type="text" name="name_field"></td>
+                </tr></table>
+            </div>
+            */
+            var admDiv = document.createElement('div')
+            admDiv.className = 'box';
+            div.appendChild(admDiv);
+    
+            var title = document.createElement('h3')
+            title.innerText = 'ADM'+level;
+            admDiv.appendChild(title);
+    
+            var table = document.createElement('table')
+            admDiv.appendChild(table);
+    
+            var row = document.createElement('tr')
+            
+            var cell = document.createElement('td')
+            cell.innerHTML = '<label>Name field</label>'
+            row.appendChild(cell);
+    
+            var cell = document.createElement('td')
+            var fieldSelect = document.createElement('select');
+            fieldSelect.name = 'name_field';
+            for (field of fields) {
+                opt = document.createElement('option');
+                opt.value = field;
+                opt.innerText = field;
+                fieldSelect.appendChild(opt);
+            };
+            cell.appendChild(fieldSelect);
+            row.appendChild(cell);
+    
+            table.appendChild(row);
+        };
+    }
+    
+    updateAdminLevels();
+    
+</script>
+
+{% endblock %}

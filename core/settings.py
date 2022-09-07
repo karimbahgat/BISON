@@ -45,7 +45,7 @@ INSTALLED_APPS = [
 
     # apps
     'adminManager',
-    #'adminImporter',
+    'adminImporter',
     #'adminDigitizer',
     #'adminCoder',
 ]

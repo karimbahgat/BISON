@@ -1,0 +1,38 @@
+{% extends "base_tool.html" %}
+
+{% load static %}
+
+{% block tool_content %}
+
+<div style="margin:20px 10px">
+    <div class="row" style="gap:10px">
+        <h3>
+            {{ sources.all.count }} boundary datasets
+        </h3>
+        <a href="{% url 'dataset_add' %}" class="button big">Add New</a>
+    </div>
+
+    <table style="width:100%; min-height:300px; font-weight:bold; overflow:hidden; border-spacing:0 10px; padding-bottom:100px; padding-left:40px">
+
+        <thead>
+            <tr>
+                <td style="width:65%">Dataset</td>
+                <td style="width:25%">Boundaries</td>
+                <td style="width:10%"></td>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for source in sources.all %}
+            <tr>
+                <td>{{ source.name }}</td>
+                <td>{{ source.boundary_refs.all.count }}</td>
+                <td><a class="button small" href="{% url 'source' source.pk %}">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+</div>
+
+{% endblock %}

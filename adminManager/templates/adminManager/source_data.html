@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<script src="{% static 'js/ol.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
+
+<section>
+    <div class="content">
+        <header>
+            <div class="row">
+                <img height="30px" src="{% static 'images/dataset.png' %}">
+                <h2 style="text-align:left">
+                    Dataset: &nbsp;&nbsp;{{ source.name }}
+                </h2>
+            </div>
+
+            <a class="button" style="float:right" href="{% url 'dataset_edit' source.pk %}">Edit</a>
+
+            <p>
+                <span style="vertical-align:top">URL: 
+                <a href="{{ source.url }}">{{ source.url }}</a>
+                </span>
+
+                <br>
+
+                <span style="vertical-align:top">Valid from: 
+                {{ source.valid_from }}
+                </span>
+
+                <br>
+
+                <span style="vertical-align:top">Valid to: 
+                {{ source.valid_to }}
+                </span>
+
+                <br>
+            
+                <span style="vertical-align:top">Citation: 
+                {{ source.citation }}
+                </span>
+
+                <br>
+            
+                <span style="vertical-align:top">Source Note: 
+                {{ source.note }}
+                </span>
+
+                <br>
+
+                <span style="vertical-align:top">Import Parameters: 
+                <textarea style="margin:10px 0px" cols="40" rows="10" disabled>{{ import_params }}</textarea>
+                </span>
+
+                <a class="button" style="float:right" href="{% url 'datasource_import' source.pk %}">Import Data</a>
+                <span style="vertical-align:top">Last Imported: 
+                {{ source.importer.last_imported }}
+                </span>
+            </p>
+        </header>
+
+        <br><br>
+
+        <div>
+
+            <style>
+                #id_title {
+                    width:60%
+                    }
+                #id_citation, #id_note, #id_url {
+                    width:98%
+                    }
+            </style>
+
+            <h3>
+                {{ toplevel_refs.count }} toplevel boundary definitions
+            </h3>
+
+            <table style="width:99%; margin-left:1%; font-weight:bold; overflow:hidden; border-spacing:0 10px; padding-bottom:100px; padding-left:40px">
+
+                <thead>
+                    <tr>
+                        <td style="width:65%">Boundary</td>
+                        <td style="width:25%">Subdivisions</td>
+                        <td style="width:10%"></td>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for ref in toplevel_refs.all %}
+                    <tr>
+                        <td>{{ ref.names.first.name }}</td>
+                        <td>{{ ref.children.all.count }}</td>
+                        <td><a class="button small" href="{% url 'boundary' ref.pk %}">View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

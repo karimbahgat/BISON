@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<script src="{% static 'js/ol.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
+
+<section>
+    <div class="content">
+        <header>
+            <div class="row">
+                <img height="30px" src="{% static 'images/dataset.png' %}">
+                <h2 style="text-align:left">
+                    Editing Data Source
+                </h2>
+            </div>
+            <p>
+                Some instructions here... 
+            </p>
+        </header>
+
+        <div>
+            <form method="POST" action="{% url 'dataset_edit' form.instance.pk %}">
+                {% csrf_token %}
+                <table>
+                    {{ form.as_table }}
+                    <tr>
+                        <th>Import Parameters:</th>
+                        <td><textarea name="import_params" cols="40" rows="10">{{ import_params }}</textarea></td>
+                    </tr>
+                </table>
+                <button style="float:right" type="submit">Save</button>
+            </form>
+        </div>
+
+        <br><br>
+
+    </div>
+</section>
+
+{% endblock %}

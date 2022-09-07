@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<script src="{% static 'js/ol.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'css/home.css' %}" type="text/css">
+
+<!-- Banner -->
+<section id="banner">
+    <div class="content">
+        <header>
+            <h1>Administrative Boundary Geocoder</h1>
+            <p>A tool for geocoding text input to political administrative boundaries.</p>
+        </header>
+
+        <ul class='etabs'>
+            <li class='tab{% if "geocoder" in request.path %} active{% endif %}'><a href="{% url 'home' %}">Geocoder</a></li>
+            <li class='tab{% if "datasets" in request.path %} active{% endif %}'><a href="{% url 'datasets' %}">Datasets</a></li>
+        </ul>
+
+        {% block tool_content %}
+        {% endblock %}
+
+        <p>Built by the <a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community</a> and <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the Admin Geocoder
+            is an online tool and database for geocoding textual name references to administrative boundaries (i.e., state, county)
+            to their spatial representation in any country in the world. We currently search administrative unit names against a database of 
+            approximately 1 million boundaries within over 200 entities,
+            including all 195 UN member states. All boundaries are available to view or download in
+            common file formats, including
+            shapefiles;
+            the only requirement for use is <a href="index.html#citation">acknowledgement</a>.
+        </p>
+
+    </div>
+</section>
+
+
+
+<!-- Sponsors -->
+<section id="banner">
+    <div class="content" id="sponsors">
+        <header>
+            <h1>Partners, Sponsors & Contributors</h1>
+            <p>Thanks to our partners, sponsors, and <a
+                    href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community of
+                    contributors</a> for making geoBoundaries possible. </p>
+        </header>
+
+            <span style="width:300px !important; float:left; text-align:center;"><img style="max-height:80px;max-width:300px;height:auto;width:auto;vertical-align:middle;margin:10px 10px 10px 10px;"
+                        src="{% static 'images/wm.png' %}" alt=""></span>
+
+    </div>
+</section>
+
+{% endblock %}
