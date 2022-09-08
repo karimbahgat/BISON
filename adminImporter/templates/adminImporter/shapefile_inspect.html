@@ -1,0 +1,236 @@
+{% load static %}
+
+{% block content %}
+
+<script src="{% static 'js/jszip.js' %}"></script>
+<script src="{% static 'js/jszip-utils.js' %}"></script>
+<script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+
+<div>
+
+    <div style="display:flex; flex-direction:row; width:100%">
+        <input id="inspect-url" type="url" placeholder="insert url to zipfile">
+        <select id="zipfile-select" name="zipfile_file" type="file" style="width:50%" onchange="zipfileDropdownChanged()">
+        </select>
+        <button type="button" onclick="handleUrlFile()">Inspect</button>
+    </div>
+
+    <div style="width:750px; max-height:300px; overflow:scroll; margin-top:10px">
+        <table id="preview-table">
+        </table>
+    </div>
+
+</div>
+
+<!-- Some dynamic javascript functionality -->
+
+<script type="text/javascript">
+
+    document.geojsonData = null;
+    document.zipData = null;
+    
+    function handleFileUpload() {
+        // get file contents as a base64 encoded url string
+        var file = document.getElementById('file-input').files[0];
+        fileExtension = file.name.split('.').pop();
+        //alert('local file selected: '+file.name+' - '+fileExtension);
+        
+        if (fileExtension == 'zip') {
+            // experiment with zipfile reading
+            // https://stuk.github.io/jszip/documentation/examples/read-local-file-api.html
+            reader = new FileReader();
+            reader.onload = function(e) {
+                // use reader results to create new source
+                var raw = reader.result;
+                var zip = new JSZip(raw);
+                var paths = [];
+                for (filename in zip.files) {
+                    if (filename.endsWith('.shp')) {
+                        var path = file.name + '/' + filename;
+                        var displayName = filename;
+                        paths.push([path,displayName]);
+                    };
+                };
+                updateZipfileDropdown(paths);
+            };
+            reader.readAsBinaryString(file);
+        };
+    };
+
+    function handleUrlFile() {
+        url = document.getElementById('inspect-url').value;
+        zipName = url.split('/').pop();
+        fileExtension = url.split('.').pop();
+        function loadData(data) {
+            document.zipData = data;
+            var zip = new JSZip(data);
+            var paths = [];
+            for (filename in zip.files) {
+                if (filename.endsWith('.shp')) {
+                    var path = zipName + '/' + filename;
+                    var displayName = filename;
+                    paths.push([path,displayName]);
+                };
+            };
+            console.log(paths);
+            updateZipfileDropdown(paths);
+        };
+        headers = {};
+        fetch(url, {headers:headers}).then(response => response.arrayBuffer()).then(data => loadData(data));
+    };
+    
+    function updateZipfileDropdown(paths) {
+        // show and clear the dropdown
+        //document.getElementById('zipfile-select-div').style.display = 'block';
+        var select = document.getElementById('zipfile-select');
+        select.innerHTML = '';
+        // populate the dropdown
+        for ([path,displayName] of paths) {
+            var opt = document.createElement('option');
+            opt.value = path;
+            opt.innerText = displayName;
+            select.appendChild(opt);
+        };
+        // force change
+        zipfileDropdownChanged();
+    };
+    
+    function zipfileDropdownChanged() {
+        // get file info
+        var path = document.getElementById('zipfile-select').value;
+        var subPath = path.split('.zip/')[1]; // only the relative path inside the zipfile
+        // load
+        // open zipfile
+        var raw = document.zipData;
+        var zip = new JSZip(raw);
+        // prep args
+        var shpString = subPath;
+        var dbfString = subPath.replace('.shp', '.dbf');
+        // note, below args are only relevant if using shp2geojson
+        var encoding = 'utf8';
+        var URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+        
+        function processData(geojson) {
+            document.geojsonData = geojson; // make available globally
+            updatePreviewTable();
+        };
+
+        // load dbf and shp, calling returnData once both are loaded
+        // ALT1: shp2geojson
+        //SHPParser.load(URL.createObjectURL(new Blob([zip.file(shpString).asArrayBuffer()])), shpLoader, processData);
+        //DBFParser.load(URL.createObjectURL(new Blob([zip.file(dbfString).asArrayBuffer()])), encoding, dbfLoader, processData);        
+        // ALT2: shapefile-js
+        // https://github.com/calvinmetcalf/shapefile-js
+        var waiting = Promise.all([shp.parseShp(zip.file(shpString).asArrayBuffer()), 
+                                    shp.parseDbf(zip.file(dbfString).asArrayBuffer())
+                                    ])
+        waiting.then(function(result){
+                        var geoj = shp.combine(result);
+                        processData(geoj);
+                    });
+    };
+    
+    function updatePreviewTable() {
+        console.log('updating preview table');
+        // load fields
+        var fields = [];
+        let geojsonData = document.geojsonData;
+        if (geojsonData !== null) {
+            for (key in geojsonData.features[0].properties) {
+                fields.push(key);
+            };
+        };
+        console.log(fields);
+        // get and clear the preview table
+        var table = document.getElementById('preview-table');
+        table.innerHTML = '';
+        // add table fields
+        thead = document.createElement('thead');
+        table.appendChild(thead);
+        tr = document.createElement('tr');
+        thead.appendChild(tr);
+        for (field of fields) {
+            th = document.createElement('th');
+            th.innerText = field;
+            thead.appendChild(th);
+        };
+        // add table data
+        tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        for (i=0; i < 20; i++) {
+            feat = geojsonData.features[i];
+            tr = document.createElement('tr');
+            tbody.appendChild(tr);
+            for (field of fields) {
+                td = document.createElement('td');
+                tr.appendChild(td);
+                val = feat.properties[field];
+                td.innerText = val;
+            };
+        };
+    }
+
+    function updateAdminLevels() {
+        console.log('updating admin levels');
+        // load fields
+        var fields = [];
+        let geojsonData = document.geojsonData;
+        if (geojsonData !== null) {
+            for (key in geojsonData.features[0].properties) {
+                fields.push(key);
+            };
+        };
+        console.log(fields);
+        // get and clear the admin levels
+        var div = document.getElementById('admin-levels-div');
+        div.innerHTML = '';
+        // add admin levels
+        var select = document.getElementById('admin-level-select');
+        console.log(select.value);
+        for (let level = 0; level <= select.value; level++) {
+            console.log('ADM'+level);
+            /*
+            <div class="box">
+                <h3>ADM1</h3>
+                <table><tr>
+                    <td><label>Name field</label></td>
+                    <td><input type="text" name="name_field"></td>
+                </tr></table>
+            </div>
+            */
+            var admDiv = document.createElement('div')
+            admDiv.className = 'box';
+            div.appendChild(admDiv);
+    
+            var title = document.createElement('h3')
+            title.innerText = 'ADM'+level;
+            admDiv.appendChild(title);
+    
+            var table = document.createElement('table')
+            admDiv.appendChild(table);
+    
+            var row = document.createElement('tr')
+            
+            var cell = document.createElement('td')
+            cell.innerHTML = '<label>Name field</label>'
+            row.appendChild(cell);
+    
+            var cell = document.createElement('td')
+            var fieldSelect = document.createElement('select');
+            fieldSelect.name = 'name_field';
+            for (field of fields) {
+                opt = document.createElement('option');
+                opt.value = field;
+                opt.innerText = field;
+                fieldSelect.appendChild(opt);
+            };
+            cell.appendChild(fieldSelect);
+            row.appendChild(cell);
+    
+            table.appendChild(row);
+        };
+    }
+        
+</script>
+
+{% endblock %}

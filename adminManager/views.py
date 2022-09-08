@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.db import transaction
 
 from . import models
 from . import forms
@@ -44,9 +45,10 @@ def datasource_add(request):
                 form.save()
                 source = form.instance
                 # save importer
-                from dataImporter.models import DataImporter
+                from adminImporter.models import DatasetImporter
+                print(data['import_params'])
                 import_params = json.loads(data['import_params'])
-                importer = DataImporter(source=source, import_params=import_params)
+                importer = DatasetImporter(source=source, import_params=import_params)
                 importer.save()
                 return redirect('source', source.pk)
             else:
