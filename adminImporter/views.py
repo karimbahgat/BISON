@@ -296,7 +296,7 @@ def parse_data(**params):
         # ...The adm level has to be explicitly defined by level_def['level'].
         data = []
         level_def = level_defs[level]
-        group_field = level_def['id_field'] if level > 0 else None # id not required for adm0
+        group_field = level_def['id_field'] if level_def['level'] > 0 else None # id not required for adm0
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, subset):
             # override all level 0 with a single iso country lookup
