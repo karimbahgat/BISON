@@ -111,10 +111,13 @@ def datasource_import(request, pk):
                 else:
                     raise Exception('"{}" is not a valid date'.format(dateval))
                 return start,end
-            start1,end1 = parse_date(str(params['valid_from']))
-            start2,end2 = parse_date(str(params['valid_to']))
-            start = min(start1,start2)
-            end = max(end1, end2)
+            if params['valid_from'] and params['valid_to']:
+                start1,end1 = parse_date(str(params['valid_from']))
+                start2,end2 = parse_date(str(params['valid_to']))
+                start = min(start1,start2)
+                end = max(end1, end2)
+            else:
+                start = end = None
 
             # get source
             # source_name = params['source'][0]
@@ -296,7 +299,7 @@ def parse_data(**params):
         # ...The adm level has to be explicitly defined by level_def['level'].
         data = []
         level_def = level_defs[level]
-        group_field = level_def['id_field'] if level_def['level'] > 0 else None # id not required for adm0
+        group_field = level_def['id_field'] if level_def['level'] > 0 else level_def.get('id_field', None) # id not required for adm0
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, subset):
             # override all level 0 with a single iso country lookup
