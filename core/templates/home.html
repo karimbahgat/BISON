@@ -8,7 +8,8 @@
 <link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'css/home.css' %}" type="text/css">
 
-<!-- Banner -->
+
+<!-- Geocoder -->
 <section id="banner">
     <div class="content">
         <header>
@@ -16,13 +17,7 @@
             <p>A tool for geocoding text input to political administrative boundaries.</p>
         </header>
 
-        <ul class='etabs'>
-            <li class='tab{% if "geocoder" in request.path %} active{% endif %}'><a href="{% url 'home' %}">Geocoder</a></li>
-            <li class='tab{% if "datasets" in request.path %} active{% endif %}'><a href="{% url 'datasets' %}">Datasets</a></li>
-        </ul>
-
-        {% block tool_content %}
-        {% endblock %}
+        {% include 'adminGeocoder/geocoder.html' %}
 
         <p>Built by the <a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community</a> and <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the Admin Geocoder
             is an online tool and database for geocoding textual name references to administrative boundaries (i.e., state, county)
@@ -33,6 +28,22 @@
             shapefiles;
             the only requirement for use is <a href="index.html#citation">acknowledgement</a>.
         </p>
+
+    </div>
+</section>
+
+
+
+<!-- Sources -->
+<section>
+    <div class="content">
+        <header>
+            <a href="{% url 'dataset_add' %}" class="button small" style="float:right">Add New Dataset</a>
+            <h2>Sources of Administrative Boundary Data</h2>
+            <p>Geocoding is made possible by importing and standardizing boundary data from multiple boundary datasets.</p>
+        </header>
+
+        {% include 'adminManager/datasets.html' %}
 
     </div>
 </section>

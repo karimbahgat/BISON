@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'adminManager',
     'adminImporter',
     #'adminDigitizer',
-    #'adminCoder',
+    'adminGeocoder',
 ]
 
 MIDDLEWARE = [
@@ -148,6 +148,7 @@ STATIC_URL = '/static/'
 # non-app specific static folders
 STATICFILES_DIRS = [
     BASE_DIR / 'core' / 'static',
+    BASE_DIR / 'adminGeocoder' / 'static',
 ]
 
 # Default primary key field type

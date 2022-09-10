@@ -1,0 +1,64 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'adminGeocoder/css/geocoder.css' %}" type="text/css">
+
+<div id="map-search-div">
+
+    <div id="map">
+    </div>
+    
+    <div id="search-pane" class="box">
+        <div id="search-bar">
+            <input type="text" class="form-control">
+            <button type="submit">Geocode</button>
+        </div>
+        <table id="search-results">
+            <thead>
+                <th>Country</th>
+                <th>Admin Level</th>
+                <th>Sources</th>
+                <th>Time Period</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for countrylevels in countries %}
+                    <tr>
+                        <td>
+                            {% for countrylevel in countrylevels %}
+                                {% if countrylevel.level == 0 %}{{ countrylevel.name }}{% endif %}
+                            {% endfor %}
+                            <br>
+                        </td>
+                        <td>
+                            {% for countrylevel in countrylevels %}
+                                ADM{{ countrylevel.level }}
+                                <br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for countrylevel in countrylevels %}
+                                {{ countrylevel.sources }}
+                                <br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for countrylevel in countrylevels %}
+                                {{ countrylevel.mindate }} &#x2192; {{ countrylevel.maxdate }}
+                                <br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for countrylevel in countrylevels %}
+                                <a class="button small" href="{% url 'build' %}?country={{ countrylevel.name }}&level={{ countrylevel.level }}" target="_blank">Build</a>
+                                <br>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="{% static 'adminGeocoder/js/geocoder.js' %}"></script>

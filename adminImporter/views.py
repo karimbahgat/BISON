@@ -357,7 +357,7 @@ def add_to_db(reader, common, entries, parent=None):
     start = common['start']
     end = common['end']
     for entry in entries:
-        #print(entry['item'])
+        print(entry['item'])
 
         groupval = entry['item']['id']
         level = entry['item']['level']

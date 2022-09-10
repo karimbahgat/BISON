@@ -21,8 +21,6 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('geocoder', views.geocoder, name='geocoder'),
-    path('datasets', views.datasets, name='datasets'),
 
     path('', include('adminManager.urls')),
     path('', include('adminImporter.urls')),
