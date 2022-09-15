@@ -19,10 +19,5 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', views.home, name='home'),
-
-    path('', include('adminManager.urls')),
-    path('', include('adminImporter.urls')),
-    path('', include('adminGeocoder.urls')),
+    path('api/search/name', views.api_search_name, name='api_search_name'),
 ]
