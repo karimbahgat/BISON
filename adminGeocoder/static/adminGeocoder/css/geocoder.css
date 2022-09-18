@@ -4,7 +4,7 @@
 }
 
 #search-results {
-    width: 98%;
+    width: 100%;
     max-height: 320px;
     display: flex;
     flex-direction: column;
@@ -12,7 +12,7 @@
 }
 
 .search-item {
-    width: 100%;
+    width: 98%;
     display: flex;
     align-items: stretch;
     gap: 10px;

@@ -103,6 +103,8 @@ function updateListEntry(searchId2, geomMatch) {
     infoName.innerText = 'Match: ' + geomMatchDisplayName + ` (${geomMatchPercent.toFixed(0)}%)`;
 
     // set the source
+    infoSource = item.querySelector('.search-info-source');
+    infoSource.innerText = 'Source: ' + geomMatch.source.name;
 
     // set temporal validity
 }
@@ -157,4 +159,16 @@ function receiveChosenGeomMatch(searchId2, geomData) {
 
     // add to map
     addResultToMap(searchId2, geomData);
+}
+
+function openOptionsPopup() {
+    elem = document.getElementById('options-popup').className = 'popup';
+}
+
+// close popups on clickout
+
+document.onclick = function(event) {
+    if (event.target.className == 'popup') {
+        event.target.className = 'popup is-hidden';
+    };
 }

@@ -13,6 +13,7 @@
         <div id="search-bar">
             <input name="search-input" type="text" class="form-control">
             <button type="submit">Geocode</button>
+            <button type="button" onclick="openOptionsPopup()">&hellip;</button>
         </div>
         <div id="search-results">
         </div>
@@ -20,6 +21,30 @@
     </div>
 
 </div>
+
+
+<!----------------------->
+<!-- Popups -->
+
+
+<!-- Options -->
+
+<div id="options-popup" class="popup is-hidden">
+    <div class="popup-content" style="overflow:auto">
+
+        <header>
+            <a href="{% url 'dataset_add' %}" class="button small" style="float:right">Add New Dataset</a>
+            <h2>Sources of Administrative Boundary Data</h2>
+            <p>Geocoding is made possible by importing and standardizing boundary data from multiple boundary datasets.</p>
+        </header>
+
+        {% include 'adminManager/datasets.html' %}
+        
+    </div>
+</div>
+
+
+
 
 <script src="{% static 'adminGeocoder/js/map.js' %}"></script>
 <script src="{% static 'adminGeocoder/js/geocoder.js' %}"></script>
