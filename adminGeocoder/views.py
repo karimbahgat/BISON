@@ -39,5 +39,4 @@ def api_search_name(request):
 def api_get_admin(request, id):
     admin = models.Admin.objects.get(pk=id)
     data = admin.serialize()
-    print(data)
     return JsonResponse(data)

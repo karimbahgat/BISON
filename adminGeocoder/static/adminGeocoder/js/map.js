@@ -3,7 +3,7 @@
 // main country map
 
 // layer
-var countryStyle = new ol.style.Style({
+var resultStyle = new ol.style.Style({
     fill: new ol.style.Fill({
         color: 'rgb(6,75,52)'
     }),
@@ -12,13 +12,13 @@ var countryStyle = new ol.style.Style({
         width: 0.5,
     }),
 });
-var countryLayer = new ol.layer.Vector({
+var resultLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
-    style: countryStyle,
+    style: resultStyle,
 });
 
 // labelling
-var countryLabelStyle = new ol.style.Style({
+var resultLabelStyle = new ol.style.Style({
     geometry: function(feature) {
         // create a geometry that defines where the label will be display
         var geom = feature.getGeometry();
@@ -71,7 +71,7 @@ var map = new ol.Map({
             maxZoom: 20,
             crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
         })}),
-        countryLayer
+        resultLayer
     ],
     view: new ol.View({
         center: ol.proj.fromLonLat([0,0]),
@@ -88,31 +88,33 @@ map.on('pointermove', function(evt) {
     // if any feat was found
     if (cursorFeat != null) {
         // clear any existing feature text
-        countryLayer.getSource().forEachFeature(function (feature) {
-            feature.setStyle([countryStyle]);
+        resultLayer.getSource().forEachFeature(function (feature) {
+            feature.setStyle([resultStyle]);
         });
         // update the text style for the found feature
-        var label = cursorFeat.get('name');
-        var labelStyle = countryLabelStyle.clone();
+        var label = cursorFeat.get('displayName');
+        var labelStyle = resultLabelStyle.clone();
         labelStyle.getText().setText(label);
-        cursorFeat.setStyle([countryStyle,labelStyle]);
+        cursorFeat.setStyle([resultStyle,labelStyle]);
     } else {
         // clear any existing feature text
-        countryLayer.getSource().forEachFeature(function (feature) {
-            feature.setStyle([countryStyle]);
+        resultLayer.getSource().forEachFeature(function (feature) {
+            feature.setStyle([resultStyle]);
         });
     };
 });
 
-function loadCountries() {
-    url = "{% static 'data/gb-countries-simple.json' %}";
-    fetch(url).then(resp=>resp.json()).then(data=>addCountriesToMap(data));
+function addResultToMap(searchId2, matchData) {
+    props = {'id': matchData.id,
+            'displayName': getDisplayName(matchData)
+            };
+    feat = {'type': 'Feature',
+            'id': searchId2,
+            'properties': props,
+            'geometry': matchData['geom']};
+    feat = new ol.format.GeoJSON().readFeature(feat, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+    resultLayer.getSource().addFeature(feat);
+    map.getView().fit(feat.getGeometry().getExtent());
+    map.getView().setZoom(map.getView().getZoom()-1);
 };
 
-function addCountriesToMap(data) {
-    feats = new ol.format.GeoJSON().readFeatures(data, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
-    countryLayer.getSource().addFeatures(feats);
-    //map.getView().fit(countryLayer.getSource().getExtent());
-};
-
-loadCountries();

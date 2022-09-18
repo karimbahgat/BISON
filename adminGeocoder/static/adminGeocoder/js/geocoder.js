@@ -79,19 +79,23 @@ function addMatchToList(searchId) {
     info.appendChild(infoTime);
 }
 
+function getDisplayName(adminData) {
+    // construct the display name
+    names = [];
+    for (parent of adminData.hierarchy) {
+        firstName = parent.names[0];
+        names.push(firstName);
+    };
+    displayName = names.join(', ');
+    return displayName;
+}
+
 function updateListEntry(searchId2, geomMatch) {
     // get the list entry
     item = document.getElementById('search-id-' + searchId2);
 
-    // construct the display name
-    geomMatchNames = [];
-    for (parent of geomMatch.hierarchy) {
-        firstName = parent.names[0];
-        geomMatchNames.push(firstName);
-    };
-    geomMatchDisplayName = geomMatchNames.join(', ');
-
-    // calc percent match
+    // calc display name and percent match
+    geomMatchDisplayName = getDisplayName(geomMatch);
     geomMatchPercent = 55.0; //nameMatch.perc_diff * 100;
 
     // set the match name
@@ -138,7 +142,6 @@ function autoDisambiguateGeoms(id) {
 function requestChosenGeomMatch(searchId2, adminId) {
     // fetch full details of chosen geom match
     url = '/api/get_admin/' + adminId;
-    console.log(url);
     fetch(url).then(result=>result.json()).then(data=>receiveChosenGeomMatch(searchId2, data));
 }
 
@@ -151,4 +154,7 @@ function receiveChosenGeomMatch(searchId2, geomData) {
 
     // update list entry
     updateListEntry(searchId2, geomData);
+
+    // add to map
+    addResultToMap(searchId2, geomData);
 }
