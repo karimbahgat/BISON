@@ -1,118 +1,154 @@
 
-/////////////
-// main country map
+searchId = 1;
+resultsData = {};
 
-// layer
-var countryStyle = new ol.style.Style({
-    fill: new ol.style.Fill({
-        color: 'rgb(6,75,52)'
-    }),
-    stroke: new ol.style.Stroke({
-        color: 'white',
-        width: 0.5,
-    }),
-});
-var countryLayer = new ol.layer.Vector({
-    source: new ol.source.Vector(),
-    style: countryStyle,
-});
+function geocode() {
+    // get search input and clear
+    input = document.querySelector('input[name="search-input"]');
+    search = input.value;
+    console.log(search);
+    input.value = '';
 
-// labelling
-var countryLabelStyle = new ol.style.Style({
-    geometry: function(feature) {
-        // create a geometry that defines where the label will be display
-        var geom = feature.getGeometry();
-        if (geom.getType() == 'Polygon') {
-            // polygon
-            // place label at the bbox/center of the polygon
-            var extent = feature.getGeometry().getExtent();
-            var newGeom = ol.geom.Polygon.fromExtent(extent);
-        } else {
-            // multi polygon
-            // place label at the bbox/center of the largest polygon
-            var largestGeom = null;
-            var largestArea = null;
-            for (poly of geom.getPolygons()) {
-                var extent = poly.getExtent();
-                var extentGeom = ol.geom.Polygon.fromExtent(extent);
-                var extentArea = extentGeom.getArea();
-                if (extentArea > largestArea) {
-                    largestGeom = extentGeom;
-                    largestArea = extentArea;
-                };
-            };
-            var newGeom = largestGeom;
-            
-        };
-        return newGeom;
-    },
-    text: new ol.style.Text({
-        //font: '12px Calibri,sans-serif',
-        fill: new ol.style.Fill({ color: '#000' }),
-        stroke: new ol.style.Stroke({
-            color: '#fff', width: 2
-        }),
-        overflow: true,
-    }),
-});
+    // search for name
+    apiSearchUrl = 'api/search/name?search='+search;
+    fetch(apiSearchUrl).then(result=>result.json()).then(data=>receiveResults(data))
+    return false;
+}
 
-// map
-var map = new ol.Map({
-    target: 'map',
-    controls: ol.control.defaults().extend([new ol.control.FullScreen(),
-                                            new ol.control.ScaleLine({units: 'metric'}),
-                                            ]),
-    layers: [
-    new ol.layer.Tile({
-        source: new ol.source.XYZ({
-            attributions: 'Satellite Imagery from Google',
-            url:
-            'http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}',
-            maxZoom: 20,
-            crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
-        })}),
-        countryLayer
-    ],
-    view: new ol.View({
-        center: ol.proj.fromLonLat([0,0]),
-        zoom: 1
-    })
-});
+function receiveResults(data) {
+    console.log(data);
+    storeResultData(data);
+    autoSelectMatch(searchId);
+    addMatchToList(searchId); // only adds an empty item, details will be filled later
+    geomMatchId = data['chosen_geom_id'];
+    console.log(geomMatchId);
+    requestChosenGeomMatch(searchId, geomMatchId);
+    searchId += 1;
+}
 
-map.on('pointermove', function(evt) {
-    // get feat at pointer
-    let cursorFeat = null;
-    map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
-        cursorFeat = feature;
-    });
-    // if any feat was found
-    if (cursorFeat != null) {
-        // clear any existing feature text
-        countryLayer.getSource().forEachFeature(function (feature) {
-            feature.setStyle([countryStyle]);
-        });
-        // update the text style for the found feature
-        var label = cursorFeat.get('name');
-        var labelStyle = countryLabelStyle.clone();
-        labelStyle.getText().setText(label);
-        cursorFeat.setStyle([countryStyle,labelStyle]);
-    } else {
-        // clear any existing feature text
-        countryLayer.getSource().forEachFeature(function (feature) {
-            feature.setStyle([countryStyle]);
-        });
+function storeResultData(data) {
+    resultsData[searchId] = data;
+}
+
+function autoSelectMatch(id) {
+    // for a given search id, sets the chosen matches to the data dicts
+    autoDisambiguateNames(id);
+    autoDisambiguateGeoms(id);
+}
+
+function addMatchToList(searchId) {
+    // only adds an empty item, details will be filled later
+    results = document.getElementById('search-results');
+
+    searchData = resultsData[searchId];
+    
+    item = document.createElement('div');
+    item.id = 'search-id-' + searchId;
+    item.className = 'search-item box';
+    results.prepend(item);
+    
+    thumb = document.createElement('img');
+    thumb.className = 'search-thumbnail';
+    thumb.src = 'https://cdn-icons-png.flaticon.com/512/235/235861.png';
+    item.appendChild(thumb);
+    
+    info = document.createElement('div');
+    info.className = 'search-info';
+    item.appendChild(info);
+
+    infoQuery = document.createElement('span');
+    infoQuery.className = 'search-info-query';
+    infoQuery.innerText = 'Search: ' + searchData.search;
+    info.appendChild(infoQuery);
+
+    // below here will be filled later only
+    
+    infoName = document.createElement('span');
+    infoName.className = 'search-info-name';
+    infoName.innerText = 'Match: ...';
+    info.appendChild(infoName);
+
+    infoSource = document.createElement('span');
+    infoSource.className = 'search-info-source';
+    infoSource.innerText = 'Source: ' + 'Test Source';
+    info.appendChild(infoSource);
+    
+    infoTime = document.createElement('span');
+    infoTime.className = 'search-info-time';
+    infoTime.innerText = 'Validity: ' + 'XXXX - YYYY';
+    info.appendChild(infoTime);
+}
+
+function updateListEntry(searchId2, geomMatch) {
+    // get the list entry
+    item = document.getElementById('search-id-' + searchId2);
+
+    // construct the display name
+    geomMatchNames = [];
+    for (parent of geomMatch.hierarchy) {
+        firstName = parent.names[0];
+        geomMatchNames.push(firstName);
     };
-});
+    geomMatchDisplayName = geomMatchNames.join(', ');
 
-function loadCountries() {
-    url = "{% static 'data/gb-countries-simple.json' %}";
-    fetch(url).then(resp=>resp.json()).then(data=>addCountriesToMap(data));
-};
+    // calc percent match
+    geomMatchPercent = 55.0; //nameMatch.perc_diff * 100;
 
-function addCountriesToMap(data) {
-    feats = new ol.format.GeoJSON().readFeatures(data, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
-    countryLayer.getSource().addFeatures(feats);
-    //map.getView().fit(countryLayer.getSource().getExtent());
-};
+    // set the match name
+    infoName = item.querySelector('.search-info-name');
+    infoName.innerText = 'Match: ' + geomMatchDisplayName + ` (${geomMatchPercent.toFixed(0)}%)`;
 
-loadCountries();
+    // set the source
+
+    // set temporal validity
+}
+
+function autoDisambiguateNames(id) {
+    // user will likely manually disambiguate the names
+    // but this method tries to do this automatically as a first guess
+
+    // get results data for the search id
+    data = resultsData[id];
+
+    // the search results are already sorted by text similiraty
+    // so for now just choose the first one (most similar)
+    chosen = data.results[0];
+
+    // update the results data with the chosen id
+    data['chosen_name_id'] = chosen.id;
+}
+
+function autoDisambiguateGeoms(id) {
+    // user will likely manually disambiguate the geoms
+    // but this method tries to do this automatically as a first guess
+    // this method is also affected by the chosen name matches which ranks the geoms
+
+    // get results data for the search id
+    data = resultsData[id];
+
+    // the search results are already sorted by text similiraty
+    // so for now just choose the first geom of the first name (most similar)
+    chosenName = data.results[0];
+    chosenGeomId = chosenName.admins[0];
+
+    // update the results data with the chosen id
+    data['chosen_geom_id'] = chosenGeomId;
+}
+
+function requestChosenGeomMatch(searchId2, adminId) {
+    // fetch full details of chosen geom match
+    url = '/api/get_admin/' + adminId;
+    console.log(url);
+    fetch(url).then(result=>result.json()).then(data=>receiveChosenGeomMatch(searchId2, data));
+}
+
+function receiveChosenGeomMatch(searchId2, geomData) {
+    console.log(geomData);
+
+    // store received geom data
+    searchData = resultsData[searchId2];
+    searchData['chosen_geom_data'] = geomData;
+
+    // update list entry
+    updateListEntry(searchId2, geomData);
+}
