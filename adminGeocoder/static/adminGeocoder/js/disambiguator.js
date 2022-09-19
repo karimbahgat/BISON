@@ -11,23 +11,31 @@ function initDisambiguator(searchId2) {
     disambiguationMap.updateSize(); // otherwise will remain hidden until window resize
     // clear geoms table
     document.querySelector('#disambiguation-geom-table tbody').innerHTML = '';
-    // add possible geoms
+    // set search input value
     data = resultsData[searchId2];
+    document.getElementById('disambiguation-search-input').value = data.search;
+    // init status
+    disambiguatorCandidatesLoaded = 0;
+    disambiguatorTotalCandidates = 0;
+    for (result of data.results) {
+        disambiguatorTotalCandidates += result.admins.length;
+    };
+    // add possible geoms
     for (result of data.results) {
         for (adminId of result.admins) {
-            addGeomToDisambiguationTable(adminId);
+            addGeomToDisambiguationTable(adminId, result);
             requestGeomCandidate(adminId);
         };
     };
 }
 
-function addGeomToDisambiguationTable(adminId) {
+function addGeomToDisambiguationTable(adminId, result) {
     tbody = document.querySelector('#disambiguation-geom-table tbody');
     tr = document.createElement('tr');
     tr.id = 'admin-candidate-id-' + adminId;
     tr.innerHTML = `
     <td>...</td>
-    <td>...</td>
+    <td>${(result.perc_diff * 100).toFixed(1)}%</td>
     <td>...</td>
     <td>...</td>
     `;
@@ -48,6 +56,9 @@ function receiveGeomCandidate(geomData) {
 
     // add to map
     addGeomToDisambiguationMap(geomData);
+
+    // update status
+    updateLoadStatus();
 }
 
 function updateDisambiguationTableEntry(geomData) {
@@ -57,10 +68,18 @@ function updateDisambiguationTableEntry(geomData) {
     } else {
         validity = `${geomData.valid_from} - ${geomData.valid_to}`;
     };
-    tr.innerHTML = `
-    <td>${getDisplayName(geomData)}</td>
-    <td>${geomData.source.name}</td>
-    <td>${validity}</td>
-    <td>...</td>
-    `;
+    tdList = tr.querySelectorAll('td');
+    tdList[0].innerText = getDisplayName(geomData);
+    tdList[2].innerText = geomData.source.name;
+    tdList[3].innerText = validity;
+}
+
+function updateLoadStatus() {
+    disambiguatorCandidatesLoaded += 1;
+    if (disambiguatorCandidatesLoaded == disambiguatorTotalCandidates) {
+        loadStatus = `All ${disambiguatorCandidatesLoaded} matches loaded`;
+    } else {
+        loadStatus = `Loading: ${disambiguatorCandidatesLoaded} of ${disambiguatorTotalCandidates} matches loaded`
+    };
+    document.getElementById('disambiguation-status').innerText = loadStatus;
 }

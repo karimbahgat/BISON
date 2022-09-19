@@ -101,7 +101,7 @@ function updateListEntry(searchId2, geomMatch) {
 
     // calc display name and percent match
     geomMatchDisplayName = getDisplayName(geomMatch);
-    geomMatchPercent = 55.0; //nameMatch.perc_diff * 100;
+    geomMatchPercent = geomMatch.perc_diff * 100;
 
     // set the match name
     infoName = item.querySelector('.search-info-name');

@@ -50,46 +50,9 @@
 
 <div id="disambiguation-popup" class="popup is-hidden">
     <div class="popup-content" style="overflow:auto">
-        <div id="disambiguation-content">
 
-            <div id="disambiguation-top">
+        {% include 'adminGeocoder/disambiguator.html' %}
 
-                <div id="disambiguation-name-dropdowns">
-                    <select>
-                        <option>Select closest admin name</option>
-                    </select>
-                </div>
-
-                <div id="disambiguation-map">
-                </div>
-
-            </div>
-
-            <div id="disambiguation-bottom">
-
-                <div id="disambiguation-geoms">
-                    <table id="disambiguation-geom-table">
-                        <thead>
-                            <tr>
-                                <td>Name</td>
-                                <td>Source</td>
-                                <td>Year Validity</td>
-                                <td>Type of Match</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="popup-buttons">
-                    <button>Save</button>
-                    <button>Close</button>
-                </div>
-
-            </div>
-
-        </div>
     </div>
 </div>
 
