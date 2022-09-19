@@ -58,7 +58,7 @@ function addMatchToList(searchId) {
 
     infoQuery = document.createElement('span');
     infoQuery.className = 'search-info-query';
-    infoQuery.innerText = 'Search: ' + searchData.search;
+    infoQuery.innerText = `Search: "${searchData.search}"`;
     info.appendChild(infoQuery);
 
     // below here will be filled later only
@@ -75,8 +75,13 @@ function addMatchToList(searchId) {
     
     infoTime = document.createElement('span');
     infoTime.className = 'search-info-time';
-    infoTime.innerText = 'Validity: ' + 'XXXX - YYYY';
+    infoTime.innerText = 'Validity: ' + '...';
     info.appendChild(infoTime);
+
+    // buttons
+    buttons = document.createElement('div');
+    item.appendChild(buttons);
+    buttons.innerHTML = `<button type="button" onclick="openDisambiguationPopup(${searchId})">Edit</button>`
 }
 
 function getDisplayName(adminData) {
@@ -107,6 +112,13 @@ function updateListEntry(searchId2, geomMatch) {
     infoSource.innerText = 'Source: ' + geomMatch.source.name;
 
     // set temporal validity
+    infoSource = item.querySelector('.search-info-time');
+    if (geomMatch.valid_from === null) {
+        validity = "Unknown";
+    } else {
+        validity = geomMatch.valid_from + ' - ' + geomMatch.valid_to;
+    }
+    infoSource.innerText = 'Validity: ' + validity;
 }
 
 function autoDisambiguateNames(id) {

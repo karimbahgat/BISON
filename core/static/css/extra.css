@@ -30,3 +30,9 @@
 .is-hidden { display: none; }
 
 .is-visually-hidden { opacity: 0; }
+
+.popup-buttons {
+    display: flex;
+    width: 100%;
+    flex-direction: row-reverse;
+}

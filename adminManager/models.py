@@ -50,6 +50,8 @@ class Admin(models.Model):
                 'hierarchy':hierarchy,
                 'geom':self.geom.__geo_interface__,
                 'source':{'name':source.name, 'id':source.pk},
+                'valid_from':self.valid_from,
+                'valid_to':self.valid_to,
                 }
         return dct
 

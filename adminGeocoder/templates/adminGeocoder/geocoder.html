@@ -2,6 +2,7 @@
 
 <link rel="stylesheet" href="{% static 'adminGeocoder/css/map.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'adminGeocoder/css/geocoder.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'adminGeocoder/css/disambiguator.css' %}" type="text/css">
 
 <div id="map-search-div">
 
@@ -13,7 +14,9 @@
         <div id="search-bar">
             <input name="search-input" type="text" class="form-control">
             <button type="submit">Geocode</button>
-            <button type="button" onclick="openOptionsPopup()">&hellip;</button>
+        </div>
+        <div id="search-options-bar">
+            <a class="small" onclick="openOptionsPopup()">Advanced Options</a>
         </div>
         <div id="search-results">
         </div>
@@ -43,8 +46,57 @@
     </div>
 </div>
 
+<!-- Disambiguation -->
+
+<div id="disambiguation-popup" class="popup is-hidden">
+    <div class="popup-content" style="overflow:auto">
+        <div id="disambiguation-content">
+
+            <div id="disambiguation-top">
+
+                <div id="disambiguation-name-dropdowns">
+                    <select>
+                        <option>Select closest admin name</option>
+                    </select>
+                </div>
+
+                <div id="disambiguation-map">
+                </div>
+
+            </div>
+
+            <div id="disambiguation-bottom">
+
+                <div id="disambiguation-geoms">
+                    <table id="disambiguation-geom-table">
+                        <thead>
+                            <tr>
+                                <td>Name</td>
+                                <td>Source</td>
+                                <td>Year Validity</td>
+                                <td>Type of Match</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="popup-buttons">
+                    <button>Save</button>
+                    <button>Close</button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
 
 
 
 <script src="{% static 'adminGeocoder/js/map.js' %}"></script>
+<script src="{% static 'adminGeocoder/js/disambiguation-map.js' %}"></script>
+<script src="{% static 'adminGeocoder/js/disambiguator.js' %}"></script>
 <script src="{% static 'adminGeocoder/js/geocoder.js' %}"></script>
