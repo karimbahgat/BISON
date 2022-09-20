@@ -42,3 +42,11 @@
 
 #disambiguation-geom-table {   
 }
+
+#disambiguation-geom-table tbody tr:hover {   
+    background-color: rgba(240, 178, 35, 0.33);
+}
+
+.selected-geom-row {
+    background-color: rgb(240, 178, 35) !important;
+}

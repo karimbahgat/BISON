@@ -1,4 +1,6 @@
 
+currentSelectedGeom = null;
+
 function openDisambiguationPopup(searchId2) {
     document.getElementById('disambiguation-popup').className = 'popup';
     initDisambiguator(searchId2);
@@ -20,6 +22,8 @@ function initDisambiguator(searchId2) {
     for (result of data.results) {
         disambiguatorTotalCandidates += result.admins.length;
     };
+    // set currently selected geom from stored data
+    currentlySelectedGeom = data.chosen_geom_id
     // add possible geoms
     for (result of data.results) {
         for (adminId of result.admins) {
@@ -33,6 +37,7 @@ function addGeomToDisambiguationTable(adminId, result) {
     tbody = document.querySelector('#disambiguation-geom-table tbody');
     tr = document.createElement('tr');
     tr.id = 'admin-candidate-id-' + adminId;
+    tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
     <td>...</td>
     <td>${(result.perc_diff * 100).toFixed(1)}%</td>
@@ -72,14 +77,36 @@ function updateDisambiguationTableEntry(geomData) {
     tdList[0].innerText = getDisplayName(geomData);
     tdList[2].innerText = geomData.source.name;
     tdList[3].innerText = validity;
+    // mark as selected
+    if (geomData.id == currentlySelectedGeom) {
+        tr.className = "selected-geom-row";
+        tr.scrollIntoView({block:'nearest', inline:'nearest'});
+    };
 }
 
 function updateLoadStatus() {
     disambiguatorCandidatesLoaded += 1;
     if (disambiguatorCandidatesLoaded == disambiguatorTotalCandidates) {
-        loadStatus = `All ${disambiguatorCandidatesLoaded} matches loaded`;
+        loadStatus = `Found ${disambiguatorCandidatesLoaded} matches`;
     } else {
         loadStatus = `Loading: ${disambiguatorCandidatesLoaded} of ${disambiguatorTotalCandidates} matches loaded`
     };
     document.getElementById('disambiguation-status').innerText = loadStatus;
+}
+
+function selectGeom(adminId) {
+    // mark the table entry as selected
+    rows = document.querySelectorAll('#disambiguation-geom-table tbody tr');
+    for (tr of rows) {
+        if (tr.id == `admin-candidate-id-${adminId}`) {
+            tr.className = "selected-geom-row";
+            tr.scrollIntoView({block:'nearest', inline:'nearest'});
+        } else {
+            tr.className = "";
+        };
+    };
+    // mark the map geom as selected
+    selectMapGeom(adminId);
+    // remember
+    currentSelectedGeom = adminId;
 }

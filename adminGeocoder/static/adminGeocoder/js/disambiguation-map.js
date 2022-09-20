@@ -12,9 +12,24 @@ var disambiguationStyle = new ol.style.Style({
         width: 0.5,
     }),
 });
+var selectedStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+        color: 'rgba(0, 183, 255, 0.5)'
+    }),
+    stroke: new ol.style.Stroke({
+        color: 'rgb(0, 183, 255)',
+        width: 0.5,
+    }),
+});
+
 var disambiguationLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
     style: disambiguationStyle,
+});
+
+var selectedLayer = new ol.layer.Vector({
+    source: new ol.source.Vector(),
+    style: selectedStyle,
 });
 
 // labelling
@@ -71,7 +86,8 @@ var disambiguationMap = new ol.Map({
             maxZoom: 20,
             crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
         })}),
-        disambiguationLayer
+        disambiguationLayer,
+        selectedLayer
     ],
     view: new ol.View({
         center: ol.proj.fromLonLat([0,0]),
@@ -104,9 +120,21 @@ disambiguationMap.on('pointermove', function(evt) {
     };
 });
 
+disambiguationMap.on('click', function(evt) {
+    // get feat at pointer
+    let cursorFeat = null;
+    disambiguationMap.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+        cursorFeat = feature;
+    });
+    // if any feat was found
+    if (cursorFeat != null) {
+        selectGeom(cursorFeat.getId());
+    };
+});
+
 function addGeomToDisambiguationMap(geomData) {
     props = {'id': geomData.id,
-            'displayName': 'test' //getDisplayName(matchData)
+            'displayName': getDisplayName(geomData)
             };
     feat = {'type': 'Feature',
             'id': geomData.id,
@@ -116,5 +144,18 @@ function addGeomToDisambiguationMap(geomData) {
     disambiguationLayer.getSource().addFeature(feat);
     disambiguationMap.getView().fit(disambiguationLayer.getSource().getExtent());
     disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
+    // add to selected layer
+    if (geomData.id == currentlySelectedGeom) {
+        selectMapGeom(geomData.id);
+    };
 };
+
+function selectMapGeom(adminId) {
+    selectedLayer.getSource().clear();
+    fromFeat = disambiguationLayer.getSource().getFeatureById(adminId);
+    props = fromFeat.getProperties();
+    feat = new ol.Feature(props);
+    feat.setGeometry(fromFeat.getGeometry());
+    selectedLayer.getSource().addFeature(feat);
+}
 
