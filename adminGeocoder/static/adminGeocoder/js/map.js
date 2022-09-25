@@ -105,7 +105,7 @@ map.on('pointermove', function(evt) {
 });
 
 function addResultToMap(searchId2, matchData) {
-    props = {'id': matchData.id,
+    props = {'geomId': matchData.id,
             'displayName': getDisplayName(matchData)
             };
     feat = {'type': 'Feature',
@@ -113,8 +113,19 @@ function addResultToMap(searchId2, matchData) {
             'properties': props,
             'geometry': matchData['geom']};
     feat = new ol.format.GeoJSON().readFeature(feat, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
-    resultLayer.getSource().addFeature(feat);
-    map.getView().fit(feat.getGeometry().getExtent());
-    map.getView().setZoom(map.getView().getZoom()-1);
+
+    existingFeat = resultLayer.getSource().getFeatureById(searchId2);
+    if (existingFeat != null) {
+        // update existing feat
+        existingFeat.setGeometry(feat.getGeometry());
+        existingFeat.setProperties(feat.getProperties());
+        map.getView().fit(feat.getGeometry().getExtent());
+        map.getView().setZoom(map.getView().getZoom()-1);
+    } else {
+        // add new feat
+        resultLayer.getSource().addFeature(feat);
+        map.getView().fit(feat.getGeometry().getExtent());
+        map.getView().setZoom(map.getView().getZoom()-1);
+    }
 };
 

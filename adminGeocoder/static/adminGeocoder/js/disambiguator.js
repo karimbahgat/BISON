@@ -1,5 +1,6 @@
 
-currentSelectedGeom = null;
+disambiguationSearchId = null;
+currentSelectedGeomId = null;
 
 function openDisambiguationPopup(searchId2) {
     document.getElementById('disambiguation-popup').className = 'popup';
@@ -7,6 +8,7 @@ function openDisambiguationPopup(searchId2) {
 }
 
 function initDisambiguator(searchId2) {
+    disambiguationSearchId = searchId2;
     // clear map
     disambiguationLayer.getSource().clear();
     // fix bug where map that's initially hidden won't show
@@ -108,5 +110,28 @@ function selectGeom(adminId) {
     // mark the map geom as selected
     selectMapGeom(adminId);
     // remember
-    currentSelectedGeom = adminId;
+    currentSelectedGeomId = adminId;
+}
+
+function saveDisambiguator() {
+    saveGeomSelection();
+}
+
+function saveGeomSelection() {
+    // change the stored geom selection
+    searchData = resultsData[disambiguationSearchId];
+    searchData.chosen_geom_id = currentSelectedGeomId;
+    // set geom match
+    requestChosenGeomMatch(disambiguationSearchId, currentSelectedGeomId);
+    // close popup
+    document.getElementById('disambiguation-popup').className = 'popup is-hidden';
+}
+
+function cancelDisambiguator() {
+    // reset the temporary geom selection variable
+    // maybe not necessary
+    searchData = resultsData[disambiguationSearchId];
+    currentSelectedGeomId = searchData.chosen_geom_id;
+    // close popup
+    document.getElementById('disambiguation-popup').className = 'popup is-hidden';
 }
