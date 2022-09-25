@@ -45,20 +45,23 @@ function addMatchToList(searchId) {
     item = document.createElement('div');
     item.id = 'search-id-' + searchId;
     item.className = 'search-item box';
+    item.onclick = function(){showListEntry(searchId)};
     results.appendChild(item);
     
+    /*
     thumb = document.createElement('img');
     thumb.className = 'search-thumbnail';
     thumb.src = 'https://cdn-icons-png.flaticon.com/512/235/235861.png';
     item.appendChild(thumb);
+    */
     
     info = document.createElement('div');
     info.className = 'search-info';
     item.appendChild(info);
 
-    infoQuery = document.createElement('span');
+    infoQuery = document.createElement('h4');
     infoQuery.className = 'search-info-query';
-    infoQuery.innerText = `Search: "${searchData.search}"`;
+    infoQuery.innerText = `#${searchId}: "${searchData.search}"`;
     info.appendChild(infoQuery);
 
     // below here will be filled later only
@@ -81,7 +84,7 @@ function addMatchToList(searchId) {
     // buttons
     buttons = document.createElement('div');
     item.appendChild(buttons);
-    buttons.innerHTML = `<button type="button" onclick="openDisambiguationPopup(${searchId})">Edit</button>`;
+    buttons.innerHTML = `<button type="button" class="small" onclick="openDisambiguationPopup(${searchId})">Edit</button>`;
 
     //scroll into view
     results.scrollTop = results.scrollHeight;
@@ -125,6 +128,18 @@ function updateListEntry(searchId2, geomMatch) {
 
     //scroll into view
     //item.scrollIntoView({block:'start', inline:'nearest'});
+}
+
+function showListEntry(searchId) {
+    // temporarily change to highlight color
+    item = document.getElementById('search-id-' + searchId);
+    item.className = 'box search-item clicked';
+    // switch back to normal (should fade)
+    setTimeout(function(){
+        item.className = 'box search-item';
+    }, 500);
+    // zoom map
+    zoomMapToSearchId(searchId);
 }
 
 function autoDisambiguateNames(id) {

@@ -139,3 +139,9 @@ function addResultToMap(searchId2, matchData) {
     }
 };
 
+function zoomMapToSearchId(searchId2) {
+    feat = resultLayer.getSource().getFeatureById(searchId2);
+    map.getView().fit(feat.getGeometry().getExtent());
+    map.getView().setZoom(map.getView().getZoom()-1);
+}
+

@@ -28,6 +28,18 @@
     align-items: stretch;
     gap: 10px;
     margin: 3px;
+    background-color: inherit;
+    transition: background-color 0.3s ease-in;
+}
+
+.search-item:hover {
+    background-color: rgba(240, 178, 35, 0.33);
+    transition: background-color 0.3s ease-in;
+}
+
+.search-item.clicked {
+    background-color: rgb(240, 178, 35);
+    transition: none;
 }
 
 .search-thumbnail {
@@ -38,5 +50,12 @@
 .search-info {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
+    padding-left: 10px;
+}
+
+.search-info-query {
+    margin-left: -10px;
+    margin-bottom: 3px;
 }
 
