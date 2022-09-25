@@ -60,6 +60,15 @@
     margin-bottom: 3px;
 }
 
+.search-info-ambiguity {
+    background-color: gray;
+    min-width: 30px;
+    padding: 1px 5px;
+    margin: 0 5px;
+    border-radius: 5px;
+    color: white;
+}
+
 .search-item-buttons {
     display: flex;
     flex-direction: column-reverse;
@@ -71,4 +80,3 @@
     right: 8px;
     cursor: pointer;
 }
-

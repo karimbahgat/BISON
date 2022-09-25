@@ -61,7 +61,8 @@ function addMatchToList(searchId) {
 
     infoQuery = document.createElement('h4');
     infoQuery.className = 'search-info-query';
-    infoQuery.innerText = `#${searchId}: "${searchData.search}"`;
+    infoQuery.innerHTML = `#${searchId}: "${searchData.search}"`;
+    infoQuery.innerHTML += `<span class="search-info-ambiguity">${searchData.count}</span>`;
     info.appendChild(infoQuery);
 
     // below here will be filled later only
