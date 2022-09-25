@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
-from django.db.models import Field, Value, IntegerField, FloatField, Prefetch
-from django.db.models.functions import Length, Abs, Concat
+from django.db.models import F, Value, IntegerField, FloatField, Prefetch
+from django.db.models.functions import Length, Abs, Concat, Greatest, Least, Cast
 
 from adminManager import models
 
@@ -19,9 +19,11 @@ def api_search_name(request):
 
     # calc search relevance metric (percent difference)
     search_len = len(search)
-    names = names.annotate(perc_diff=Abs(Length('name') - Value(search_len))  / Value(search_len, output_field=FloatField()),
+    names = names.annotate(shortest=Least(Length('name'), Value(search_len)),
+                            longest=Greatest(Length('name'), Value(search_len)),
                             )
-    names = names.order_by('perc_diff')
+    names = names.annotate(simil=F('shortest') / Cast('longest', FloatField()) )
+    names = names.order_by('-simil')
 
     # use a difference cutoff (eg only matches above 0.5 perc)?
     # ... 
@@ -29,7 +31,7 @@ def api_search_name(request):
     # serialize
     def serialize(m):
         admins = [a.id for a in m.admins.all()]
-        return {'id':m.id, 'name':m.name, 'perc_diff':m.perc_diff, 'admins':admins}
+        return {'id':m.id, 'name':m.name, 'simil':m.simil, 'admins':admins}
     results = [serialize(n) for n in names]
 
     # return

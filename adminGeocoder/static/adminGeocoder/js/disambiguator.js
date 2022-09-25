@@ -42,7 +42,7 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
     <td>...</td>
-    <td>${(result.perc_diff * 100).toFixed(1)}%</td>
+    <td>${(result.simil * 100).toFixed(1)}%</td>
     <td>...</td>
     <td>...</td>
     `;

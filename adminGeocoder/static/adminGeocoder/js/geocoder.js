@@ -101,7 +101,7 @@ function updateListEntry(searchId2, geomMatch) {
 
     // calc display name and percent match
     geomMatchDisplayName = getDisplayName(geomMatch);
-    geomMatchPercent = geomMatch.perc_diff * 100;
+    geomMatchPercent = geomMatch.chosen_name_simil * 100;
 
     // set the match name
     infoName = item.querySelector('.search-info-name');
@@ -134,6 +134,7 @@ function autoDisambiguateNames(id) {
 
     // update the results data with the chosen id
     data['chosen_name_id'] = chosen.id;
+    data['chosen_name_simil'] = chosen.simil;
 }
 
 function autoDisambiguateGeoms(id) {
