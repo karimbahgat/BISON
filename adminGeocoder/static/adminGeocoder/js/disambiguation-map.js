@@ -142,8 +142,8 @@ function addGeomToDisambiguationMap(geomData) {
             'geometry': geomData['geom']};
     feat = new ol.format.GeoJSON().readFeature(feat, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
     disambiguationLayer.getSource().addFeature(feat);
-    disambiguationMap.getView().fit(disambiguationLayer.getSource().getExtent());
-    disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
+    //disambiguationMap.getView().fit(disambiguationLayer.getSource().getExtent());
+    //disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
     // add to selected layer
     if (geomData.id == currentlySelectedGeom) {
         selectMapGeom(geomData.id);
@@ -157,5 +157,8 @@ function selectMapGeom(adminId) {
     feat = new ol.Feature(props);
     feat.setGeometry(fromFeat.getGeometry());
     selectedLayer.getSource().addFeature(feat);
+    // zoom
+    disambiguationMap.getView().fit(feat.getGeometry().getExtent());
+    disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
 }
 
