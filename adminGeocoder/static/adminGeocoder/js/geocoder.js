@@ -45,7 +45,7 @@ function addMatchToList(searchId) {
     item = document.createElement('div');
     item.id = 'search-id-' + searchId;
     item.className = 'search-item box';
-    results.prepend(item);
+    results.appendChild(item);
     
     thumb = document.createElement('img');
     thumb.className = 'search-thumbnail';
@@ -81,7 +81,10 @@ function addMatchToList(searchId) {
     // buttons
     buttons = document.createElement('div');
     item.appendChild(buttons);
-    buttons.innerHTML = `<button type="button" onclick="openDisambiguationPopup(${searchId})">Edit</button>`
+    buttons.innerHTML = `<button type="button" onclick="openDisambiguationPopup(${searchId})">Edit</button>`;
+
+    //scroll into view
+    results.scrollTop = results.scrollHeight;
 }
 
 function getDisplayName(adminData) {
@@ -119,6 +122,9 @@ function updateListEntry(searchId2, geomMatch) {
         validity = geomMatch.valid_from + ' - ' + geomMatch.valid_to;
     }
     infoSource.innerText = 'Validity: ' + validity;
+
+    //scroll into view
+    //item.scrollIntoView({block:'start', inline:'nearest'});
 }
 
 function autoDisambiguateNames(id) {

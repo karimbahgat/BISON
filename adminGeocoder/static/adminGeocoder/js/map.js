@@ -2,7 +2,7 @@
 /////////////
 // main country map
 
-// layer
+// style
 var resultStyle = new ol.style.Style({
     fill: new ol.style.Fill({
         color: 'rgb(6,75,52)'
@@ -11,10 +11,6 @@ var resultStyle = new ol.style.Style({
         color: 'white',
         width: 0.5,
     }),
-});
-var resultLayer = new ol.layer.Vector({
-    source: new ol.source.Vector(),
-    style: resultStyle,
 });
 
 // labelling
@@ -56,6 +52,18 @@ var resultLabelStyle = new ol.style.Style({
     }),
 });
 
+// layer
+function getStyle(feature) {
+    var labelStyle = resultLabelStyle.clone();
+    label = feature.get('displayName');
+    labelStyle.getText().setText(label);
+    return [resultStyle,labelStyle]
+}
+var resultLayer = new ol.layer.Vector({
+    source: new ol.source.Vector(),
+    style: getStyle,
+});
+
 // map
 var map = new ol.Map({
     target: 'map',
@@ -79,6 +87,7 @@ var map = new ol.Map({
     })
 });
 
+/*
 map.on('pointermove', function(evt) {
     // get feat at pointer
     let cursorFeat = null;
@@ -103,6 +112,7 @@ map.on('pointermove', function(evt) {
         });
     };
 });
+*/
 
 function addResultToMap(searchId2, matchData) {
     props = {'geomId': matchData.id,
