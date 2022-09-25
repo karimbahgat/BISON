@@ -83,11 +83,36 @@ function addMatchToList(searchId) {
 
     // buttons
     buttons = document.createElement('div');
+    buttons.className = 'search-item-buttons';
     item.appendChild(buttons);
-    buttons.innerHTML = `<button type="button" class="small" onclick="openDisambiguationPopup(${searchId})">Edit</button>`;
+    buttons.innerHTML = `
+        <button type="button" class="small" onclick="openDisambiguationPopup(${searchId})">Edit</button>
+    `;
+
+    // remove
+    drop = document.createElement('span');
+    drop.innerHTML = '&times;';
+    drop.className = 'search-item-dropbut';
+    drop.onclick = function(){removeGeocode(searchId)};
+    item.appendChild(drop);
 
     //scroll into view
     results.scrollTop = results.scrollHeight;
+}
+
+function removeGeocode(searchId) {
+    removeMatchFromList(searchId);
+    removeResultFromMap(searchId);
+    removeFromData(searchId);
+}
+
+function removeMatchFromList(searchId) {
+    item = document.getElementById('search-id-' + searchId);
+    item.remove();
+}
+
+function removeFromData(searchId) {
+    delete resultsData[searchId];
 }
 
 function getDisplayName(adminData) {
@@ -131,13 +156,17 @@ function updateListEntry(searchId2, geomMatch) {
 }
 
 function showListEntry(searchId) {
+    // clicking to remove entry also triggers this
+    if (document.getElementById('search-id-' + searchId) == null) {
+        return;
+    };
     // temporarily change to highlight color
     item = document.getElementById('search-id-' + searchId);
     item.className = 'box search-item clicked';
     // switch back to normal (should fade)
     setTimeout(function(){
         item.className = 'box search-item';
-    }, 500);
+    }, 300);
     // zoom map
     zoomMapToSearchId(searchId);
 }

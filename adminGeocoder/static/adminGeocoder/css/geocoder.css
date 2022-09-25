@@ -30,10 +30,11 @@
     margin: 3px;
     background-color: inherit;
     transition: background-color 0.3s ease-in;
+    position: relative;
 }
 
 .search-item:hover {
-    background-color: rgba(240, 178, 35, 0.33);
+    background-color: rgba(240, 178, 35, 0.22);
     transition: background-color 0.3s ease-in;
 }
 
@@ -57,5 +58,17 @@
 .search-info-query {
     margin-left: -10px;
     margin-bottom: 3px;
+}
+
+.search-item-buttons {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.search-item-dropbut {
+    position: absolute;
+    top: 3px;
+    right: 8px;
+    cursor: pointer;
 }
 

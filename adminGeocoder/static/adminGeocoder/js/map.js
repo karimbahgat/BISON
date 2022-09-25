@@ -145,3 +145,8 @@ function zoomMapToSearchId(searchId2) {
     map.getView().setZoom(map.getView().getZoom()-1);
 }
 
+function removeResultFromMap(searchId2, matchData) {
+    feat = resultLayer.getSource().getFeatureById(searchId2);
+    resultLayer.getSource().removeFeature(feat);
+}
+
