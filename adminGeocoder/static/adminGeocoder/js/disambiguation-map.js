@@ -145,7 +145,7 @@ function addGeomToDisambiguationMap(geomData) {
     //disambiguationMap.getView().fit(disambiguationLayer.getSource().getExtent());
     //disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
     // add to selected layer
-    if (geomData.id == currentlySelectedGeom) {
+    if (geomData.id == currentSelectedGeomId) {
         selectMapGeom(geomData.id);
     };
 };

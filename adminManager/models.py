@@ -65,7 +65,7 @@ class Admin(models.Model):
                 'valid_to':self.valid_to,
                 }
         if geom:
-            dct['geom'] = geom.__geo_interface__
+            dct['geom'] = self.geom.__geo_interface__
         return dct
 
 class AdminName(models.Model):

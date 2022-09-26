@@ -25,13 +25,40 @@ function initDisambiguator(searchId2) {
         disambiguatorTotalCandidates += result.admins.length;
     };
     // set currently selected geom from stored data
-    currentlySelectedGeom = data.chosen_geom_id
-    // add possible geoms
+    currentSelectedGeomId = data.chosen_geom_id
+    // show currently selected geom on map
+    requestGeomForMap(currentSelectedGeomId);
+    // also show all similar geoms to map
+    requestSimilarGeomsForMap(currentSelectedGeomId);
+    // add all possible geom candidates to table
     for (result of data.results) {
         for (adminId of result.admins) {
             addGeomToDisambiguationTable(adminId, result);
             requestGeomCandidate(adminId);
         };
+    };
+}
+
+function requestGeomForMap(adminId) {
+    // fetch full details of geom
+    url = '/api/get_admin/' + adminId;
+    fetch(url).then(result=>result.json()).then(data=>receiveGeomForMap(data));
+}
+
+function receiveGeomForMap(data) {
+    // add to map
+    addGeomToDisambiguationMap(data);
+}
+
+function requestSimilarGeomsForMap(adminId) {
+    // fetch full details of geom
+    url = '/api/get_similar_admins/' + adminId;
+    fetch(url).then(result=>result.json()).then(data=>receiveSimilarGeomsForMap(data));
+}
+
+function receiveSimilarGeomsForMap(data) {
+    for (entry of data.results) {
+        requestGeomForMap(entry.id);
     };
 }
 
@@ -51,7 +78,7 @@ function addGeomToDisambiguationTable(adminId, result) {
 
 function requestGeomCandidate(adminId) {
     // fetch full details of geom candidate
-    url = '/api/get_admin/' + adminId;
+    url = '/api/get_admin/' + adminId + '?geom=0';
     fetch(url).then(result=>result.json()).then(data=>receiveGeomCandidate(data));
 }
 
@@ -60,9 +87,6 @@ function receiveGeomCandidate(geomData) {
 
     // update geom table entry
     updateDisambiguationTableEntry(geomData);
-
-    // add to map
-    addGeomToDisambiguationMap(geomData);
 
     // update status
     updateLoadStatus();
@@ -80,7 +104,7 @@ function updateDisambiguationTableEntry(geomData) {
     tdList[2].innerText = geomData.source.name;
     tdList[3].innerText = validity;
     // mark as selected
-    if (geomData.id == currentlySelectedGeom) {
+    if (geomData.id == currentSelectedGeomId) {
         tr.className = "selected-geom-row";
         tr.scrollIntoView({block:'nearest', inline:'nearest'});
     };
@@ -107,10 +131,16 @@ function selectGeom(adminId) {
             tr.className = "";
         };
     };
+    // clear map
+    disambiguationLayer.getSource().clear();
     // mark the map geom as selected
-    selectMapGeom(adminId);
+    //selectMapGeom(adminId);
     // remember
     currentSelectedGeomId = adminId;
+    // show currently selected geom on map
+    requestGeomForMap(currentSelectedGeomId);
+    // also show all similar geoms to map
+    requestSimilarGeomsForMap(currentSelectedGeomId);
 }
 
 function saveDisambiguator() {

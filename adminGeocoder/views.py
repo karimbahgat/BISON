@@ -40,15 +40,15 @@ def api_search_name(request):
     data = {'search':search, 'count':len(results), 'results':results}
     return JsonResponse(data)
 
-def api_get_admin(request, id):
+def api_get_admin(request, id, geom=True):
     admin = models.Admin.objects.get(pk=id)
-    data = admin.serialize()
+    data = admin.serialize(geom=geom)
     return JsonResponse(data)
 
 def api_get_similar_admins(request, id):
     admin = models.Admin.objects.get(pk=id)
     xmin,ymin,xmax,ymax = admin.geom.bbox()
-    print(xmin,ymin,xmax,ymax)
+    #print(xmin,ymin,xmax,ymax)
 
     # find all other admins whose bbox overlap
     matches = models.Admin.objects.exclude(pk=id)
@@ -83,6 +83,7 @@ def api_get_similar_admins(request, id):
         entry['simil'] = simil
         #print(admin,m,simil)
         results.append(entry)
+    print(len(results), 'geom overlaps')
 
     data = {'count': len(results), 'results':results}
     return JsonResponse(data)
