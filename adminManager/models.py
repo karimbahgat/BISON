@@ -17,6 +17,18 @@ class Admin(models.Model):
     valid_to = models.DateField(null=True, blank=True)
     geom = GeometryField()
 
+    minx = models.FloatField(null=True, blank=True)
+    miny = models.FloatField(null=True, blank=True)
+    maxx = models.FloatField(null=True, blank=True)
+    maxy = models.FloatField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        # auto set bbox attrs
+        if self.geom and self.geom.wkb: # TODO: need to fix django-wkb to handle empty wkb strings and/or use None instead
+            self.minx,self.miny,self.maxx,self.maxy = self.geom.bbox()
+        # normal save
+        super(Admin, self).save(*args, **kwargs)
+
     def get_all_parents(self, include_self=True):
         '''Returns a list of all parents, starting with and including self.'''
         refs = [self]
@@ -39,7 +51,7 @@ class Admin(models.Model):
         full_name = ', '.join([ref.names.first().name for ref in all_refs])
         return full_name
 
-    def serialize(self, snapshots=True):
+    def serialize(self, geom=True):
         hierarchy = [{'id':p.id, 
                         'names':[n.name for n in p.names.all()], 
                         'level':p.level,
@@ -48,11 +60,12 @@ class Admin(models.Model):
         source = self.source
         dct = {'id':self.pk,
                 'hierarchy':hierarchy,
-                'geom':self.geom.__geo_interface__,
                 'source':{'name':source.name, 'id':source.pk},
                 'valid_from':self.valid_from,
                 'valid_to':self.valid_to,
                 }
+        if geom:
+            dct['geom'] = geom.__geo_interface__
         return dct
 
 class AdminName(models.Model):

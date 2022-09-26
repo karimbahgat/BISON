@@ -21,4 +21,5 @@ from . import views
 urlpatterns = [
     path('api/search/name', views.api_search_name, name='api_search_name'),
     path('api/get_admin/<int:id>/', views.api_get_admin, name='api_get_admin'),
+    path('api/get_similar_admins/<int:id>/', views.api_get_similar_admins, name='api_get_similar_admins'),
 ]

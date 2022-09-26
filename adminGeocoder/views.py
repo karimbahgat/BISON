@@ -6,6 +6,8 @@ from django.db.models.functions import Length, Abs, Concat, Greatest, Least, Cas
 
 from adminManager import models
 
+from shapely.wkb import loads as wkb_loads
+
 # Create your views here.
 
 def api_search_name(request):
@@ -41,4 +43,46 @@ def api_search_name(request):
 def api_get_admin(request, id):
     admin = models.Admin.objects.get(pk=id)
     data = admin.serialize()
+    return JsonResponse(data)
+
+def api_get_similar_admins(request, id):
+    admin = models.Admin.objects.get(pk=id)
+    xmin,ymin,xmax,ymax = admin.geom.bbox()
+    print(xmin,ymin,xmax,ymax)
+
+    # find all other admins whose bbox overlap
+    matches = models.Admin.objects.exclude(pk=id)
+    matches = matches.filter(maxx__gte=xmin, minx__lte=xmax,
+                             maxy__gte=ymin, miny__lte=ymax)
+    print(matches.count(), 'bbox overlaps')
+
+    # calculate geom overlap/similarity
+    # PAPER NOTE: scatterplot of bbox overlap vs geom overlap
+    def getshp(obj):
+        return wkb_loads(obj.geom.wkb).simplify(0.001)
+    def similarity(shp1, shp2):
+        isec = shp1.intersection(shp2)
+        union = shp1.union(shp2)
+        simil = isec.area / union.area
+        return simil
+    shp = getshp(admin)
+    matches = [(m,similarity(shp, getshp(m)))
+                for m in matches]
+
+    # filter to overlapping geoms
+    matches = [(m,simil) for m,simil in matches
+                if simil > 0.01]
+
+    # sort by similarity
+    matches = sorted(matches, key=lambda x: -x[1])
+
+    # return list of admins as json
+    results = []
+    for m,simil in matches:
+        entry = m.serialize(geom=False)
+        entry['simil'] = simil
+        #print(admin,m,simil)
+        results.append(entry)
+
+    data = {'count': len(results), 'results':results}
     return JsonResponse(data)
