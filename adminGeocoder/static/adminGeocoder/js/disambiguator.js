@@ -220,7 +220,7 @@ function addSimilarGeomToTable(entry) {
         validity = `${entry.valid_from} - ${entry.valid_to}`;
     };
     tr.innerHTML = `
-    <td>&#9654;${getDisplayName(entry)}</td>
+    <td style="width:30%">&#9654; ${getDisplayName(entry)}</td>
     <td class="similar-geom-match-percent"><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></td>
     <td>${entry.source.name}</td>
     <td>${validity}</td>

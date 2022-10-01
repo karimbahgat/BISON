@@ -58,14 +58,20 @@ def api_get_similar_admins(request, id):
 
     # calculate geom overlap/similarity
     # PAPER NOTE: scatterplot of bbox overlap vs geom overlap
-    def getshp(obj):
-        return wkb_loads(obj.geom.wkb).simplify(0.001)
+    def getshp(obj, simplify=False):
+        shp = wkb_loads(obj.geom.wkb)
+        if simplify:
+            return shp.simplify(0.001)
+        else:
+            return shp
     def similarity(shp1, shp2):
+        if not shp1.intersects(shp2):
+            return 0
         isec = shp1.intersection(shp2)
         union = shp1.union(shp2)
         simil = isec.area / union.area
         return simil
-    shp = getshp(admin)
+    shp = getshp(admin, simplify=True)
     matches = [(m,similarity(shp, getshp(m)))
                 for m in matches]
 
