@@ -239,6 +239,24 @@ function openOptionsPopup() {
     elem = document.getElementById('options-popup').className = 'popup';
 }
 
+function exportResults() {
+    // create geojson of results
+    feats = [];
+    for (key of Object.keys(resultsData)) {
+        props = resultsData[key].chosen_geom_data;
+        featObj = resultLayer.getSource().getFeatureById(key);
+        geomObj = featObj.getGeometry();
+        geom = {type: geomObj.getType(), coordinates: geomObj.getCoordinates()};
+        feat = {type:'Feature', properties:props, geometry:geom};
+        feats.push(feat);
+    };
+    geoj = {type: 'FeatureCollection', features:feats};
+    // encode data to link href
+    downloadBut = document.getElementById('export-button');
+    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geoj));
+    downloadBut.href = dataStr;
+}
+
 // close popups on clickout
 
 document.onclick = function(event) {
