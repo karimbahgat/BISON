@@ -16,14 +16,23 @@ function geocode() {
 }
 
 function receiveResults(data) {
-    console.log(data);
     storeResultData(data);
     autoSelectMatch(searchId);
     addMatchToList(searchId); // only adds an empty item, details will be filled later
     geomMatchId = data['chosen_geom_id'];
     console.log(geomMatchId);
     requestChosenGeomMatch(searchId, geomMatchId);
+    updateResultCounts();
     searchId += 1;
+}
+
+function updateResultCounts() {
+    // get count
+    count = Object.keys(resultsData).length;
+    // update count elements
+    for (elem of document.querySelectorAll('.results-count')) {
+        elem.innerText = count;
+    };
 }
 
 function storeResultData(data) {
@@ -114,6 +123,7 @@ function removeMatchFromList(searchId) {
 
 function removeFromData(searchId) {
     delete resultsData[searchId];
+    updateResultCounts();
 }
 
 function getDisplayName(adminData) {

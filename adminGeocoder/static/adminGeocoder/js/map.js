@@ -55,9 +55,9 @@ var resultLabelStyle = new ol.style.Style({
 // layer
 function getStyle(feature) {
     var labelStyle = resultLabelStyle.clone();
-    label = feature.get('displayName');
+    label = `${feature.getId()}: ${feature.get('displayName')}`;
     labelStyle.getText().setText(label);
-    return [resultStyle,labelStyle]
+    return [resultStyle,labelStyle];
 }
 var resultLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
@@ -148,5 +148,10 @@ function zoomMapToSearchId(searchId2) {
 function removeResultFromMap(searchId2, matchData) {
     feat = resultLayer.getSource().getFeatureById(searchId2);
     resultLayer.getSource().removeFeature(feat);
+}
+
+function zoomMapToAllResults() {
+    map.getView().fit(resultLayer.getSource().getExtent());
+    map.getView().setZoom(map.getView().getZoom()-0.5);
 }
 

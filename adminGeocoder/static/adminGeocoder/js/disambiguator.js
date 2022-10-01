@@ -57,7 +57,7 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.className = 'admin-candidate-row';
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
-    <td>...</td>
+    <td style="width:30%">...</td>
     <td class="admin-name-match-percent"><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></td>
     <td>...</td>
     <td>...</td>
@@ -154,6 +154,8 @@ function cancelDisambiguator() {
     // close popup
     document.getElementById('disambiguation-popup').className = 'popup is-hidden';
 }
+
+
 
 ///////////////////
 // similar geoms
