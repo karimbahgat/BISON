@@ -50,3 +50,51 @@
 .selected-geom-row {
     background-color: rgb(240, 178, 35) !important;
 }
+
+
+
+
+.similar-geoms-tr {
+    margin: 0;
+    padding: 0;
+    background-color: inherit;
+    border-width: 0;
+}
+
+.similar-geoms-td {
+    margin: 0;
+    padding: 0;
+}
+
+.similar-geoms-loading {
+    display: flex;
+    align-items: center;
+    font-weight: italic;
+    padding: 10px;
+}
+
+.similar-geoms-loading img {
+    height: 30px;
+    margin: 5px;
+}
+
+.similar-geoms-table {
+    margin: 0;
+    padding: 0;
+}
+
+.similar-geoms-table tbody tr:nth-child(2n + 1) {
+}
+
+.similar-geom-admin {
+}
+
+.admin-name-match-percent, .similar-geom-match-percent {
+    display: flex;
+    align-items: center;
+}
+
+.admin-name-match-percent img, .similar-geom-match-percent img {
+    height: 15px;
+    margin: 3px;
+}
