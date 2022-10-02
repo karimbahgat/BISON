@@ -10,7 +10,7 @@ function geocode() {
     input.value = '';
 
     // search for name
-    apiSearchUrl = 'api/search/name?search='+search;
+    apiSearchUrl = 'api/search/name_hierarchy?search='+search;
     fetch(apiSearchUrl).then(result=>result.json()).then(data=>receiveResults(data))
     return false;
 }
@@ -19,6 +19,7 @@ function receiveResults(data) {
     storeResultData(data);
     autoSelectMatch(searchId);
     addMatchToList(searchId); // only adds an empty item, details will be filled later
+    updateListEntry(searchId); // fills in the details from above
     geomMatchId = data['chosen_geom_id'];
     console.log(geomMatchId);
     requestChosenGeomMatch(searchId, geomMatchId);
@@ -137,28 +138,32 @@ function getDisplayName(adminData) {
     return displayName;
 }
 
-function updateListEntry(searchId2, geomMatch) {
+function updateListEntry(searchId2) {
+    // get the chosen data
+    searchResult = resultsData[searchId2];
+    chosenMatch = lookupChosenGeomData(searchId2);
+
     // get the list entry
     item = document.getElementById('search-id-' + searchId2);
 
     // calc display name and percent match
-    geomMatchDisplayName = getDisplayName(geomMatch);
-    geomMatchPercent = geomMatch.chosen_name_simil * 100;
+    chosenMatchDisplayName = getDisplayName(chosenMatch);
+    chosenMatchPercent = chosenMatch.simil * 100;
 
     // set the match name
     infoName = item.querySelector('.search-info-name');
-    infoName.innerText = 'Match: ' + geomMatchDisplayName + ` (${geomMatchPercent.toFixed(0)}%)`;
+    infoName.innerText = 'Match: ' + chosenMatchDisplayName + ` (${chosenMatchPercent.toFixed(0)}%)`;
 
     // set the source
     infoSource = item.querySelector('.search-info-source');
-    infoSource.innerText = 'Source: ' + geomMatch.source.name;
+    infoSource.innerText = 'Source: ' + chosenMatch.source.name;
 
     // set temporal validity
     infoSource = item.querySelector('.search-info-time');
-    if (geomMatch.valid_from === null) {
+    if (chosenMatch.valid_from === null) {
         validity = "Unknown";
     } else {
-        validity = geomMatch.valid_from + ' - ' + geomMatch.valid_to;
+        validity = chosenMatch.valid_from + ' - ' + chosenMatch.valid_to;
     }
     infoSource.innerText = 'Validity: ' + validity;
 
@@ -182,6 +187,19 @@ function showListEntry(searchId) {
     zoomMapToSearchId(searchId);
 }
 
+function lookupChosenGeomData(searchId2) {
+    // get results data for the search id
+    data = resultsData[searchId2];
+
+    // loop search results until find chosen
+    chosenId = data['chosen_geom_id'];
+    for (entry of data.results) {
+        if (entry.id == chosenId) {
+            return entry;
+        };
+    };
+}
+
 function autoDisambiguateNames(id) {
     // user will likely manually disambiguate the names
     // but this method tries to do this automatically as a first guess
@@ -194,8 +212,7 @@ function autoDisambiguateNames(id) {
     chosen = data.results[0];
 
     // update the results data with the chosen id
-    data['chosen_name_id'] = chosen.id;
-    data['chosen_name_simil'] = chosen.simil;
+    //data['chosen_name_simil'] = chosen.simil;
 }
 
 function autoDisambiguateGeoms(id) {
@@ -208,8 +225,8 @@ function autoDisambiguateGeoms(id) {
 
     // the search results are already sorted by text similiraty
     // so for now just choose the first geom of the first name (most similar)
-    chosenName = data.results[0];
-    chosenGeomId = chosenName.admins[0];
+    chosen = data.results[0];
+    chosenGeomId = chosen.id;
 
     // update the results data with the chosen id
     data['chosen_geom_id'] = chosenGeomId;
@@ -228,8 +245,8 @@ function receiveChosenGeomMatch(searchId2, geomData) {
     searchData = resultsData[searchId2];
     searchData['chosen_geom_data'] = geomData;
 
-    // update list entry
-    updateListEntry(searchId2, geomData);
+    // update table
+    updateListEntry(searchId2);
 
     // add to map
     addResultToMap(searchId2, geomData);

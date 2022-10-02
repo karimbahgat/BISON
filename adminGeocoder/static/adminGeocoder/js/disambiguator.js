@@ -20,20 +20,15 @@ function initDisambiguator(searchId2) {
     document.getElementById('disambiguation-search-input').value = data.search;
     // init status
     disambiguatorCandidatesLoaded = 0;
-    disambiguatorTotalCandidates = 0;
-    for (result of data.results) {
-        disambiguatorTotalCandidates += result.admins.length;
-    };
+    disambiguatorTotalCandidates = data.count;
     // set currently selected geom from stored data
-    currentSelectedGeomId = data.chosen_geom_id
+    currentSelectedGeomId = data.chosen_geom_id;
     // show currently selected geom on map
     requestGeomForMap(currentSelectedGeomId);
     // add all possible geom candidates to table
     for (result of data.results) {
-        for (adminId of result.admins) {
-            addGeomToDisambiguationTable(adminId, result);
-            requestGeomCandidate(adminId);
-        };
+        addGeomToDisambiguationTable(result.id, result);
+        requestGeomCandidate(result.id);
     };
     // also show all similar geoms to map
     requestSimilarGeomsForMap(currentSelectedGeomId);
