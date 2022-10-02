@@ -40,7 +40,14 @@ def api_search_name(request):
     data = {'search':search, 'count':len(results), 'results':results}
     return JsonResponse(data)
 
-def api_get_admin(request, id, geom=True):
+def api_get_admin(request, id):
+    geom_string = request.GET.get('geom', 'true')
+    if geom_string.lower() in ('true','1'):
+        geom = True
+    elif geom_string.lower() in ('false','0'):
+        geom = False
+    else:
+        raise ValueError('geom param must be one of true,false,1,0')
     admin = models.Admin.objects.get(pk=id)
     data = admin.serialize(geom=geom)
     return JsonResponse(data)
