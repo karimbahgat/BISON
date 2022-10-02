@@ -22,6 +22,10 @@ class Admin(models.Model):
     maxx = models.FloatField(null=True, blank=True)
     maxy = models.FloatField(null=True, blank=True)
 
+    def __str__(self):
+        hierarchy_names = [p.names.first().name for p in self.get_all_parents()]
+        return f'{", ".join(hierarchy_names)}'
+
     def save(self, *args, **kwargs):
         # auto set bbox attrs
         if self.geom and self.geom.wkb: # TODO: need to fix django-wkb to handle empty wkb strings and/or use None instead
@@ -75,6 +79,9 @@ class AdminName(models.Model):
         indexes = [
             models.Index(fields=['name']), # not case insensitive though... 
         ]
+
+    def __str__(self):
+        return f'{self.name}'
 
 class AdminSource(models.Model):
     SOURCE_TYPES = [
