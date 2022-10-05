@@ -17,23 +17,20 @@
         </div>
         <div id="search-options-bar">
             <a class="small" onclick="openOptionsPopup()">Advanced Options</a>
+            <span>
+                <span class="results-count">0</span>
+                geocoded boundaries
+            </span>
         </div>
         <div id="search-results">
+        </div>
+        <div id="export-bar">
+            <button type="button" onclick="zoomMapToAllResults()">Preview</button>
+            <a id="export-button" class="button button-primary" href="" onclick="exportResults()" download="admin-geocoder-export.geojson">Export as GeoJSON</a>
         </div>
     </form>
     </div>
 
-</div>
-
-<div id="export-div" class="box">
-    <div id="export-bar">
-        <h4>
-            <span class="results-count">0</span>
-            geocoded boundaries
-        </h4>
-        <button type="button" onclick="zoomMapToAllResults()">Preview</button>
-        <a id="export-button" class="button button-primary" href="" onclick="exportResults()" download="admin-geocoder-export.geojson">Export as GeoJSON</a>
-    </div>
 </div>
 
 
