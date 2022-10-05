@@ -111,6 +111,7 @@ def datasource_import(request, pk):
                 else:
                     raise Exception('"{}" is not a valid date'.format(dateval))
                 return start,end
+
             if params['valid_from'] and params['valid_to']:
                 start1,end1 = parse_date(str(params['valid_from']))
                 start2,end2 = parse_date(str(params['valid_to']))
@@ -144,6 +145,7 @@ def datasource_import(request, pk):
                 inputs = input_arg
             else:
                 raise Exception("metadata file contains an error (input arg must be either string or list of dicts)")
+
             # run one or more imports
             error_count = 0
             for sub_params in inputs:
@@ -153,17 +155,24 @@ def datasource_import(request, pk):
                 print('')
                 print('-'*30)
                 print('import args', _params)
-                reader,data = parse_data(**_params)
-                #try:
-                #    reader,data = parse_data(**_params)
-                #except Exception as err:
-                #    error_count += 1
-                #    logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
 
-                # add to db
-                print('adding to db')
-                common = {'source':source, 'start':start, 'end':end}
-                add_to_db(reader, common, data)
+                try:
+                    # open and parse data
+                    reader,data = parse_data(**_params)
+
+                    # add to db
+                    print('adding to db')
+                    common = {'source':source, 'start':start, 'end':end}
+                    add_to_db(reader, common, data)
+
+                except Exception as err:
+                    error_count += 1
+                    logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
+                    continue
+
+            # report errors
+            print(f'all inputs processed, of which {error_count} had errors and were skipped')
+
             # update last imported
             importer = source.importer
             importer.last_imported = timezone.now()
@@ -357,7 +366,7 @@ def add_to_db(reader, common, entries, parent=None):
     start = common['start']
     end = common['end']
     for entry in entries:
-        print(entry['item'])
+        #print(entry['item'])
 
         groupval = entry['item']['id']
         level = entry['item']['level']
@@ -368,6 +377,8 @@ def add_to_db(reader, common, entries, parent=None):
         name_obj,created = models.AdminName.objects.get_or_create(name=name)
 
         if entry['children']:
+            print(entry['item'])
+
             # create parent node
             ref = models.Admin(parent=parent, source=source, level=level)
             ref.save()

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.forms.models import model_to_dict
 from django.db.models import F, Value, IntegerField, FloatField, Prefetch
-from django.db.models.functions import Length, Abs, Concat, Greatest, Least, Cast
+from django.db.models.functions import Length, Abs, Concat, Greatest, Least, Cast, Upper
 
 from adminManager import models
 
@@ -83,8 +83,15 @@ def api_search_name_hierarchy(request):
     search_query = request.GET.get('search')
     searches = [s.strip() for s in search_query.split(',')]
 
+    # (hacky one-time creation of case insensitive name index)
+    #from django.db import connection
+    #with connection.cursor() as cursor:
+    #    cursor.execute("create index 'adminManager_adminName_name_nocollate_idx' on 'adminManager_adminName' ('name' collate nocase)")
+    #    print('created')
+
     # search admins that match on name (lowest level)
-    matches = models.Admin.objects.filter(names__name__icontains=searches[0])
+    matches = models.Admin.objects.filter(names__name__istartswith=searches[0], 
+                                        minx__isnull=False) # only those with geoms
     matches = list(matches)
 
     # functions
@@ -173,7 +180,7 @@ def api_get_admin(request, id):
 
 def api_get_similar_admins(request, id):
     admin = models.Admin.objects.get(pk=id)
-    xmin,ymin,xmax,ymax = admin.geom.bbox()
+    xmin,ymin,xmax,ymax = admin.minx,admin.miny,admin.maxx,admin.maxy
     #print(xmin,ymin,xmax,ymax)
 
     # find all other admins whose bbox overlap
@@ -197,9 +204,12 @@ def api_get_similar_admins(request, id):
         union = shp1.union(shp2)
         simil = isec.area / union.area
         return simil
+    from time import time
+    t=time()
     shp = getshp(admin, simplify=True)
     matches = [(m,similarity(shp, getshp(m)))
                 for m in matches]
+    print('comparisons finished in',time()-t,'seconds')
 
     # filter to overlapping geoms
     matches = [(m,simil) for m,simil in matches
@@ -215,7 +225,7 @@ def api_get_similar_admins(request, id):
         entry['simil'] = simil
         #print(admin,m,simil)
         results.append(entry)
-    print(len(results), 'geom overlaps')
+    print(len(results), 'geom overlaps serialized')
 
     data = {'count': len(results), 'results':results}
     return JsonResponse(data)

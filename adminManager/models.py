@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Upper
 
 from django.forms.models import model_to_dict
 
@@ -21,6 +22,11 @@ class Admin(models.Model):
     miny = models.FloatField(null=True, blank=True)
     maxx = models.FloatField(null=True, blank=True)
     maxy = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['minx','miny','maxx','maxy']), 
+        ]
 
     def __str__(self):
         hierarchy_names = [p.names.first().name for p in self.get_all_parents()]
@@ -75,10 +81,12 @@ class Admin(models.Model):
 class AdminName(models.Model):
     name = models.CharField(max_length=100)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['name']), # not case insensitive though... 
-        ]
+    # for now just manually add index w collate nocase
+    #class Meta:
+    #    indexes = [
+    #        models.Index(Upper('name'),
+    #                    name='adminManage_name_upper_idx'), 
+    #    ]
 
     def __str__(self):
         return f'{self.name}'
