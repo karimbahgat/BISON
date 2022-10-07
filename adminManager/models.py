@@ -16,7 +16,7 @@ class Admin(models.Model):
     level = models.IntegerField(null=True, blank=True) # just to indicate the self-described admin-level of the ref
     valid_from = models.DateField(null=True, blank=True)
     valid_to = models.DateField(null=True, blank=True)
-    geom = GeometryField()
+    geom = GeometryField() #null=True, blank=True)
 
     minx = models.FloatField(null=True, blank=True)
     miny = models.FloatField(null=True, blank=True)
@@ -34,8 +34,8 @@ class Admin(models.Model):
 
     def save(self, *args, **kwargs):
         # auto set bbox attrs
-        if self.geom and self.geom.wkb: # TODO: need to fix django-wkb to handle empty wkb strings and/or use None instead
-            self.minx,self.miny,self.maxx,self.maxy = self.geom.bbox()
+        #if self.geom and self.geom.wkb: # TODO: need to fix django-wkb to handle empty wkb strings and/or use None instead
+        #    self.minx,self.miny,self.maxx,self.maxy = self.geom.bbox()
         # normal save
         super(Admin, self).save(*args, **kwargs)
 

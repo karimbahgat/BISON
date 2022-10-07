@@ -58,20 +58,22 @@ def datasource_import(request, pk):
         params = source.importer.import_params.copy()
         print('params', params)
 
-        # # load country data
-        # iso2_to_3 = {}
-        # iso3_to_name = {}
-        # name_to_iso3 = {}
-        # filedir = os.path.dirname(__file__)
-        # with open(os.path.join(filedir, 'scripts/countries_codes_and_coordinates.csv'), encoding='utf8', newline='') as f:
-        #     csvreader = csv.DictReader(f)
-        #     for row in csvreader:
-        #         name = row['Country'].strip().strip('"')
-        #         iso2 = row['Alpha-2 code'].strip().strip('"')
-        #         iso3 = row['Alpha-3 code'].strip().strip('"')
-        #         iso2_to_3[iso2] = iso3
-        #         iso3_to_name[iso3] = name
-        #         name_to_iso3[name] = iso3
+        # load country data
+        # WARNING: globals vars is not very good
+        global iso2_to_3, iso3_to_name, name_to_iso3
+        iso2_to_3 = {}
+        iso3_to_name = {}
+        name_to_iso3 = {}
+        filedir = os.path.dirname(__file__)
+        with open(os.path.join(filedir, 'scripts/countries_codes_and_coordinates.csv'), encoding='utf8', newline='') as f:
+            csvreader = csv.DictReader(f)
+            for row in csvreader:
+                name = row['Country'].strip().strip('"')
+                iso2 = row['Alpha-2 code'].strip().strip('"')
+                iso3 = row['Alpha-3 code'].strip().strip('"')
+                iso2_to_3[iso2] = iso3
+                iso3_to_name[iso3] = name
+                name_to_iso3[name] = iso3
 
         # # load country
         # iso = request.POST.get('iso', '')
@@ -248,17 +250,21 @@ def parse_data(**params):
     # (name_field is a list of one or more name_field inputs from a form)
 
     # download data if needed
-    path = params['input_path']
-    if path.startswith('http'):
-        urlpath = path
-        if '.zip' in urlpath:
-            # only download the highest level zipfile
-            urlpath,relpath = urlpath.split('.zip')[:2]
-            urlpath += '.zip'
-            path = download_file(urlpath)
-            params['input_path'] = path + relpath
-        else:
-            raise Exception('External input data must be inside zipfile')
+    # path = params['input_path']
+    # if path.startswith('http'):
+    #     urlpath = path
+    #     if '.zip' in urlpath:
+    #         # only download the highest level zipfile
+    #         urlpath,relpath = urlpath.split('.zip')[:2]
+    #         urlpath += '.zip'
+    #         path = download_file(urlpath)
+    #         params['input_path'] = path + relpath
+    #     elif urlpath.endswith('.shp'):
+    #         for ext in ('.shp','.shx','.dbf'):
+    #             path = download_file(urlpath.replace('.shp',ext))
+    #             params['input_path'] = path
+    #     else:
+    #         raise Exception('External input data must be inside zipfile')
 
     # get shapefile encoding
     reader_opts = {}
@@ -312,8 +318,9 @@ def parse_data(**params):
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, subset):
             # override all level 0 with a single iso country lookup
-            #if level == 0 and iso:
-            #    groupval = iso3_to_name[iso]
+            # WARNING: this assumes that id_field is iso code if is set for level0
+            if level == 0 and groupval:
+                level_def['name'] = iso3_to_name[groupval]
             # item
             item = {'id':groupval, 'level':level_def['level'], 
                     'positions':_subset}

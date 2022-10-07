@@ -42,7 +42,7 @@ if __name__ == '__main__':
     }
 
     # iterate github country zipfiles
-    for path in utils.iter_git_folders('sourceData/GADM/countryfiles'):
+    for path in utils.iter_git_folders('wmgeolab', 'geoContrast', 'sourceData/GADM/countryfiles'):
         print('--------')
         print(path)
 

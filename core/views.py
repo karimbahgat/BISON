@@ -25,7 +25,7 @@ def home(request):
     #         if i > nxt:
     #             print(i, 'of', count)
     #             nxt += incr
-    #         if x.minx is None:
+    #         if x.geom and x.geom.wkb and x.minx is None:
     #             x.save(update_fields=['minx','miny','maxx','maxy'])
 
     sources = models.AdminSource.objects.filter(type='DataSource')

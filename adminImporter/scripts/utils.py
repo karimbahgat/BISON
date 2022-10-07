@@ -1,10 +1,15 @@
 
 import requests
 
-def iter_git_folders(path):
-    owner = 'wmgeolab'
-    repo = 'geoContrast'
+token = ''
+
+def iter_git_folders(owner, repo, path):
     url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
-    resp = requests.get(url)
-    for item in resp.json():
+    if token:
+        headers = {'Authorization': f'Bearer {token}'}
+        resp = requests.get(url, headers=headers)
+    else:
+        resp = requests.get(url)
+    data = resp.json()
+    for item in data:
         yield item['path']

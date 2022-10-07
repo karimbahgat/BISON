@@ -13,7 +13,7 @@ def generate_input_params(iso, level):
         "levels": [
             {
                 "level": 0,
-                "id_field": "shapeGroup", 
+                "id_field": 'shapeGroup', 
                 "name_field": "shapeGroup",
             }
         ]
@@ -23,7 +23,7 @@ def generate_input_params(iso, level):
             {
                 "level": level,
                 "id_field": 'shapeID', 
-                "name_field": f'ADM{level}_NAME',
+                "name_field": 'shapeName',
             }
         )
     return input
@@ -42,14 +42,17 @@ if __name__ == '__main__':
     }
 
     # iterate github country zipfiles
-    for iso_path in utils.iter_git_folders('releaseData/gbOpen'):
+    owner,repo = 'wmgeolab', 'geoBoundaries', 
+    for iso_path in utils.iter_git_folders(owner, repo, 'releaseData/gbOpen'):
         print('--------')
         print(iso_path)
         iso = os.path.basename(iso_path)
 
         # generate input params for each level path
-        for lvl_path in utils.iter_git_folders(iso_path):
-            lvl = os.path.basename(lvl_path)
+        #for lvl_path in utils.iter_git_folders(owner, repo, iso_path):
+        #    lvl = os.path.basename(lvl_path)
+        for lvl_num in range(4+1):
+            lvl = f'ADM{lvl_num}'
 
             input_params = generate_input_params(iso, int(lvl[-1]))
             #print(input_params)
