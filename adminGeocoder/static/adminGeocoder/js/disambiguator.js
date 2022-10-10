@@ -1,5 +1,6 @@
 
 disambiguationSearchId = null;
+disambiguationSearchData = null;
 currentSelectedGeomId = null;
 
 function openDisambiguationPopup(searchId2) {
@@ -7,7 +8,27 @@ function openDisambiguationPopup(searchId2) {
     initDisambiguator(searchId2);
 }
 
-function initDisambiguator(searchId2) {
+function requestUpdateDisambiguationPopup() {
+    // get search input and clear
+    input = document.querySelector('#disambiguation-search-input');
+    search = input.value;
+    console.log(search);
+
+    // search for name
+    apiSearchUrl = 'api/search/name_hierarchy?search='+search;
+    fetch(apiSearchUrl).then(result=>result.json()).then(data=>updateDisambiguationPopup(data))
+    return false;
+}
+
+function updateDisambiguationPopup(data) {
+    disambiguationSearchData = data;
+    autoSelectMatch(disambiguationSearchId, data);
+    initDisambiguator(disambiguationSearchId, data);
+}
+
+function initDisambiguator(searchId2, data=null) {
+    // read data from the provided 'data' arg
+    // otherwise read from the stored data in searchid
     disambiguationSearchId = searchId2;
     // clear map
     disambiguationLayer.getSource().clear();
@@ -16,7 +37,9 @@ function initDisambiguator(searchId2) {
     // clear geoms table
     document.querySelector('#disambiguation-geom-table tbody').innerHTML = '';
     // set search input value
-    data = resultsData[searchId2];
+    if (data == null) {
+        data = resultsData[searchId2];
+    };
     document.getElementById('disambiguation-search-input').value = data.search;
     // init status
     disambiguatorCandidatesLoaded = 0;
@@ -131,7 +154,12 @@ function selectGeom(adminId) {
 }
 
 function saveDisambiguator() {
+    saveSearchInput();
     saveGeomSelection();
+}
+
+function saveSearchInput() {
+    resultsData[disambiguationSearchId] = disambiguationSearchData;
 }
 
 function saveGeomSelection() {

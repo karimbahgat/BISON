@@ -41,10 +41,10 @@ function storeResultData(data) {
     resultsData[searchId] = data;
 }
 
-function autoSelectMatch(id) {
+function autoSelectMatch(id, data=null) {
     // for a given search id, sets the chosen matches to the data dicts
-    autoDisambiguateNames(id);
-    autoDisambiguateGeoms(id);
+    autoDisambiguateNames(id, data);
+    autoDisambiguateGeoms(id, data);
 }
 
 function addMatchToList(searchId) {
@@ -84,11 +84,6 @@ function addMatchToList(searchId) {
     info.appendChild(infoName);
 
     infoSource = document.createElement('span');
-    infoSource.className = 'search-info-level';
-    infoSource.innerText = 'Level: ' + '...';
-    info.appendChild(infoSource);
-
-    infoSource = document.createElement('span');
     infoSource.className = 'search-info-source';
     infoSource.innerText = 'Source: ' + '...';
     info.appendChild(infoSource);
@@ -103,6 +98,7 @@ function addMatchToList(searchId) {
     buttons.className = 'search-item-buttons';
     item.appendChild(buttons);
     buttons.innerHTML = `
+        <div class="search-info-level" title="Administrative level"><div><img src="static/images/hierarchy-structure.png"><span>...</span></div></div>
         <div class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>...</span></div></div>
         <div class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></div>
         <button type="button" class="small" onclick="openDisambiguationPopup(${searchId})">Edit</button>
@@ -161,7 +157,12 @@ function updateListEntry(searchId2) {
     // get the list entry
     item = document.getElementById('search-id-' + searchId2);
 
-    // calc display name and percent match
+    // update search query and results count
+    infoQuery = item.querySelector('.search-info-query');
+    infoQuery.innerHTML = `#${searchId2}: "${searchResult.search}"`;
+    infoQuery.innerHTML += `<span class="search-info-ambiguity">${searchResult.count}</span>`;
+
+    // calc match display name and percent match
     chosenMatchDisplayName = getDisplayName(chosenMatch);
     chosenMatchPercent = chosenMatch.simil * 100;
 
@@ -174,8 +175,8 @@ function updateListEntry(searchId2) {
     infoName.innerText = 'Match: ' + chosenMatchDisplayName;
 
     // set the admin level
-    infoSource = item.querySelector('.search-info-level');
-    infoSource.innerText = 'Level: ADM' + getAdminLevel(chosenMatch);
+    infoSource = item.querySelector('.search-info-level div span');
+    infoSource.innerText = 'ADM' + getAdminLevel(chosenMatch);
 
     // set the source
     infoSource = item.querySelector('.search-info-source');
@@ -223,12 +224,14 @@ function lookupChosenGeomData(searchId2) {
     };
 }
 
-function autoDisambiguateNames(id) {
+function autoDisambiguateNames(id, data=null) {
     // user will likely manually disambiguate the names
     // but this method tries to do this automatically as a first guess
 
     // get results data for the search id
-    data = resultsData[id];
+    if (data == null) {
+        data = resultsData[id];
+    };
 
     // the search results are already sorted by text similiraty
     // so for now just choose the first one (most similar)
@@ -238,13 +241,15 @@ function autoDisambiguateNames(id) {
     //data['chosen_name_simil'] = chosen.simil;
 }
 
-function autoDisambiguateGeoms(id) {
+function autoDisambiguateGeoms(id, data=null) {
     // user will likely manually disambiguate the geoms
     // but this method tries to do this automatically as a first guess
     // this method is also affected by the chosen name matches which ranks the geoms
 
     // get results data for the search id
-    data = resultsData[id];
+    if (data == null) {
+        data = resultsData[id];
+    };
 
     // the search results are already sorted by text similiraty
     // so for now just choose the first geom of the first name (most similar)

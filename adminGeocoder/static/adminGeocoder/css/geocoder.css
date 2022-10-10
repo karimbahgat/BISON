@@ -69,6 +69,11 @@
     padding-left: 10px;
 }
 
+.search-info-level div img {
+    height: 15px;
+    margin: 3px;
+}
+
 .search-info-query {
     margin-left: -10px;
     margin-bottom: 3px;
@@ -87,7 +92,7 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 5px;
 }
 
 .search-item-dropbut {

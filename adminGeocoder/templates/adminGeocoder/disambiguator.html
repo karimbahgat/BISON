@@ -1,9 +1,11 @@
 <div id="disambiguation-content">
 
-    <div id="disambiguation-search-bar">
-        <input id="disambiguation-search-input" type="text">
-        <button type="button">Update Search</button>
-    </div>
+    <form onsubmit="return requestUpdateDisambiguationPopup()">
+        <div id="disambiguation-search-bar">
+            <input id="disambiguation-search-input" type="text">
+            <button type="submit">Update Search</button>
+        </div>
+    </form>
 
     <div>
         <div id="disambiguation-status">Initiating...</div>
