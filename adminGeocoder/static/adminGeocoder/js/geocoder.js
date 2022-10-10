@@ -83,8 +83,13 @@ function addMatchToList(searchId) {
     info.appendChild(infoName);
 
     infoSource = document.createElement('span');
+    infoSource.className = 'search-info-level';
+    infoSource.innerText = 'Level: ' + '...';
+    info.appendChild(infoSource);
+
+    infoSource = document.createElement('span');
     infoSource.className = 'search-info-source';
-    infoSource.innerText = 'Source: ' + 'Test Source';
+    infoSource.innerText = 'Source: ' + '...';
     info.appendChild(infoSource);
     
     infoTime = document.createElement('span');
@@ -138,6 +143,13 @@ function getDisplayName(adminData) {
     return displayName;
 }
 
+function getAdminLevel(adminData) {
+    // get the admin level
+    // assume hierarchy has lowest level first
+    level = adminData.hierarchy[0].level;
+    return level;
+}
+
 function updateListEntry(searchId2) {
     // get the chosen data
     searchResult = resultsData[searchId2];
@@ -153,6 +165,10 @@ function updateListEntry(searchId2) {
     // set the match name
     infoName = item.querySelector('.search-info-name');
     infoName.innerText = 'Match: ' + chosenMatchDisplayName + ` (${chosenMatchPercent.toFixed(0)}%)`;
+
+    // set the admin level
+    infoSource = item.querySelector('.search-info-level');
+    infoSource.innerText = 'Level: ADM' + getAdminLevel(chosenMatch);
 
     // set the source
     infoSource = item.querySelector('.search-info-source');

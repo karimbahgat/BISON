@@ -53,6 +53,7 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
     <td class="admin-name">...</td>
+    <td class="admin-level">...</td>
     <td class="admin-name-match-percent"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
     <td class="similar-geom-match-percent"><div><img src="static/images/square.png"><span>...</span></div></td>
     <td>...</td>
@@ -86,8 +87,9 @@ function updateDisambiguationTableEntry(geomData) {
     };
     tdList = tr.querySelectorAll('td');
     tdList[0].innerHTML = `&#9654; ${getDisplayName(geomData)}`;
-    tdList[3].innerText = geomData.source.name;
-    tdList[4].innerText = validity;
+    tdList[1].innerText = `ADM${getAdminLevel(geomData)}`;
+    tdList[4].innerText = geomData.source.name;
+    tdList[5].innerText = validity;
     // mark as selected
     if (geomData.id == currentSelectedGeomId) {
         tr.className = "admin-candidate-row selected-geom-row";
@@ -222,6 +224,7 @@ function addSimilarGeomsToTable(entries) {
         };
         tr.innerHTML = `
         <td class="admin-name">${getDisplayName(entry)}</td>
+        <td class="admin-level">ADM${getAdminLevel(entry)}</td>
         <td class="admin-name-match-percent"></td>
         <td class="similar-geom-match-percent"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
         <td>${entry.source.name}</td>
