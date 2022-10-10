@@ -23,4 +23,5 @@ urlpatterns = [
     path('api/search/name_hierarchy', views.api_search_name_hierarchy, name='api_search_name_hierarchy'),
     path('api/get_admin/<int:id>/', views.api_get_admin, name='api_get_admin'),
     path('api/get_similar_admins/<int:id>/', views.api_get_similar_admins, name='api_get_similar_admins'),
+    path('api/get_best_source_matches/<int:id>/', views.api_get_best_source_matches, name='api_get_best_source_matches'),
 ]

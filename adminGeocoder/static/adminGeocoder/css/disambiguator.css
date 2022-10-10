@@ -89,9 +89,14 @@
 .similar-geom-admin {
 }
 
+.admin-name {
+    width: 30%;
+}
+
 .admin-name-match-percent, .similar-geom-match-percent {
     display: flex;
     align-items: center;
+    width: 18%;
 }
 
 .admin-name-match-percent img, .similar-geom-match-percent img {

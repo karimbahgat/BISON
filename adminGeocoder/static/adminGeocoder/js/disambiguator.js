@@ -52,8 +52,9 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.className = 'admin-candidate-row';
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
-    <td style="width:30%">...</td>
+    <td class="admin-name">...</td>
     <td class="admin-name-match-percent"><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></td>
+    <td class="similar-geom-match-percent"><img src="static/images/square.png"><span>...</span></td>
     <td>...</td>
     <td>...</td>
     `;
@@ -85,8 +86,8 @@ function updateDisambiguationTableEntry(geomData) {
     };
     tdList = tr.querySelectorAll('td');
     tdList[0].innerText = getDisplayName(geomData);
-    tdList[2].innerText = geomData.source.name;
-    tdList[3].innerText = validity;
+    tdList[3].innerText = geomData.source.name;
+    tdList[4].innerText = validity;
     // mark as selected
     if (geomData.id == currentSelectedGeomId) {
         tr.className = "admin-candidate-row selected-geom-row";
@@ -161,7 +162,7 @@ function requestSimilarGeomsForMap(adminId) {
     // indicate loading to the user
     showSimilarGeomsLoading(adminId);
     // fetch full details of geom
-    url = '/api/get_similar_admins/' + adminId;
+    url = '/api/get_best_source_matches/' + adminId;
     fetch(url).then(result=>result.json()).then(data=>receiveSimilarGeomsForMap(data));
 }
 
@@ -178,7 +179,7 @@ function showSimilarGeomsLoading(adminId) {
     similar_tr.className = 'similar-geoms-tr';
     similar_td = document.createElement('td');
     similar_td.className = 'similar-geoms-td';
-    similar_td.colSpan = "4";
+    similar_td.colSpan = "5";
     similar_tr.appendChild(similar_td);
     tr.parentNode.insertBefore(similar_tr, tr.nextSibling);
 
@@ -217,7 +218,8 @@ function addSimilarGeomToTable(entry) {
         validity = `${entry.valid_from} - ${entry.valid_to}`;
     };
     tr.innerHTML = `
-    <td style="width:30%">&#9654; ${getDisplayName(entry)}</td>
+    <td class="admin-name">&#9654; ${getDisplayName(entry)}</td>
+    <td class="admin-name-match-percent"></td>
     <td class="similar-geom-match-percent"><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></td>
     <td>${entry.source.name}</td>
     <td>${validity}</td>

@@ -8,6 +8,8 @@ from adminManager import models
 
 from shapely.wkb import loads as wkb_loads
 
+import itertools
+
 # Create your views here.
 
 def api_search_name(request):
@@ -184,7 +186,7 @@ def api_get_similar_admins(request, id):
     #print(xmin,ymin,xmax,ymax)
 
     # find all other admins whose bbox overlap
-    matches = models.Admin.objects.exclude(pk=id)
+    matches = models.Admin.objects.exclude(source=admin.source)
     matches = matches.filter(maxx__gte=xmin, minx__lte=xmax,
                              maxy__gte=ymin, miny__lte=ymax)
     print(matches.count(), 'bbox overlaps')
@@ -211,6 +213,12 @@ def api_get_similar_admins(request, id):
                 for m in matches]
     print('comparisons finished in',time()-t,'seconds')
 
+    # sort simil by source, only return best simil in source
+
+    # maybe also quick filter based on total area of B, or
+    # combined area of A plus B (compared to intersection area of
+    # another we can know the max possible overlap and so can skip)
+
     # filter to overlapping geoms
     matches = [(m,simil) for m,simil in matches
                 if simil > 0.01]
@@ -227,5 +235,90 @@ def api_get_similar_admins(request, id):
         results.append(entry)
     print(len(results), 'geom overlaps serialized')
 
+    data = {'count': len(results), 'results':results}
+    return JsonResponse(data)
+
+def api_get_best_source_matches(request, id):
+    admin = models.Admin.objects.get(pk=id)
+    xmin,ymin,xmax,ymax = admin.minx,admin.miny,admin.maxx,admin.maxy
+    #print(xmin,ymin,xmax,ymax)
+
+    # find all other admins whose bbox overlap
+    from time import time
+    t = time()
+    matches = models.Admin.objects.exclude(source=admin.source)
+    matches = matches.filter(maxx__gte=xmin, minx__lte=xmax,
+                             maxy__gte=ymin, miny__lte=ymax)
+    print(matches.count(), 'bbox overlaps')
+
+    # calc bbox simil
+    ## bbox xoverlap = max(minx,xmin) - min(maxx,xmax)
+    ## bbox yoverlap = max(miny,ymin) - min(maxy,ymax)
+    matches = matches.annotate(xoverlap=Greatest('minx',Value(xmin)) - Least('maxx',Value(xmax)),
+                                yoverlap=Greatest('miny',Value(ymin)) - Least('maxy',Value(ymax)),
+                                xunion=Least('minx',Value(xmin)) - Greatest('maxx',Value(xmax)),
+                                yunion=Least('miny',Value(ymin)) - Greatest('maxy',Value(ymax)),
+                                )
+    ## bbox overlap = xoverlap * yoverlap
+    matches = matches.annotate(union=F('xunion') * F('yunion'),
+                                overlap=F('xoverlap') * F('yoverlap'),
+                                )
+    ## bbox similarity
+    matches = matches.annotate(bbox_simil=F('overlap')/F('union'))
+
+    # get the admin w highest bbox simil in each source group
+    matches = list(matches.values('id', 'names__name', 'source__name', 'bbox_simil'))
+    best_matches = {}
+    key = lambda m: m['source__name']
+    grouped = itertools.groupby(sorted(matches, key=key), key=key)
+    for src,group in grouped:
+        #print(src)
+        group = list(group)
+        most_similar = sorted(group, key=lambda m: m['bbox_simil'], reverse=True)
+        #print(most_similar)
+        best_match = most_similar[0]
+        best_matches[src] = best_match
+    print('bbox overlaps done')
+
+    # calc true overlap for the best source matches
+    def getshp(obj, simplify=False):
+        shp = wkb_loads(obj.geom.wkb)
+        if simplify:
+            return shp.simplify(0.001)
+        else:
+            return shp
+    def similarity(shp1, shp2):
+        if not shp1.intersects(shp2):
+            return 0
+        isec = shp1.intersection(shp2)
+        union = shp1.union(shp2)
+        simil = isec.area / union.area
+        return simil
+    # begin
+    shp = getshp(admin, simplify=True)
+    for src,best in best_matches.items():
+        print(src,best)
+        best_obj = models.Admin.objects.get(pk=best['id'])
+        best['obj'] = best_obj
+        best['simil'] = similarity(shp, getshp(best_obj))
+    print('comparisons finished in',time()-t,'seconds')
+
+    # return as list of sources with best match info, sorted by simil
+    key = lambda v: v['simil']
+    results = sorted(best_matches.values(), key=key, reverse=True)
+
+    # get list of soruces with best match admin, sorted by simil
+    key = lambda v: v['simil']
+    results = []
+    for best_match in sorted(best_matches.values(), key=key, reverse=True):
+        m = best_match['obj']
+        entry = m.serialize(geom=False)
+        entry['bbox_simil'] = best_match['bbox_simil']
+        entry['simil'] = best_match['simil']
+        #print(admin,m,simil)
+        results.append(entry)
+    print(len(results), 'geom overlaps serialized')
+
+    # return as json
     data = {'count': len(results), 'results':results}
     return JsonResponse(data)
