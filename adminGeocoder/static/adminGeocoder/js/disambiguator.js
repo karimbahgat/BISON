@@ -54,8 +54,8 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.innerHTML = `
     <td class="admin-name">...</td>
     <td class="admin-level">...</td>
-    <td class="admin-name-match-percent"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
-    <td class="similar-geom-match-percent"><div><img src="static/images/square.png"><span>...</span></div></td>
+    <td class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
+    <td class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></td>
     <td>...</td>
     <td>...</td>
     `;
@@ -140,6 +140,8 @@ function saveGeomSelection() {
     searchData.chosen_geom_id = currentSelectedGeomId;
     // set geom match
     requestChosenGeomMatch(disambiguationSearchId, currentSelectedGeomId);
+    // set geom agreement
+    requestChosenGeomAgreement(disambiguationSearchId);
     // close popup
     document.getElementById('disambiguation-popup').className = 'popup is-hidden';
 }
@@ -226,7 +228,7 @@ function addSimilarGeomsToTable(entries) {
         <td class="admin-name">${getDisplayName(entry)}</td>
         <td class="admin-level">ADM${getAdminLevel(entry)}</td>
         <td class="admin-name-match-percent"></td>
-        <td class="similar-geom-match-percent"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
+        <td class="similar-geom-match-percent" title="Boundary similarity"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
         <td>${entry.source.name}</td>
         <td>${validity}</td>
         `;

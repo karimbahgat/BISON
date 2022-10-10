@@ -20,6 +20,7 @@ function receiveResults(data) {
     autoSelectMatch(searchId);
     addMatchToList(searchId); // only adds an empty item, details will be filled later
     updateListEntry(searchId); // fills in the details from above
+    requestChosenGeomAgreement(searchId); // requests and updates source agreement metric
     geomMatchId = data['chosen_geom_id'];
     console.log(geomMatchId);
     requestChosenGeomMatch(searchId, geomMatchId);
@@ -102,6 +103,8 @@ function addMatchToList(searchId) {
     buttons.className = 'search-item-buttons';
     item.appendChild(buttons);
     buttons.innerHTML = `
+        <div class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>...</span></div></div>
+        <div class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></div>
         <button type="button" class="small" onclick="openDisambiguationPopup(${searchId})">Edit</button>
     `;
 
@@ -162,9 +165,13 @@ function updateListEntry(searchId2) {
     chosenMatchDisplayName = getDisplayName(chosenMatch);
     chosenMatchPercent = chosenMatch.simil * 100;
 
-    // set the match name
+    // set name match metric
+    infoNameMatch = item.querySelector('.admin-name-match-percent div span');
+    infoNameMatch.innerHTML = `${chosenMatchPercent.toFixed(0)}%`;
+
+    // set the matched name
     infoName = item.querySelector('.search-info-name');
-    infoName.innerText = 'Match: ' + chosenMatchDisplayName + ` (${chosenMatchPercent.toFixed(0)}%)`;
+    infoName.innerText = 'Match: ' + chosenMatchDisplayName;
 
     // set the admin level
     infoSource = item.querySelector('.search-info-level');
@@ -246,6 +253,34 @@ function autoDisambiguateGeoms(id) {
 
     // update the results data with the chosen id
     data['chosen_geom_id'] = chosenGeomId;
+}
+
+function requestChosenGeomAgreement(searchId2) {
+    // show as loading
+    span = document.querySelector(`#search-id-${searchId2} .similar-geom-match-percent div span`);
+    span.innerHTML = '<img class="loading-icon" src="static/images/Spinner-1s-200px.gif">';
+
+    // get the chosen data
+    searchResult = resultsData[searchId2];
+    chosenMatch = lookupChosenGeomData(searchId2);
+    adminId = chosenMatch.id;
+
+    // fetch full details of geom
+    url = '/api/get_best_source_matches/' + adminId;
+    fetch(url).then(result=>result.json()).then(data=>receiveChosenGeomAgreement(searchId2, data));
+}
+
+function receiveChosenGeomAgreement(searchId2, data) {
+    updateGeomAgreement(searchId2, data);
+}
+
+function updateGeomAgreement(searchId2, data) {
+    // get the list entry
+    item = document.getElementById('search-id-' + searchId2);
+
+    // set the agreement metric
+    span = item.querySelector('.similar-geom-match-percent div span');
+    span.innerHTML = `${(data.agreement*100).toFixed(0)}%`;
 }
 
 function requestChosenGeomMatch(searchId2, adminId) {
