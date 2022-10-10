@@ -54,6 +54,14 @@
 
 
 
+.similar-geoms-table {
+    margin: 0;
+    padding: 0;
+}
+
+.similar-geoms-table tbody tr:nth-child(2n + 1) {
+}
+
 .similar-geoms-tr {
     margin: 0;
     padding: 0;
@@ -66,24 +74,18 @@
     padding: 0;
 }
 
-.similar-geoms-loading {
+
+
+.similar-geoms-loading td span {
     display: flex;
     align-items: center;
     font-weight: italic;
     padding: 10px;
 }
 
-.similar-geoms-loading img {
+.similar-geoms-loading td span img {
     height: 30px;
     margin: 5px;
-}
-
-.similar-geoms-table {
-    margin: 0;
-    padding: 0;
-}
-
-.similar-geoms-table tbody tr:nth-child(2n + 1) {
 }
 
 .similar-geom-admin {
@@ -93,13 +95,17 @@
     width: 30%;
 }
 
-.admin-name-match-percent, .similar-geom-match-percent {
+.similar-geom-admin .admin-name {
+    padding-left: 30px;
+}
+
+.admin-name-match-percent div, .similar-geom-match-percent div {
     display: flex;
     align-items: center;
     width: 18%;
 }
 
-.admin-name-match-percent img, .similar-geom-match-percent img {
+.admin-name-match-percent div img, .similar-geom-match-percent div img {
     height: 15px;
     margin: 3px;
 }

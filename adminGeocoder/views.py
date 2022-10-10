@@ -307,7 +307,7 @@ def api_get_best_source_matches(request, id):
     key = lambda v: v['simil']
     results = sorted(best_matches.values(), key=key, reverse=True)
 
-    # get list of soruces with best match admin, sorted by simil
+    # get list of sources with best match admin, sorted by simil
     key = lambda v: v['simil']
     results = []
     for best_match in sorted(best_matches.values(), key=key, reverse=True):
@@ -319,6 +319,14 @@ def api_get_best_source_matches(request, id):
         results.append(entry)
     print(len(results), 'geom overlaps serialized')
 
+    # calc total cross-source agreement
+    # ie prob that a randomly chosen point in the selected geom
+    # will land in the matched geom from a randomly chosen source
+    # is calc as the average of probabilities
+    # this assumes equal probability of choosing each source
+    simils = [e['simil'] for e in results]
+    agreement = sum(simils) / len(simils)
+
     # return as json
-    data = {'count': len(results), 'results':results}
+    data = {'count': len(results), 'results':results, 'agreement':agreement}
     return JsonResponse(data)

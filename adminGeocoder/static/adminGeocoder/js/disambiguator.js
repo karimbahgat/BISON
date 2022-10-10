@@ -53,8 +53,8 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
     <td class="admin-name">...</td>
-    <td class="admin-name-match-percent"><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></td>
-    <td class="similar-geom-match-percent"><img src="static/images/square.png"><span>...</span></td>
+    <td class="admin-name-match-percent"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
+    <td class="similar-geom-match-percent"><div><img src="static/images/square.png"><span>...</span></div></td>
     <td>...</td>
     <td>...</td>
     `;
@@ -85,7 +85,7 @@ function updateDisambiguationTableEntry(geomData) {
         validity = `${geomData.valid_from} - ${geomData.valid_to}`;
     };
     tdList = tr.querySelectorAll('td');
-    tdList[0].innerText = getDisplayName(geomData);
+    tdList[0].innerHTML = `&#9654; ${getDisplayName(geomData)}`;
     tdList[3].innerText = geomData.source.name;
     tdList[4].innerText = validity;
     // mark as selected
@@ -167,62 +167,66 @@ function requestSimilarGeomsForMap(adminId) {
 }
 
 function clearSimilarGeomsFromTable() {
-    elem = document.querySelector('.similar-geoms-tr');
-    if (elem) {elem.remove()};
+    elems = document.querySelectorAll('.similar-geom-admin');
+    for (elem of elems) {
+        elem.remove();
+    };
 }
 
 function showSimilarGeomsLoading(adminId) {
     // indicate loading by adding a row with loading text
     // right below the table row of this adminId
     tr = document.getElementById('admin-candidate-id-' + adminId);
-    similar_tr = document.createElement('tr');
-    similar_tr.className = 'similar-geoms-tr';
-    similar_td = document.createElement('td');
-    similar_td.className = 'similar-geoms-td';
-    similar_td.colSpan = "5";
-    similar_tr.appendChild(similar_td);
-    tr.parentNode.insertBefore(similar_tr, tr.nextSibling);
-
-    // create a text to indicate loading
+    loading_tr = document.createElement('tr');
+    loading_tr.className = 'similar-geoms-loading';
+    tr.parentNode.insertBefore(loading_tr, tr.nextSibling);
+    loading_td = document.createElement('td');
+    loading_td.colSpan = "5";
     span = document.createElement('span');
-    span.className = 'similar-geoms-loading';
     span.innerHTML = '<img src="static/images/Spinner-1s-200px.gif"> Looking for similar geometries';
-    similar_td.appendChild(span);
-
-    // create a table inside this tr
-    table = document.createElement('table');
-    table.className = 'similar-geoms-table';
-    similar_td.appendChild(table);
+    loading_td.appendChild(span);
+    loading_tr.appendChild(loading_td);
 }
 
 function receiveSimilarGeomsForMap(data) {
     // remove loading text
     span = document.querySelector('.similar-geoms-loading');
     span.remove();
-    // add similar geoms
+    // update total source agreement
+    updateSelectedTableEntryAgreement(data);
+    // add similar geoms to table
+    addSimilarGeomsToTable(data.results);
+    // add similar geoms to map
     for (entry of data.results) {
-        addSimilarGeomToTable(entry);
         requestGeomForMap(entry.id);
     };
 }
 
-function addSimilarGeomToTable(entry) {
-    console.log(entry)
-    table = document.querySelector('.similar-geoms-table');
-    tr = document.createElement('tr');
-    tr.id = 'similar-geom-id-' + entry.id;
-    tr.className = 'similar-geom-admin';
-    if (entry.valid_from === null) {
-        validity = 'Unknown';
-    } else {
-        validity = `${entry.valid_from} - ${entry.valid_to}`;
+function updateSelectedTableEntryAgreement(data) {
+    span = document.querySelector('.selected-geom-row .similar-geom-match-percent div span');
+    span.innerText = `${(data.agreement * 100).toFixed(1)}%`;
+}
+
+function addSimilarGeomsToTable(entries) {
+    selected_tr = document.querySelector('.selected-geom-row');
+    insertBefore = selected_tr.nextSibling;
+    for (entry of entries) {
+        console.log(entry)
+        tr = document.createElement('tr');
+        tr.id = 'similar-geom-id-' + entry.id;
+        tr.className = 'similar-geom-admin';
+        if (entry.valid_from === null) {
+            validity = 'Unknown';
+        } else {
+            validity = `${entry.valid_from} - ${entry.valid_to}`;
+        };
+        tr.innerHTML = `
+        <td class="admin-name">${getDisplayName(entry)}</td>
+        <td class="admin-name-match-percent"></td>
+        <td class="similar-geom-match-percent"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
+        <td>${entry.source.name}</td>
+        <td>${validity}</td>
+        `;
+        selected_tr.parentNode.insertBefore(tr, insertBefore);
     };
-    tr.innerHTML = `
-    <td class="admin-name">&#9654; ${getDisplayName(entry)}</td>
-    <td class="admin-name-match-percent"></td>
-    <td class="similar-geom-match-percent"><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></td>
-    <td>${entry.source.name}</td>
-    <td>${validity}</td>
-    `;
-    table.appendChild(tr);
 }
