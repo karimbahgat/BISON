@@ -229,7 +229,7 @@ function autoDisambiguateNames(id, data=null) {
     // but this method tries to do this automatically as a first guess
 
     // get results data for the search id
-    if (data == null) {
+    if (data === null) {
         data = resultsData[id];
     };
 
@@ -247,7 +247,7 @@ function autoDisambiguateGeoms(id, data=null) {
     // this method is also affected by the chosen name matches which ranks the geoms
 
     // get results data for the search id
-    if (data == null) {
+    if (data === null) {
         data = resultsData[id];
     };
 

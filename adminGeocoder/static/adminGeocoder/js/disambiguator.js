@@ -5,6 +5,7 @@ currentSelectedGeomId = null;
 
 function openDisambiguationPopup(searchId2) {
     document.getElementById('disambiguation-popup').className = 'popup';
+    disambiguationSearchData = resultsData[searchId2];
     initDisambiguator(searchId2);
 }
 
