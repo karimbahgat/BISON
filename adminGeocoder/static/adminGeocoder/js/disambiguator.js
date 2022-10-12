@@ -2,6 +2,7 @@
 disambiguationSearchId = null;
 disambiguationSearchData = null;
 currentSelectedGeomId = null;
+currentSelectedGeomData = null;
 
 function openDisambiguationPopup(searchId2) {
     document.getElementById('disambiguation-popup').className = 'popup';
@@ -47,6 +48,7 @@ function initDisambiguator(searchId2, data=null) {
     disambiguatorTotalCandidates = data.count;
     // set currently selected geom from stored data
     currentSelectedGeomId = data.chosen_geom_id;
+    currentSelectedGeomData = data.chosen_geom_data;
     // show currently selected geom on map
     requestGeomForMap(currentSelectedGeomId);
     // add all possible geom candidates to table
@@ -132,7 +134,12 @@ function updateLoadStatus() {
 }
 
 function selectGeom(adminId) {
-    // mark the table entry as selected
+    // unmark any selected similar geom rows
+    rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
+    for (tr of rows) {
+        tr.className = "similar-geom-admin";
+    };
+    // mark the admin candidate table entry as selected
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .admin-candidate-row');
     for (tr of rows) {
         if (tr.id == `admin-candidate-id-${adminId}`) {
@@ -142,16 +149,36 @@ function selectGeom(adminId) {
             tr.className = "admin-candidate-row";
         };
     };
-    // clear map
-    disambiguationLayer.getSource().clear();
-    // mark the map geom as selected
-    //selectMapGeom(adminId);
     // remember
     currentSelectedGeomId = adminId;
+    // clear map
+    disambiguationLayer.getSource().clear();
     // show currently selected geom on map
     requestGeomForMap(currentSelectedGeomId);
     // also show all similar geoms to map
     requestSimilarGeomsForMap(currentSelectedGeomId);
+}
+
+function selectSimilarGeom(adminId) {
+    // unmark any selected admin candidate
+    rows = document.querySelectorAll('#disambiguation-geom-table tbody .admin-candidate-row');
+    for (tr of rows) {
+        tr.className = "admin-candidate-row";
+    };
+    // mark the similar geom table entry as selected
+    rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
+    for (tr of rows) {
+        if (tr.id == `similar-geom-id-${adminId}`) {
+            tr.className = "similar-geom-admin selected-geom-row";
+            tr.scrollIntoView({block:'nearest', inline:'nearest'});
+        } else {
+            tr.className = "similar-geom-admin";
+        };
+    };
+    // remember
+    currentSelectedGeomId = adminId;
+    // mark the map geom as selected
+    selectMapGeom(adminId);
 }
 
 function saveDisambiguator() {
@@ -167,6 +194,7 @@ function saveGeomSelection() {
     // change the stored geom selection
     searchData = resultsData[disambiguationSearchId];
     searchData.chosen_geom_id = currentSelectedGeomId;
+    searchData.chosen_geom_data = currentSelectedGeomData;
     // set geom match
     requestChosenGeomMatch(disambiguationSearchId, currentSelectedGeomId);
     // set geom agreement
@@ -180,6 +208,7 @@ function cancelDisambiguator() {
     // maybe not necessary
     searchData = resultsData[disambiguationSearchId];
     currentSelectedGeomId = searchData.chosen_geom_id;
+    currentSelectedGeomData = searchData.chosen_geom_data;
     // close popup
     document.getElementById('disambiguation-popup').className = 'popup is-hidden';
 }
@@ -243,11 +272,12 @@ function updateSelectedTableEntryAgreement(data) {
 function addSimilarGeomsToTable(entries) {
     selected_tr = document.querySelector('.selected-geom-row');
     insertBefore = selected_tr.nextSibling;
-    for (entry of entries) {
+    for (let entry of entries) {
         console.log(entry)
         tr = document.createElement('tr');
         tr.id = 'similar-geom-id-' + entry.id;
         tr.className = 'similar-geom-admin';
+        tr.onclick = function(){selectSimilarGeom(entry.id)};
         if (entry.valid_from === null) {
             validity = 'Unknown';
         } else {

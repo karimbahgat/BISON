@@ -54,28 +54,6 @@
 
 
 
-.similar-geoms-table {
-    margin: 0;
-    padding: 0;
-}
-
-.similar-geoms-table tbody tr:nth-child(2n + 1) {
-}
-
-.similar-geoms-tr {
-    margin: 0;
-    padding: 0;
-    background-color: inherit;
-    border-width: 0;
-}
-
-.similar-geoms-td {
-    margin: 0;
-    padding: 0;
-}
-
-
-
 .similar-geoms-loading td span {
     display: flex;
     align-items: center;

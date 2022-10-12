@@ -215,13 +215,20 @@ function lookupChosenGeomData(searchId2) {
     // get results data for the search id
     data = resultsData[searchId2];
 
+    // return chosen geom data directly 
+    // becuase the data may not exist in text search results
+    // eg if a similar geom with a diff name was selected
+    return data['chosen_geom_data'];
+
     // loop search results until find chosen
+    /*
     chosenId = data['chosen_geom_id'];
     for (entry of data.results) {
         if (entry.id == chosenId) {
             return entry;
         };
     };
+    */
 }
 
 function autoDisambiguateNames(id, data=null) {
@@ -258,6 +265,7 @@ function autoDisambiguateGeoms(id, data=null) {
 
     // update the results data with the chosen id
     data['chosen_geom_id'] = chosenGeomId;
+    data['chosen_geom_data'] = chosen;
 }
 
 function requestChosenGeomAgreement(searchId2) {
