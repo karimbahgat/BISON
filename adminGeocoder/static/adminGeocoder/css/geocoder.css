@@ -41,7 +41,10 @@
     display: flex;
     align-items: stretch;
     gap: 10px;
-    margin: 3px;
+    margin: 1px;
+    padding: 15px;
+    padding-bottom: 8px;
+    padding-right: 20px;
     background-color: inherit;
     transition: background-color 0.3s ease-in;
     position: relative;
@@ -69,9 +72,16 @@
     padding-left: 10px;
 }
 
-.search-info-level div img {
-    height: 15px;
-    margin: 3px;
+.search-info-name {
+    display: none;
+}
+
+.search-info-source {
+    display: none;
+}
+
+.search-info-time {
+    display: none;
 }
 
 .search-info-query {
@@ -79,7 +89,8 @@
     margin-bottom: 3px;
 }
 
-.search-info-ambiguity {
+/*
+.search-info-count {
     background-color: gray;
     min-width: 30px;
     padding: 1px 5px;
@@ -87,18 +98,32 @@
     border-radius: 5px;
     color: white;
 }
+*/
+
+.search-info-name-match div, .search-info-geom-match div, .search-info-level div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 18%;
+}
+
+.search-info-name-match div img, .search-info-geom-match div img, .search-info-level div img {
+    height: 15px;
+    margin: 3px;
+}
+
 
 .search-item-buttons {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: flex-end;
     gap: 5px;
 }
 
 .search-item-dropbut {
     position: absolute;
-    top: 3px;
-    right: 8px;
+    top: 2px;
+    right: 6px;
     cursor: pointer;
 }
 

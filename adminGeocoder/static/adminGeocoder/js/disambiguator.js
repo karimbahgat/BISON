@@ -78,12 +78,13 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.className = 'admin-candidate-row';
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
-    <td class="admin-name">...</td>
-    <td class="admin-level">...</td>
+    <td class="admin-name-div">
+        <span class="admin-name">...</span>
+        <div class="admin-source">...</div>
+    </td>
+    <td class="admin-level" title="Administrative level"><img src="static/images/hierarchy-structure.png">...</td>
     <td class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
     <td class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></td>
-    <td>...</td>
-    <td>...</td>
     `;
     tbody.appendChild(tr);
 }
@@ -111,11 +112,10 @@ function updateDisambiguationTableEntry(geomData) {
     } else {
         validity = `${geomData.valid_from} - ${geomData.valid_to}`;
     };
-    tdList = tr.querySelectorAll('td');
-    tdList[0].innerHTML = `&#9654; ${getDisplayName(geomData)}`;
-    tdList[1].innerText = `ADM${getAdminLevel(geomData)}`;
-    tdList[4].innerText = geomData.source.name;
-    tdList[5].innerText = validity;
+    tr.querySelector('.admin-name').innerHTML = `&#9654; ${getDisplayName(geomData)}`;
+    tr.querySelector('.admin-source').innerText = geomData.source.name;
+    tr.querySelector('.admin-level').innerHTML = `<img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(geomData)}`;
+    //tr.querySelector('admin-validity').innerText = validity;
     // mark as selected
     if (geomData.id == currentSelectedGeomId) {
         tr.className = "admin-candidate-row selected-geom-row";
@@ -284,12 +284,13 @@ function addSimilarGeomsToTable(entries) {
             validity = `${entry.valid_from} - ${entry.valid_to}`;
         };
         tr.innerHTML = `
-        <td class="admin-name">${getDisplayName(entry)}</td>
-        <td class="admin-level">ADM${getAdminLevel(entry)}</td>
+        <td class="admin-name-div">
+            <span class="admin-name">${getDisplayName(entry)}</span>
+            <div class="admin-source">(${entry.source.name})</div>
+        </td>
+        <td class="admin-level" title="Administrative level"><img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(entry)}</td>
         <td class="admin-name-match-percent"></td>
         <td class="similar-geom-match-percent" title="Boundary similarity"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
-        <td>${entry.source.name}</td>
-        <td>${validity}</td>
         `;
         selected_tr.parentNode.insertBefore(tr, insertBefore);
     };

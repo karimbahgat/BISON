@@ -73,17 +73,22 @@
     width: 30%;
 }
 
-.similar-geom-admin .admin-name {
+.admin-source {
+    font-style: italic;
+}
+
+.similar-geom-admin .admin-name-div {
     padding-left: 30px;
 }
 
-.admin-name-match-percent div, .similar-geom-match-percent div {
+.admin-name-match-percent div, .similar-geom-match-percent div, .admin-level {
     display: flex;
+    flex-direction: column;
     align-items: center;
     width: 18%;
 }
 
-.admin-name-match-percent div img, .similar-geom-match-percent div img {
+.admin-name-match-percent div img, .similar-geom-match-percent div img, .admin-level img {
     height: 15px;
     margin: 3px;
 }

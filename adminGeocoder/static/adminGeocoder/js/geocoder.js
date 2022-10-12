@@ -76,6 +76,11 @@ function addMatchToList(searchId) {
     infoQuery.innerHTML += `<span class="search-info-ambiguity">${searchData.count}</span>`;
     info.appendChild(infoQuery);
 
+    infoCount = document.createElement('div');
+    infoCount.className = 'search-info-count';
+    infoCount.innerHTML = `${searchData.count} results`;
+    info.appendChild(infoCount);
+
     // below here will be filled later only
     
     infoName = document.createElement('span');
@@ -99,8 +104,8 @@ function addMatchToList(searchId) {
     item.appendChild(buttons);
     buttons.innerHTML = `
         <div class="search-info-level" title="Administrative level"><div><img src="static/images/hierarchy-structure.png"><span>...</span></div></div>
-        <div class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>...</span></div></div>
-        <div class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></div>
+        <div class="search-info-name-match" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>...</span></div></div>
+        <div class="search-info-geom-match" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></div>
         <button type="button" class="small" onclick="openDisambiguationPopup(${searchId})">Edit</button>
     `;
 
@@ -160,14 +165,17 @@ function updateListEntry(searchId2) {
     // update search query and results count
     infoQuery = item.querySelector('.search-info-query');
     infoQuery.innerHTML = `#${searchId2}: "${searchResult.search}"`;
-    infoQuery.innerHTML += `<span class="search-info-ambiguity">${searchResult.count}</span>`;
+
+    // update search results count
+    infoCount = item.querySelector('.search-info-count');
+    infoCount.innerHTML = `${searchResult.count} results`;
 
     // calc match display name and percent match
     chosenMatchDisplayName = getDisplayName(chosenMatch);
     chosenMatchPercent = chosenMatch.simil * 100;
 
     // set name match metric
-    infoNameMatch = item.querySelector('.admin-name-match-percent div span');
+    infoNameMatch = item.querySelector('.search-info-name-match div span');
     infoNameMatch.innerHTML = `${chosenMatchPercent.toFixed(0)}%`;
 
     // set the matched name
@@ -270,7 +278,7 @@ function autoDisambiguateGeoms(id, data=null) {
 
 function requestChosenGeomAgreement(searchId2) {
     // show as loading
-    span = document.querySelector(`#search-id-${searchId2} .similar-geom-match-percent div span`);
+    span = document.querySelector(`#search-id-${searchId2} .search-info-geom-match div span`);
     span.innerHTML = '<img class="loading-icon" src="static/images/Spinner-1s-200px.gif">';
 
     // get the chosen data
@@ -292,7 +300,7 @@ function updateGeomAgreement(searchId2, data) {
     item = document.getElementById('search-id-' + searchId2);
 
     // set the agreement metric
-    span = item.querySelector('.similar-geom-match-percent div span');
+    span = item.querySelector('.search-info-geom-match div span');
     span.innerHTML = `${(data.agreement*100).toFixed(0)}%`;
 }
 
