@@ -308,15 +308,18 @@ def api_get_best_source_matches(request, id):
     results = sorted(best_matches.values(), key=key, reverse=True)
 
     # get list of sources with best match admin, sorted by simil
+    # filter by similarity thresh
     key = lambda v: v['simil']
+    thresh = 0.05
     results = []
     for best_match in sorted(best_matches.values(), key=key, reverse=True):
         m = best_match['obj']
         entry = m.serialize(geom=False)
         entry['bbox_simil'] = best_match['bbox_simil']
         entry['simil'] = best_match['simil']
-        #print(admin,m,simil)
-        results.append(entry)
+        if entry['simil'] >= thresh:
+            #print(admin,m,simil)
+            results.append(entry)
     print(len(results), 'geom overlaps serialized')
 
     # calc total cross-source agreement
@@ -325,7 +328,7 @@ def api_get_best_source_matches(request, id):
     # is calc as the average of probabilities
     # this assumes equal probability of choosing each source
     simils = [e['simil'] for e in results]
-    agreement = sum(simils) / len(simils)
+    agreement = sum(simils) / len(simils) if simils else 1.0
 
     # return as json
     data = {'count': len(results), 'results':results, 'agreement':agreement}

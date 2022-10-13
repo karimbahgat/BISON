@@ -5,20 +5,21 @@
 // layer
 var disambiguationStyle = new ol.style.Style({
     fill: new ol.style.Fill({
-        color: 'rgb(6,75,52)'
+        color: 'rgba(255, 255, 255, 0)', // fully transparent
     }),
     stroke: new ol.style.Stroke({
-        color: 'white',
-        width: 0.5,
+        color: 'rgba(255, 0, 0, 0.8)',
+        width: 1.5,
+        lineDash: [10,10]
     }),
 });
 var selectedStyle = new ol.style.Style({
     fill: new ol.style.Fill({
-        color: 'rgba(0, 183, 255, 0.5)'
+        color: 'rgba(220, 220, 255, 0.3)',
     }),
     stroke: new ol.style.Stroke({
-        color: 'rgb(0, 183, 255)',
-        width: 0.5,
+        color: 'rgb(29,107,191)', //'rgb(49, 127, 211)',
+        width: 2.5,
     }),
 });
 

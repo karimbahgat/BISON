@@ -143,7 +143,7 @@ function getDisplayName(adminData) {
         firstName = parent.names[0];
         names.push(firstName);
     };
-    displayName = names.join(', ');
+    displayName = names.join(' &rarr; ');
     return displayName;
 }
 
