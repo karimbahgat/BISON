@@ -95,6 +95,7 @@ def api_search_name_hierarchy(request):
     matches = models.Admin.objects.filter(names__name__istartswith=searches[0], 
                                         minx__isnull=False) # only those with geoms
     matches = list(matches)
+    print('db fetched',len(matches))
 
     # functions
     def calc_name_match(name1, name2):
@@ -138,6 +139,7 @@ def api_search_name_hierarchy(request):
         for search in searches:
             #print('search',search)
 
+            # NOTE: this recursive get all parents is the most expensive part
             best_parent,best_name,best_name_match = calc_best_parent_match(search, m)
             best_level_names.append(best_name)
             #print('best level name',best_name.name,best_name_match)
@@ -160,6 +162,7 @@ def api_search_name_hierarchy(request):
         serialized = m.serialize(geom=False)
         serialized['simil'] = simil
         results.append(serialized)
+    print('python calc and serialized',len(results))
 
     # sort by similarity
     results = sorted(results, key=lambda r: r['simil'], reverse=True)
@@ -176,9 +179,19 @@ def api_get_admin(request, id):
         geom = False
     else:
         raise ValueError('geom param must be one of true,false,1,0')
-    admin = models.Admin.objects.get(pk=id)
-    data = admin.serialize(geom=geom)
-    return JsonResponse(data)
+
+    if ',' in id:
+        ids = [int(_id) for _id in id.split(',')]
+        admins = models.Admin.objects.filter(pk__in=ids)
+        # returned as list
+        data = [admin.serialize(geom=geom) for admin in admins]
+    else:
+        id = int(id)
+        admin = models.Admin.objects.get(pk=id)
+        # returned as a single dict
+        data = admin.serialize(geom=geom)
+
+    return JsonResponse(data, safe=False)
 
 def api_get_similar_admins(request, id):
     admin = models.Admin.objects.get(pk=id)

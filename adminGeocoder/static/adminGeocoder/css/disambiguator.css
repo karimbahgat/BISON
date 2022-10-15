@@ -34,7 +34,7 @@
 
 #disambiguation-geoms {
     width: 50%;
-    height: 340px;
+    height: 280px;
     flex-grow: 1;
     flex-shrink: 0;
     overflow: auto;

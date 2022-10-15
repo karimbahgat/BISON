@@ -54,7 +54,7 @@ function initDisambiguator(searchId2, data=null) {
     // add all possible geom candidates to table
     for (result of data.results) {
         addGeomToDisambiguationTable(result.id, result);
-        requestGeomCandidate(result.id);
+        updateLoadStatus();
     };
     // also show all similar geoms to map
     requestSimilarGeomsForMap(currentSelectedGeomId);
@@ -72,6 +72,7 @@ function receiveGeomForMap(data) {
 }
 
 function addGeomToDisambiguationTable(adminId, result) {
+    console.log(result)
     tbody = document.querySelector('#disambiguation-geom-table tbody');
     tr = document.createElement('tr');
     tr.id = 'admin-candidate-id-' + adminId;
@@ -79,27 +80,37 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
     <td class="admin-name-div">
-        <span class="admin-name">...</span>
-        <div class="admin-source">...</div>
+        <span class="admin-name">&#9654; ${getDisplayName(result)}</span>
+        <div class="admin-source">${result.source.name}</div>
     </td>
-    <td class="admin-level" title="Administrative level"><img src="static/images/hierarchy-structure.png">...</td>
+    <td class="admin-level" title="Administrative level"><img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(result)}</td>
     <td class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
     <td class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></td>
     `;
     tbody.appendChild(tr);
+    // mark as selected
+    if (result.id == currentSelectedGeomId) {
+        tr.className = "admin-candidate-row selected-geom-row";
+        tr.scrollIntoView({block:'nearest', inline:'nearest'});
+    };
 }
 
-function requestGeomCandidate(adminId) {
+/*
+function requestGeomCandidates(adminIds) {
     // fetch full details of geom candidate
-    url = '/api/get_admin/' + adminId + '?geom=0';
-    fetch(url).then(result=>result.json()).then(data=>receiveGeomCandidate(data));
+    adminIds = adminIds.join(',');
+    url = '/api/get_admin/' + adminIds + '?geom=0';
+    console.log(url)
+    fetch(url).then(result=>result.json()).then(data=>receiveGeomCandidates(data));
 }
 
-function receiveGeomCandidate(geomData) {
-    console.log(geomData);
+function receiveGeomCandidates(geomDatas) {
+    console.log(geomDatas);
 
     // update geom table entry
-    updateDisambiguationTableEntry(geomData);
+    for (geomData of geomDatas) {
+        updateDisambiguationTableEntry(geomData);
+    };
 
     // update status
     updateLoadStatus();
@@ -122,6 +133,7 @@ function updateDisambiguationTableEntry(geomData) {
         tr.scrollIntoView({block:'nearest', inline:'nearest'});
     };
 }
+*/
 
 function updateLoadStatus() {
     disambiguatorCandidatesLoaded += 1;
