@@ -2,6 +2,10 @@
 
 <link rel="stylesheet" href="{% static 'adminManager/css/datasets.css' %}" type="text/css">
 
+<div class="button-bar">
+    <a class="button small" onclick="openAddDatasetPopup()">+ Add New Dataset</a>
+</div>
+
 <div class="datasets-container">
 
     {% for source in datasets.all %}
@@ -21,3 +25,32 @@
     {% endfor %}
 
 </div>
+
+
+<!----------------------->
+<!-- Popups -->
+
+<!-- Add dataset -->
+
+<div id="add-dataset-popup" class="popup is-hidden">
+    <div class="popup-content" style="overflow:auto">
+
+        <div class="popup-buttons">
+            <a onclick="closeAddDatasetPopup()">x</a>
+        </div>
+
+        {% include 'adminManager/add_dataset.html' with form=add_dataset_form %}
+
+        <br><br>
+
+    </div>
+</div>
+
+<script>
+    function openAddDatasetPopup() {
+        document.getElementById('add-dataset-popup').className = 'popup';
+    }
+    function closeAddDatasetPopup() {
+        document.getElementById('add-dataset-popup').className = 'popup is-hidden';
+    }
+</script>

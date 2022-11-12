@@ -2,16 +2,17 @@
 .datasets-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 3%;
+    gap: 5%;
     margin: 10px 0;
 }
 
 .dataset-card {
     position: relative;
     width: 30%;
+    background-color: rgb(244,244,244);
 }
 
 .dataset-card .image {
-    width: 90%;
+    width: 95%;
     height: 80px;
 }

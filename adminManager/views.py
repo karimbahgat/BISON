@@ -10,7 +10,9 @@ import json
 
 def sources(request):
     datasets = models.AdminSource.objects.filter(type='DataSource')
-    context = {'datasets':datasets}
+    context = {'datasets':datasets,
+                'add_dataset_form': forms.AdminSourceForm(),
+                }
     return render(request, 'adminManager/sources.html', context=context)
 
 def source(request, pk):
