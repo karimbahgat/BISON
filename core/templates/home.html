@@ -17,16 +17,33 @@
             <p>A comprehensive system for storing and managing administrative boundary data.</p>
         </header>
 
-        <p>Some summary stats for all sources and boundaries...</p>
+        <div class="apps-container">
 
-        <p>
-            The system contains a core set of data, and can easily be extended with various plugins.
-            Explore these below: 
-            <ul>
-                <li><a href="{% url 'boundarylookup' %}">Boundary Lookup</a></li>
-                <li><a href="{% url 'sources' %}">Boundary Sources</a></li>
-            </ul>
-        </p>
+            <div class="app-card box">
+                <a href="{% url 'sources' %}">
+                    <h3 class="title">
+                        Boundary Sources
+                    </h3>
+                    <img class="image" src="{% static 'images/text.png' %}">
+                    <div class="details">
+                        Compare and contrast {{ source_count }} boundary sources
+                    </div>
+                </a>
+            </div>
+        
+            <div class="app-card box">
+                <a href="{% url 'boundarylookup' %}">
+                    <h3 class="title">
+                        Boundary Lookup
+                    </h3>
+                    <img class="image" src="{% static 'images/magnifier.png' %}">
+                    <div class="details">
+                        Search across {{ admin_count }} boundaries
+                    </div>
+                </a>
+            </div>
+        
+        </div>
 
         <p>Built by the <a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community</a> and <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the Admin Geocoder
             is an online tool and database for storing and managing administrative boundaries (i.e., state, county)

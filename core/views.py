@@ -7,27 +7,8 @@ from adminManager import models
 import json
 
 def home(request):
-
-    # print('home')
-    # for adm in models.Admin.objects.filter(names__name='Afghanistan'): #source__name='GADM v4.0.4', geom__isnull=True):
-    #     print(adm, adm.geom, len(adm.geom.wkb))
-    #     if adm.geom.wkb:
-    #         print(adm.geom.bbox(),(adm.minx,adm.miny))
-
-    # one-time hack to set bbox for existing db entries
-    # from django.db import transaction
-    # with transaction.atomic():
-    #     all = models.Admin.objects.all()
-    #     count = all.count()
-    #     print('count',count)
-    #     nxt = incr = 1000
-    #     for i,x in enumerate(all):
-    #         if i > nxt:
-    #             print(i, 'of', count)
-    #             nxt += incr
-    #         if x.geom and x.geom.wkb and x.minx is None:
-    #             x.save(update_fields=['minx','miny','maxx','maxy'])
-
-    sources = models.AdminSource.objects.filter(type='DataSource')
-    context = {'sources':sources}
+    source_count = models.AdminSource.objects.all().count()
+    admin_count = models.Admin.objects.all().count()
+    context = {'source_count':source_count,
+                'admin_count':admin_count}
     return render(request, 'home.html', context=context)

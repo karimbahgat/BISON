@@ -1,0 +1,18 @@
+
+.apps-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5%;
+    margin: 10px 0;
+}
+
+.app-card {
+    position: relative;
+    width: 30%;
+    background-color: rgb(244,244,244);
+}
+
+.app-card .image {
+    width: 95%;
+    height: 80px;
+}
