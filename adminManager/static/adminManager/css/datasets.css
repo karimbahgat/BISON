@@ -1,0 +1,17 @@
+
+.datasets-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3%;
+    margin: 10px 0;
+}
+
+.dataset-card {
+    position: relative;
+    width: 30%;
+}
+
+.dataset-card .image {
+    width: 90%;
+    height: 80px;
+}

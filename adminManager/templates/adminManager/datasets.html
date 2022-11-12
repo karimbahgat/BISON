@@ -1,26 +1,23 @@
 {% load static %}
 
-<div style="margin:20px 0px">
+<link rel="stylesheet" href="{% static 'adminManager/css/datasets.css' %}" type="text/css">
 
-    <table style="width:100%; font-weight:bold; overflow:hidden; border-spacing:0 10px; padding-bottom:100px; padding-left:40px">
+<div class="datasets-container">
 
-        <thead>
-            <tr>
-                <td style="width:65%">Dataset</td>
-                <td style="width:25%">Boundaries</td>
-                <td style="width:10%"></td>
-            </tr>
-        </thead>
+    {% for source in datasets.all %}
 
-        <tbody>
-            {% for source in datasets.all %}
-            <tr>
-                <td>{{ source.name }}</td>
-                <td>{{ source.boundary_refs.all.count }}</td>
-                <td><a class="button small" href="{% url 'source' source.pk %}">View</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
+        <div class="dataset-card box">
+            <a href="{% url 'source' source.pk %}">
+                <h3 class="title">
+                    {{ source.name }}
+                </h3>
+                <img class="image" src="{% static 'images/map.png' %}">
+                <div class="details">
+                    {{ source.admins.all.count }} boundaries
+                </div>
+            </a>
+        </div>
 
-    </table>
+    {% endfor %}
+
 </div>
