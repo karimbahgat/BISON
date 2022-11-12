@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<section id="banner">
+    <div class="content">
+
+        <header>
+            <h2>Sources of Administrative Boundary Data</h2>
+            <p>fsdkfsd gdfgdf fdgfg dfg fksdfls.</p>
+        </header>
+
+        <style>
+            .etabs { margin: 0; padding: 0; }
+            .tab { display: inline-block; zoom:1; *display:inline; background: #eee; border: solid 1px #999; border-bottom: none; -moz-border-radius: 4px 4px 0 0; -webkit-border-radius: 4px 4px 0 0; }
+            .tab a { font-size: 14px; line-height: 2em; display: block; padding: 0 10px; outline: none; }
+            .tab a:hover { text-decoration: underline; }
+            .tab.active { background: #fff; padding-top: 6px; position: relative; top: 1px; border-color: rgba(210, 215, 217, 0.75); }
+            .tab a.active { font-weight: bold; }
+            .table-container { height:200px; overflow:auto; }
+        </style>
+
+        <div id="sources" class="tab-container">
+            <ul class='etabs'>
+                <li class='tab'><a href="#datasets-tab">Datasets ({{ datasets.count }})</a></li>
+            </ul>
+            <div id="datasets-tab" class="tab-content box">
+                <a href="{% url 'dataset_add' %}" class="button small" style="float:right">Add New Dataset</a>
+                {% include 'adminManager/datasets.html' %}
+            </div>
+        </div>
+
+        <script>
+            // init easytabs
+            $('#sources').easytabs({animate:false});
+        </script>
+    
+    </div>
+</section>
+
+{% endblock %}

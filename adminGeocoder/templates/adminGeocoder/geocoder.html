@@ -16,7 +16,6 @@
             <button type="submit">Search</button>
         </div>
         <div id="search-options-bar">
-            <a class="small" onclick="openOptionsPopup()">Advanced Options</a>
             <span>
                 <span class="results-count">0</span>
                 search entries
@@ -37,22 +36,6 @@
 <!----------------------->
 <!-- Popups -->
 
-
-<!-- Options -->
-
-<div id="options-popup" class="popup is-hidden">
-    <div class="popup-content" style="overflow:auto">
-
-        <header>
-            <a href="{% url 'dataset_add' %}" class="button small" style="float:right">Add New Dataset</a>
-            <h2>Sources of Administrative Boundary Data</h2>
-            <p>Geocoding is made possible by importing and standardizing boundary data from multiple boundary datasets.</p>
-        </header>
-
-        {% include 'adminManager/datasets.html' %}
-        
-    </div>
-</div>
 
 <!-- Disambiguation -->
 

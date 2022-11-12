@@ -12,6 +12,11 @@ import itertools
 
 # Create your views here.
 
+def boundarylookup(request):
+    sources = models.AdminSource.objects.filter(type='DataSource')
+    context = {'sources':sources}
+    return render(request, 'adminGeocoder/boundarylookup.html', context=context)
+
 def api_search_name(request):
     # this is only a simple search for a single name
     # no hierarchical input

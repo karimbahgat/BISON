@@ -13,7 +13,7 @@
         </thead>
 
         <tbody>
-            {% for source in sources.all %}
+            {% for source in datasets.all %}
             <tr>
                 <td>{{ source.name }}</td>
                 <td>{{ source.boundary_refs.all.count }}</td>

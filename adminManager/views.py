@@ -8,6 +8,11 @@ import json
 
 # Create your views here.
 
+def sources(request):
+    datasets = models.AdminSource.objects.filter(type='DataSource')
+    context = {'datasets':datasets}
+    return render(request, 'adminManager/sources.html', context=context)
+
 def source(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)

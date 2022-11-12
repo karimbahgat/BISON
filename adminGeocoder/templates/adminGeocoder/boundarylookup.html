@@ -6,31 +6,21 @@
 
 <script src="{% static 'js/ol.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
-<link rel="stylesheet" href="{% static 'css/home.css' %}" type="text/css">
 
 
 <!-- Geocoder -->
 <section id="banner">
     <div class="content">
         <header>
-            <h1>Administrative Boundary System</h1>
-            <p>A comprehensive system for storing and managing administrative boundary data.</p>
+            <h2>Administrative Boundary Lookup</h2>
+            <p>A tool for looking up and download political administrative boundaries.</p>
         </header>
 
-        <p>Some summary stats for all sources and boundaries...</p>
-
-        <p>
-            The system contains a core set of data, and can easily be extended with various plugins.
-            Explore these below: 
-            <ul>
-                <li><a href="{% url 'boundarylookup' %}">Boundary Lookup</a></li>
-                <li><a href="{% url 'sources' %}">Boundary Sources</a></li>
-            </ul>
-        </p>
+        {% include 'adminGeocoder/geocoder.html' %}
 
         <p>Built by the <a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community</a> and <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the Admin Geocoder
-            is an online tool and database for storing and managing administrative boundaries (i.e., state, county)
-            and their spatial representation for any country in the world. We currently search administrative unit names against a database of 
+            is an online tool and database for geocoding textual name references to administrative boundaries (i.e., state, county)
+            to their spatial representation in any country in the world. We currently search administrative unit names against a database of 
             approximately 1 million boundaries within over 200 entities,
             including all 195 UN member states. All boundaries are available to view or download in
             common file formats, including

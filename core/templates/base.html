@@ -9,7 +9,7 @@
 {% load static %}
 
 <head>
-	<title>AdminCoder</title>
+	<title>AdminSystem</title>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 	<link rel="stylesheet" type="text/css" href="{% static 'js/slick/slick.css' %}" />
@@ -65,7 +65,7 @@
 
 				<!-- Header -->
 				<header id="header">
-					<span class="logo"><a href="{% url 'home' %}"><strong>Admin Geocoder</strong></a> built by the <a href="https://github.com/wmgeolab/geoBoundaries">community</a> and <a
+					<span class="logo"><a href="{% url 'home' %}"><strong>Admin System</strong></a> built by the <a href="https://github.com/wmgeolab/geoBoundaries">community</a> and <a
 							href="http://geolab.wm.edu">W&M geoLab</a></span>
 					<ul class="icons">
 						<li><a href="https://twitter.com/wmgeolab?lang=en" class="icon brands fa-twitter"><span
@@ -98,15 +98,9 @@
 						<h2>Menu</h2>
 					</header>
 					<ul>
-						<li><a href="index.html">Home</a></li>
-						<li><a href="index.html#getdata">Download Data</a></li>
-						<li><a href="geoContrast.html">View Data</a></li>
-						<li><a href="api.html">API & Archive</a></li>
-						<li><a href="index.html#citation">Requirements for Use</a></li>
-						<li><a href="https://github.com/wmgeolab/geoBoundaries/issues">Known Issues</a></li>
-						<li><a href="https://github.com/wmgeolab/geoBoundaries#getting-involved">Get Involved</a></li>
-						<li><a href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">We Made This</a>
-						</li>
+						<li><a href="{% url 'home' %}">Home</a></li>
+						<li><a href="{% url 'boundarylookup' %}">Boundary Lookup</a></li>
+						<li><a href="{% url 'sources' %}">Boundary Sources</a></li>
 					</ul>
 					<br />
 					<div id="mc_embed_signup">

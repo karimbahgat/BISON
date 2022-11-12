@@ -19,6 +19,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('sources/', views.sources, name='sources'),
     path('source/<int:pk>/', views.source, name='source'),
     path('dataset/add/', views.datasource_add, name='dataset_add'),
     path('dataset/edit/<int:pk>/', views.datasource_edit, name='dataset_edit'),
