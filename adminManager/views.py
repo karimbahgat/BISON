@@ -4,6 +4,8 @@ from django.db import transaction
 from . import models
 from . import forms
 
+from adminImporter.forms import DatasetImporterForm
+
 import json
 
 # Create your views here.
@@ -11,7 +13,8 @@ import json
 def sources(request):
     datasets = models.AdminSource.objects.filter(type='DataSource')
     context = {'datasets':datasets,
-                'add_dataset_form': forms.AdminSourceForm(),
+                'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource'}),
+                'import_params_form': DatasetImporterForm(),
                 }
     return render(request, 'adminManager/sources.html', context=context)
 
@@ -47,6 +50,7 @@ def datasource_add(request):
         with transaction.atomic():
             # save form data
             data = request.POST
+            print(data)
             form = forms.AdminSourceForm(data)
             if form.is_valid():
                 form.save()
@@ -68,10 +72,8 @@ def datasource_edit(request, pk):
     if request.method == 'GET':
         # create empty form
         form = forms.AdminSourceForm(instance=src)
-        import_params = src.importer.import_params
-        try: import_params = json.dumps(import_params, indent=4)
-        except: pass
-        context = {'form': form, 'import_params': import_params}
+        import_params_form = DatasetImporterForm(instance=src.importer)
+        context = {'form': form, 'import_params_form': import_params_form}
         return render(request, 'adminManager/source_data_edit.html', context)
 
     elif request.method == 'POST':

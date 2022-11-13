@@ -42,6 +42,7 @@ INSTALLED_APPS = [
 
     # thirdparty packages
     'djangowkb',
+    'django_jsonform',
 
     # apps
     'adminManager',

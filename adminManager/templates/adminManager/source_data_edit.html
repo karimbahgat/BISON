@@ -16,26 +16,42 @@
                     Editing Data Source
                 </h2>
             </div>
+
+            <button style="float:right" type="submit" form="form1">Submit</button>
+
             <p>
                 Some instructions here... 
             </p>
         </header>
 
         <div>
-            <form method="POST" action="{% url 'dataset_edit' form.instance.pk %}">
+            <form id="form1" method="POST" action="{% url 'dataset_edit' form.instance.pk %}">
                 {% csrf_token %}
-                <table>
-                    {{ form.as_table }}
-                    <tr>
-                        <th>Inspect Data:</th>
-                        <td>{% include 'adminImporter/shapefile_inspect.html' %}</td>
-                    </tr>
-                    <tr>
-                        <th>Import Parameters:</th>
-                        <td><textarea name="import_params" cols="40" rows="10">{{ import_params }}</textarea></td>
-                    </tr>
-                </table>
-                <button style="float:right" type="submit">Save</button>
+
+                <div id="tabs">
+                    <ul class='etabs'>
+                        <li class='tab'><a href="#metadata-tab">Metadata</a></li>
+                        <li class='tab'><a href="#import-tab">Import</a></li>
+                    </ul>
+                    <div class="tab-container">
+                        <div id="metadata-tab" class="panel-container">
+                            <table>
+                                {{ form.as_table }}
+                            </table>
+                        </div>
+                        <div id="import-tab" class="panel-container">
+                            <table>
+                                {{ import_params_form.media }}
+                                {{ import_params_form.as_table }}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    // init easytabs
+                    $('#tabs').easytabs({animate:false});
+                </script>
             </form>
         </div>
 
