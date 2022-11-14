@@ -6,6 +6,7 @@
 
 <script src="{% static 'js/ol.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'adminManager/css/source_data.css' %}" type="text/css">
 
 <section>
     <div class="content">
@@ -21,41 +22,45 @@
 
             <div id="tabs">
                 <ul class='etabs'>
-                    <li class='tab'><a href="#metadata-tab">Metadata</a></li>
+                    <li class='tab'><a href="#overview-tab">Overview</a></li>
                     <li class='tab'><a href="#import-tab">Import</a></li>
                 </ul>
                 <div class="tab-container">
-                    <div id="metadata-tab" class="panel-container">
-                        <p>
-                            <span style="vertical-align:top">URL: 
-                            <a href="{{ source.url }}">{{ source.url }}</a>
-                            </span>
+                    <div id="overview-tab" class="panel-container">
+                        <div id="map-info-div">
+                            <div id="map"></div>
+                            <p id="map-info">
+                                <span style="vertical-align:top">URL: 
+                                <a href="{{ source.url }}">{{ source.url }}</a>
+                                </span>
 
-                            <br>
+                                <br>
 
-                            <span style="vertical-align:top">Valid from: 
-                            {{ source.valid_from }}
-                            </span>
+                                <span style="vertical-align:top">Valid from: 
+                                {{ source.valid_from }}
+                                </span>
 
-                            <br>
+                                <br>
 
-                            <span style="vertical-align:top">Valid to: 
-                            {{ source.valid_to }}
-                            </span>
+                                <span style="vertical-align:top">Valid to: 
+                                {{ source.valid_to }}
+                                </span>
 
-                            <br>
-                        
-                            <span style="vertical-align:top">Citation: 
-                            {{ source.citation }}
-                            </span>
+                                <br>
+                            
+                                <span style="vertical-align:top">Citation: 
+                                {{ source.citation }}
+                                </span>
 
-                            <br>
-                        
-                            <span style="vertical-align:top">Source Note: 
-                            {{ source.note }}
-                            </span>
-                        </p>
+                                <br>
+                            
+                                <span style="vertical-align:top">Source Note: 
+                                {{ source.note }}
+                                </span>
+                            </p>
+                        </div>
                     </div>
+
                     <div id="import-tab" class="panel-container">
                         <span style="vertical-align:top">Import Parameters: 
                         <textarea style="margin:10px 0px" cols="40" rows="10" disabled>{{ import_params }}</textarea>
@@ -66,6 +71,7 @@
                         {{ source.importer.last_imported }}
                         </span>
                     </div>
+
                 </div>
             </div>
 
@@ -76,5 +82,7 @@
 
     </div>
 </section>
+
+<script src="{% static 'adminManager/js/source_data.js' %}"></script>
 
 {% endblock %}

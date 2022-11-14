@@ -1,0 +1,23 @@
+
+.rjf-form-group {
+    max-width: 100% !important;
+    margin: 15px 5px;
+}
+
+.rjf-form-group-wrapper {
+    max-width: 100% !important;
+}
+
+.rjf-form-row-inner {
+    padding: 5px !important;
+}
+
+.rjf-input-group {
+    max-width: 100% !important;
+    width: 100% !important; 
+}
+
+.rjf-form-row input {
+    max-width: 100% !important;
+    width: 100% !important; 
+}
