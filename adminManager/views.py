@@ -63,6 +63,7 @@ def datasource_add(request):
                 importer.save()
                 return redirect('source', source.pk)
             else:
+                raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
                 return render(request, 'adminManager/source_data_add.html', {'form':form})
 
 def datasource_edit(request, pk):

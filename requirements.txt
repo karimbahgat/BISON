@@ -3,6 +3,8 @@ django==3.*
 pymysql==1.0.2
 dj-database-url
 python-decouple
+whitenoise
+gunicorn
 requests
 
 git+https://github.com/karimbahgat/django-wkb
