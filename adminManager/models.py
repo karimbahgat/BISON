@@ -39,6 +39,15 @@ class Admin(models.Model):
         # normal save
         super(Admin, self).save(*args, **kwargs)
 
+    @property
+    def lineres(self):
+        # not very efficient
+        from core.utils import calc_stats
+        geom = self.geom.__geo_interface__
+        feat = {'type':'Feature', 'geometry':geom}
+        stats = calc_stats(feats=[feat])
+        return stats['statsLineResolution']
+
     def get_all_parents(self, include_self=True):
         '''Returns a list of all parents, starting with and including self.'''
         refs = [self]
@@ -73,6 +82,7 @@ class Admin(models.Model):
                 'source':{'name':source.name, 'id':source.pk},
                 'valid_from':self.valid_from,
                 'valid_to':self.valid_to,
+                'lineres':self.lineres,
                 }
         if geom:
             dct['geom'] = self.geom.__geo_interface__

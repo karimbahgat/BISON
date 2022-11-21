@@ -11,6 +11,11 @@
     
     <div id="search-pane" class="box">
     <form id="search-form" onsubmit="return geocode()">
+        <div id="search-date" style="display:none">
+            <div class="slidecontainer">
+                <input id="search-date-slider" class="slider" type="range" min="1" max="100" value="50">
+            </div>
+        </div>
         <div id="search-bar">
             <input name="search-input" type="text" autocomplete="off" class="form-control" autofocus>
             <button type="submit">Search</button>

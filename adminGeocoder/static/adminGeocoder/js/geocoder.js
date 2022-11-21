@@ -154,6 +154,21 @@ function getAdminLevel(adminData) {
     return level;
 }
 
+function getAdminYears(adminData) {
+    // get the admin year(s) of validity as text
+    if (adminData.valid_from != null & adminData.valid_to != null) {
+        fromYear = adminData.valid_from.slice(1,4);
+        toYear = adminData.valid_to.slice(1,4);
+        if (fromYear == toYear) {
+            return `${fromYear}`;
+        } else {
+            return `${fromYear}&rarr;${toYear}`;
+        };
+    } else {
+        return 'Unk.'
+    }
+}
+
 function updateListEntry(searchId2) {
     // get the chosen data
     searchResult = resultsData[searchId2];
@@ -352,4 +367,11 @@ document.onclick = function(event) {
     if (event.target.className == 'popup') {
         event.target.className = 'popup is-hidden';
     };
+}
+
+// date slider
+
+slider = document.getElementById("search-date-slider");
+slider.oninput = function() {
+    console.log(this.value);
 }

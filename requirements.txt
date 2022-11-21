@@ -12,3 +12,5 @@ shapefile==2.2.*
 shapely==1.*
 dateparser==1.1.*
 django-jsonform
+numpy
+pyproj

@@ -27,13 +27,13 @@
 }
 
 #disambiguation-map {
-    width: 50%;
+    width: 30%;
     flex-grow: 1;
     flex-shrink: 0;
 }
 
 #disambiguation-geoms {
-    width: 50%;
+    width: 70%;
     height: 280px;
     flex-grow: 1;
     flex-shrink: 0;
@@ -70,7 +70,7 @@
 }
 
 .admin-name {
-    width: 30%;
+    width: 20%;
 }
 
 .admin-source {
@@ -81,14 +81,13 @@
     padding-left: 30px;
 }
 
-.admin-name-match-percent div, .similar-geom-match-percent div, .admin-level {
+.admin-name-match-percent div, .similar-geom-match-percent div, .admin-level div, .admin-geom-lineres div, .admin-time div {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 18%;
 }
 
-.admin-name-match-percent div img, .similar-geom-match-percent div img, .admin-level img {
+.admin-name-match-percent div img, .similar-geom-match-percent div img, .admin-level div img, .admin-geom-lineres div img, .admin-time div img {
     height: 15px;
     margin: 3px;
 }
