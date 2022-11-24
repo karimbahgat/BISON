@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<section id="banner">
+    <div class="content">
+
+        <header>
+            <h2>Maps of Administrative Boundaries</h2>
+            <p>fsdkfsd gdfgdf fdgfg dfg fksdfls.</p>
+        </header>
+
+        <div id="sources">
+            <ul class='etabs'>
+                <li class='tab'><a href="#maps-tab">Maps ({{ maps.count }})</a></li>
+            </ul>
+            <div class="tab-container">
+                <div id="maps-tab" class="panel-container">
+                    {% include 'mapDigitizer/list_maps.html' %}
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // init easytabs
+            $('#sources').easytabs({animate:false});
+        </script>
+    
+    </div>
+</section>
+
+{% endblock %}

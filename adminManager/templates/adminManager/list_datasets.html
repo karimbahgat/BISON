@@ -1,6 +1,6 @@
 {% load static %}
 
-<link rel="stylesheet" href="{% static 'adminManager/css/datasets.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'adminManager/css/list_datasets.css' %}" type="text/css">
 
 <div class="button-bar">
     <a class="button small" onclick="openAddDatasetPopup()">+ Add New Dataset</a>
@@ -11,7 +11,7 @@
     {% for source in datasets.all %}
 
         <div class="dataset-card box">
-            <a href="{% url 'source' source.pk %}">
+            <a href="{% url 'dataset' source.pk %}">
                 <h3 class="title">
                     {{ source.name }}
                 </h3>

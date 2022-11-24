@@ -7,8 +7,10 @@ from adminManager import models
 import json
 
 def home(request):
-    source_count = models.AdminSource.objects.all().count()
+    dataset_count = models.AdminSource.objects.filter(type='DataSource').count()
+    map_count = models.AdminSource.objects.filter(type='MapSource').count()
     admin_count = models.Admin.objects.all().count()
-    context = {'source_count':source_count,
+    context = {'dataset_count':dataset_count,
+                'map_count':map_count,
                 'admin_count':admin_count}
     return render(request, 'home.html', context=context)

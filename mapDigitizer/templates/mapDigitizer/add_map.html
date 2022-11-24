@@ -1,0 +1,70 @@
+
+{% load static %}
+
+<style>
+    #img-preview {
+        width: 100%;
+        min-height: 400px;
+    }
+</style>
+
+<section>
+    <header>
+        <div class="row">
+            <img height="30px" src="{% static 'images/map.png' %}">
+            <h2 style="text-align:left">
+                Add a Map Source
+            </h2>
+        </div>
+
+        <button style="float:right" type="submit" form="form1">Submit</button>
+        
+        <p>
+            Some instructions here... 
+        </p>
+
+    </header>
+
+    <div>
+        <form id="form1" method="POST" action="{% url 'map_add' %}">
+            {% csrf_token %}
+
+            <div id="tabs">
+                <ul class='etabs'>
+                    <li class='tab'><a href="#metadata-tab">Metadata</a></li>
+                </ul>
+                <div class="tab-container">
+                    <div id="metadata-tab" class="panel-container">
+                        <table>
+                            {{ form.as_table }}
+                            <tr>
+                                <th style="vertical-align:top; padding-top:15px">
+                                Preview:
+                                </th>
+                                <td><img id="img-preview"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                // init easytabs
+                $('#tabs').easytabs({animate:false});
+            </script>
+
+        </form>
+    </div>
+</section>
+
+<script>
+    function previewImage() {
+        url = document.getElementById('id_url').value;
+        if (url.endsWith('.jpg') | url.endsWith('.png')) {
+            img = document.getElementById('img-preview');
+            img.src = url;
+        };
+    };
+    urlInput = document.getElementById('id_url');
+    urlInput.addEventListener('input', previewImage, true);
+</script>

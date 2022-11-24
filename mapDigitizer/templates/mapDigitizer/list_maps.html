@@ -1,0 +1,54 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'mapDigitizer/css/list_maps.css' %}" type="text/css">
+
+<div class="button-bar">
+    <a class="button small" onclick="openAddMapPopup()">+ Add New Map</a>
+</div>
+
+<div class="map-container">
+
+    {% for source in maps.all %}
+
+        <div class="map-card box">
+            <a href="{% url 'map' source.pk %}">
+                <h3 class="title">
+                    {{ source.name }}
+                </h3>
+                <img class="image" src="{% static 'images/map.png' %}">
+                <div class="details">
+                    {{ source.admins.all.count }} boundaries
+                </div>
+            </a>
+        </div>
+
+    {% endfor %}
+
+</div>
+
+
+<!----------------------->
+<!-- Popups -->
+
+<!-- Add dataset -->
+
+<div id="add-map-popup" class="popup is-hidden">
+    <div class="popup-content" style="overflow:auto">
+
+        <div class="popup-buttons">
+            <a onclick="closeAddMapPopup()">x</a>
+        </div>
+
+        {% include 'mapDigitizer/add_map.html' with form=add_map_form %}
+
+    </div>
+</div>
+
+<script>
+    function openAddMapPopup() {
+        document.getElementById('add-map-popup').className = 'popup';
+    }
+    function closeAddMapPopup() {
+        document.getElementById('add-map-popup').className = 'popup is-hidden';
+    }
+</script>

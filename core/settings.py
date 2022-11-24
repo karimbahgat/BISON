@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     # apps
     'adminManager',
     'adminImporter',
-    #'adminDigitizer',
+    'mapDigitizer',
     'adminGeocoder',
 ]
 

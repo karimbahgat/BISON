@@ -32,13 +32,25 @@
             </div>
 
             <div class="app-card box">
-                <a href="{% url 'sources' %}">
+                <a href="{% url 'datasets' %}">
                     <h3 class="title">
-                        Boundary Sources
+                        Boundary Data
                     </h3>
                     <img class="image" src="{% static 'images/text.png' %}">
                     <div class="details">
-                        Compare and contrast {{ source_count }} boundary sources
+                        Compare and contrast {{ dataset_count }} boundary datasets
+                    </div>
+                </a>
+            </div>
+
+            <div class="app-card box">
+                <a href="{% url 'maps' %}">
+                    <h3 class="title">
+                        Boundary Maps
+                    </h3>
+                    <img class="image" src="{% static 'images/map.png' %}">
+                    <div class="details">
+                        Find and digitize boundaries from {{ map_count }} maps
                     </div>
                 </a>
             </div>

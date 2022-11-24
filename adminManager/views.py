@@ -10,34 +10,29 @@ import json
 
 # Create your views here.
 
-def sources(request):
+def datasources(request):
     datasets = models.AdminSource.objects.filter(type='DataSource')
     context = {'datasets':datasets,
                 'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource'}),
                 'import_params_form': DatasetImporterForm(),
                 }
-    return render(request, 'adminManager/sources.html', context=context)
+    return render(request, 'adminManager/sources_data.html', context=context)
 
-def source(request, pk):
+def datasource(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)
     toplevel_refs = src.admins.filter(parent=None)
     context = {'source':src, 'toplevel_refs':toplevel_refs}
 
     print('typ',src,repr(src.type))
+
+    assert src.type == 'DataSource'
     
-    if src.type == 'DataSource':
-        import_params = src.importer.import_params
-        try: import_params = json.dumps(import_params, indent=4)
-        except: pass
-        context['import_params'] = import_params
-        return render(request, 'adminManager/source_data.html', context)
-        
-    elif src.type == 'MapSource':
-        levels = src.admins.all().values_list('level').distinct()
-        levels = [lvl[0] for lvl in levels]
-        context['levels'] = sorted(levels)
-        return render(request, 'adminManager/source_map.html', context)
+    import_params = src.importer.import_params
+    try: import_params = json.dumps(import_params, indent=4)
+    except: pass
+    context['import_params'] = import_params
+    return render(request, 'adminManager/source_data.html', context)
 
 def datasource_add(request):
     if request.method == 'GET':

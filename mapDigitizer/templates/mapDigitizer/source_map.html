@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<script src="{% static 'js/ol.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'mapDigitizer/css/source_map.css' %}" type="text/css">
+
+<section>
+    <div class="content">
+        <header>
+            <div class="row">
+                <img height="30px" src="{% static 'images/map.png' %}">
+                <h2 style="text-align:left">
+                    Map: &nbsp;&nbsp;{{ source.name }}
+                </h2>
+            </div>
+
+            <a class="button" style="float:right" href="{% url 'map_edit' source.pk %}">Edit</a>
+
+            <div id="tabs">
+                <ul class='etabs'>
+                    <li class='tab'><a href="#overview-tab">Overview</a></li>
+                    <li class='tab'><a href="#digitizer-tab">Map Data</a></li>
+                </ul>
+                <div class="tab-container">
+                    <div id="overview-tab" class="panel-container">
+                        <div id="map-info-div">
+                            <img id="map-preview" src="{{ source.url }}">
+                            <p id="map-info">
+                                <span style="vertical-align:top">URL: 
+                                <a href="{{ source.url }}">{{ source.url }}</a>
+                                </span>
+
+                                <br>
+
+                                <span style="vertical-align:top">Valid from: 
+                                {{ source.valid_from }}
+                                </span>
+
+                                <br>
+
+                                <span style="vertical-align:top">Valid to: 
+                                {{ source.valid_to }}
+                                </span>
+
+                                <br>
+                            
+                                <span style="vertical-align:top">Citation: 
+                                {{ source.citation }}
+                                </span>
+
+                                <br>
+                            
+                                <span style="vertical-align:top">Source Note: 
+                                {{ source.note }}
+                                </span>
+
+                                <br>
+
+                                <span>Digitized: 
+                                {% if source.digitizer and source.digitizer.last_digitized %}
+                                    {{ source.digitizer.last_digitized }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div id="digitizer-tab" class="panel-container">
+                        {% include "mapDigitizer/digitize_map.html" %}
+                    </div>
+
+                </div>
+            </div>
+
+            <script>
+                // init easytabs
+                $('#tabs').easytabs({animate:false});
+            </script>
+
+    </div>
+</section>
+
+<script src="{% static 'adminManager/js/source_data.js' %}"></script>
+
+{% endblock %}
