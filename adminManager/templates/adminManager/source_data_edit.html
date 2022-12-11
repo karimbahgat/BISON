@@ -18,7 +18,8 @@
                 </h2>
             </div>
 
-            <button style="float:right" type="submit" form="form1">Submit</button>
+            <button style="float:right" type="submit" form="form1">Save</button>
+            <a class="button" style="float:right" href="{% url 'dataset' form.instance.pk %}">Cancel</a>
 
             <p>
                 Some instructions here... 
@@ -41,10 +42,14 @@
                             </table>
                         </div>
                         <div id="import-tab" class="panel-container">
-                            <table>
-                                {{ import_params_form.media }}
-                                {{ import_params_form.as_table }}
-                            </table>
+                            {{ importer_forms.0.media }}
+                            {{ importer_forms.management_form }}
+                            {% for import_form in importer_forms %}
+                                <h3>Input {{ forloop.counter }}</h3>
+                                {{ import_form.id }}
+                                {{ import_form.source }}
+                                {{ import_form.import_params }}
+                            {% endfor %}
                         </div>
                     </div>
                 </div>

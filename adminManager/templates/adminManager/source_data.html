@@ -62,6 +62,7 @@
                     </div>
 
                     <div id="import-tab" class="panel-container">
+                        <p>Dataset is sourced through {{ source.importers.all.count }} import actions.</p>
                         <table>
                             <thead>
                                 <tr>
@@ -71,7 +72,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for importer in source.importers %}
+                                {% for importer in source.importers.all %}
                                     <tr>
                                         <td>{{ importer.import_params.path }}</td>
                                         <td>{{ importer.import_params.levels|length }}</td>
