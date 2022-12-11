@@ -5,5 +5,8 @@ from .models import DatasetImporter
 class DatasetImporterForm(ModelForm):
     class Meta:
         model = DatasetImporter
-        fields = ['import_params']
+        exclude = ['last_imported']
+        widgets = {
+            'source': HiddenInput()
+        }
 

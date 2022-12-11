@@ -9,34 +9,55 @@ import csv
 import logging
 import traceback
 
+from .models import DatasetImporter #, ImportJob
 from adminManager import models
 
 # Create your views here.
 
-def datasource_import_all(request):
-    '''Not meant for users, only for internal use to quickly load
-    large amounts of data'''
-    params = request.GET.dict()
-    print(params)
-    replace = params.pop('replace','false').lower()
-    if len(params):
-        sources = models.AdminSource.objects.filter(**params)
-    else:
-        sources = models.AdminSource.objects.all()
-    for src in sources:
-        if replace == 'false':
-            if src.admins.all().count() > 0:
-                # don't reimport populated sources if replace is false
-                continue
-        print('importing from', src)
-        try:
-            datasource_import(request, src.pk)
-        except Exception as err:
-            print('error importing source:', err)
+# def datasource_import_all(request):
+#     '''Not meant for users, only for internal use to quickly load
+#     large amounts of data'''
+#     params = request.GET.dict()
+#     print(params)
+#     replace = params.pop('replace','false').lower()
+#     if len(params):
+#         sources = models.AdminSource.objects.filter(**params)
+#     else:
+#         sources = models.AdminSource.objects.all()
+#     for src in sources:
+#         if replace == 'false':
+#             if src.admins.all().count() > 0:
+#                 # don't reimport populated sources if replace is false
+#                 continue
+#         print('importing from', src)
+#         try:
+#             datasource_import(request, src.pk)
+#         except Exception as err:
+#             print('error importing source:', err)
 
 @csrf_exempt
 def datasource_import(request, pk):
+    '''Import all DatasetImporters defined for a source'''
     source = models.AdminSource(pk=pk)
+
+    # start db transaction
+    with transaction.atomic():
+        # drop all existing source data
+        source.admins.all().delete()
+
+        # loop all related importers
+
+        # schedule import job
+
+@csrf_exempt
+def schedule_importer(request, pk):
+    '''Schedule running a DatasetImporter by adding an ImportJob to a queue'''
+    fsdfsdfd
+
+def run_importjob(job):
+    '''Runs a specific ImportJob'''
+    importer = job.importer
+    source = importer.source
 
     #if request.method == 'GET':
     #    dfafds #return render(request, 'source_import.html')
@@ -55,7 +76,7 @@ def datasource_import(request, pk):
         print('POST', request.POST)
 
         # load import params
-        params = source.importer.import_params.copy()
+        params = importer.import_params.copy()
         print('params', params)
 
         # load country data
@@ -91,94 +112,88 @@ def datasource_import(request, pk):
                 for chunk in fobj.chunks():
                     temp.write(chunk)
 
-        # add to db inside transaction
-        with transaction.atomic():
-            # drop any existing data (refs incl cascading snapshots)
-            source.admins.all().delete()
-
-            # parse date
-            def parse_date(dateval):
-                '''Can be a year, year-month, or year-month-day'''
-                dateparts = dateval.split('-')
-                if len(dateparts) == 1:
-                    yr = dateparts[0]
-                    start = '{}-01-01'.format(yr)
-                    end = '{}-12-31'.format(yr)
-                elif len(dateparts) == 2:
-                    yr,mn = dateparts
-                    start = '{}-{}-01'.format(yr,mn)
-                    end = '{}-{}-31'.format(yr,mn)
-                elif len(dateparts) == 3:
-                    start = end = dateval
-                else:
-                    raise Exception('"{}" is not a valid date'.format(dateval))
-                return start,end
-
-            if params['valid_from'] and params['valid_to']:
-                start1,end1 = parse_date(str(params['valid_from']))
-                start2,end2 = parse_date(str(params['valid_to']))
-                start = min(start1,start2)
-                end = max(end1, end2)
+        # parse date
+        def parse_date(dateval):
+            '''Can be a year, year-month, or year-month-day'''
+            dateparts = dateval.split('-')
+            if len(dateparts) == 1:
+                yr = dateparts[0]
+                start = '{}-01-01'.format(yr)
+                end = '{}-12-31'.format(yr)
+            elif len(dateparts) == 2:
+                yr,mn = dateparts
+                start = '{}-{}-01'.format(yr,mn)
+                end = '{}-{}-31'.format(yr,mn)
+            elif len(dateparts) == 3:
+                start = end = dateval
             else:
-                start = end = None
+                raise Exception('"{}" is not a valid date'.format(dateval))
+            return start,end
 
-            # get source
-            # source_name = params['source'][0]
-            # source = models.BoundarySource.objects.filter(name=source_name).first()
-            # if not source:
-            #     source_cite = request.POST.get('source_citation', '')
-            #     source_note = request.POST.get('source_note', '')
-            #     source_url = request.POST.get('source_url', '')
-            #     source = models.BoundarySource(type="DataSource",
-            #                                     name=source_name,
-            #                                     citation=source_cite,
-            #                                     note=source_note,
-            #                                     url=source_url,
-            #                                     )
-            #     source.save()
+        if params['valid_from'] and params['valid_to']:
+            start1,end1 = parse_date(str(params['valid_from']))
+            start2,end2 = parse_date(str(params['valid_to']))
+            start = min(start1,start2)
+            end = max(end1, end2)
+        else:
+            start = end = None
 
-            # nest multiple inputs
-            if 'input' not in params:
-                raise Exception("metadata file doesn't have correct format")
-            input_arg = params.pop('input')
-            if isinstance(input_arg, str):
-                inputs = [{'path':input_arg}]
-            elif isinstance(input_arg, list):
-                inputs = input_arg
-            else:
-                raise Exception("metadata file contains an error (input arg must be either string or list of dicts)")
+        # get source
+        # source_name = params['source'][0]
+        # source = models.BoundarySource.objects.filter(name=source_name).first()
+        # if not source:
+        #     source_cite = request.POST.get('source_citation', '')
+        #     source_note = request.POST.get('source_note', '')
+        #     source_url = request.POST.get('source_url', '')
+        #     source = models.BoundarySource(type="DataSource",
+        #                                     name=source_name,
+        #                                     citation=source_cite,
+        #                                     note=source_note,
+        #                                     url=source_url,
+        #                                     )
+        #     source.save()
 
-            # run one or more imports
-            error_count = 0
-            for sub_params in inputs:
-                _params = params.copy()
-                _params.update(sub_params)
-                _params['input_path'] = _params.pop('path') # rename path arg
-                print('')
-                print('-'*30)
-                print('import args', _params)
+        # nest multiple inputs
+        if 'input' not in params:
+            raise Exception("metadata file doesn't have correct format")
+        input_arg = params.pop('input')
+        if isinstance(input_arg, str):
+            inputs = [{'path':input_arg}]
+        elif isinstance(input_arg, list):
+            inputs = input_arg
+        else:
+            raise Exception("metadata file contains an error (input arg must be either string or list of dicts)")
 
-                try:
-                    # open and parse data
-                    reader,data = parse_data(**_params)
+        # run one or more imports
+        error_count = 0
+        for sub_params in inputs:
+            _params = params.copy()
+            _params.update(sub_params)
+            _params['input_path'] = _params.pop('path') # rename path arg
+            print('')
+            print('-'*30)
+            print('import args', _params)
 
-                    # add to db
-                    print('adding to db')
-                    common = {'source':source, 'start':start, 'end':end}
-                    add_to_db(reader, common, data)
+            try:
+                # open and parse data
+                reader,data = parse_data(**_params)
 
-                except Exception as err:
-                    error_count += 1
-                    logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
-                    continue
+                # add to db
+                print('adding to db')
+                common = {'source':source, 'start':start, 'end':end}
+                add_to_db(reader, common, data)
 
-            # report errors
-            print(f'all inputs processed, of which {error_count} had errors and were skipped')
+            except Exception as err:
+                error_count += 1
+                logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
+                continue
 
-            # update last imported
-            importer = source.importer
-            importer.last_imported = timezone.now()
-            importer.save()
+        # report errors
+        print(f'all inputs processed, of which {error_count} had errors and were skipped')
+
+        # update last imported
+        importer.last_imported = timezone.now()
+        importer.save()
 
         # delete tempfiles
         for temp in temps:

@@ -17,6 +17,10 @@
     width: 100% !important; 
 }
 
+.rjf-form-group-wrapper .rjf-form-group-wrapper .rjf-form-group-inner {
+    display: flex;
+}
+
 .rjf-form-row input {
     max-width: 100% !important;
     width: 100% !important; 

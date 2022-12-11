@@ -10,34 +10,27 @@ class DatasetImporter(models.Model):
         'items': {
             'type': 'dict',
             'keys': {
-                "level": {'type':'int'},
-                "id_field": {'type':'str'},
-                "name_field": {'type':'str'}
-            }
-        }
-    }
-    INPUT_SCHEMA = {
-        'type': 'array',
-        'minItems': 1,
-        'items': {
-            'type': 'dict',
-            'keys': {
-                'path': {'type':'str'},
-                'encoding': {'type':'str', 'default':'utf8'},
-                'levels': LEVELS_SCHEMA,
+                "level": {'type':'string'}, # should be integer
+                "id_field": {'type':'string'},
+                "name_field": {'type':'string'}
             }
         }
     }
     IMPORT_PARAMS_SCHEMA = {
         'type': 'dict',
         'keys': {
-            'input': INPUT_SCHEMA,
+            'path': {'type':'string'},
+            'encoding': {'type':'string', 'default':'utf8'},
+            'levels': LEVELS_SCHEMA,
         }
     }
 
-    source = models.OneToOneField('adminManager.AdminSource', related_name='importer', on_delete=models.PROTECT)
+    source = models.ForeignKey('adminManager.AdminSource', related_name='importers', on_delete=models.PROTECT)
     import_params_old = models.JSONField(blank=True, null=True)
     import_params = JSONField(schema=IMPORT_PARAMS_SCHEMA,
                                 blank=True, null=True)
     last_imported = models.DateTimeField(null=True, blank=True)
 
+# class ImportJob(models.Model):
+#     importer = models.OneToOneField('DatasetImporter', related_name='importer')
+#     created = models.DateTimeField(autoadd_now=True)

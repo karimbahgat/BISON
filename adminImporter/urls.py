@@ -20,5 +20,5 @@ from . import views
 
 urlpatterns = [
     path('datasource/import/<int:pk>/', views.datasource_import, name='datasource_import'),
-    path('datasource/import_all/', views.datasource_import_all, name='datasource_import_all'),
+    #path('datasource/import_all/', views.datasource_import_all, name='datasource_import_all'),
 ]

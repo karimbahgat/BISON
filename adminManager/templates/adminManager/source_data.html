@@ -62,14 +62,24 @@
                     </div>
 
                     <div id="import-tab" class="panel-container">
-                        <span style="vertical-align:top">Import Parameters: 
-                        <textarea style="margin:10px 0px" cols="40" rows="10" disabled>{{ import_params }}</textarea>
-                        </span>
-
-                        <a class="button" style="float:right" href="{% url 'datasource_import' source.pk %}">Import Data</a>
-                        <span style="vertical-align:top">Last Imported: 
-                        {{ source.importer.last_imported }}
-                        </span>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Path</th>
+                                    <th>Levels</th>
+                                    <th>Last imported</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for importer in source.importers %}
+                                    <tr>
+                                        <td>{{ importer.import_params.path }}</td>
+                                        <td>{{ importer.import_params.levels|length }}</td>
+                                        <td>{{ importer.last_imported }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
 
                 </div>

@@ -36,10 +36,13 @@
                         </table>
                     </div>
                     <div id="import-tab" class="panel-container">
-                        <table>
-                            {{ import_params_form.media }}
-                            {{ import_params_form.as_table }}
-                        </table>
+                        {{ importer_forms.0.media }}
+                        {{ importer_forms.management_form }}
+                        {% for import_form in importer_forms %}
+                            <h3>Input {{ forloop.counter }}</h3>
+                            {{ import_form.source }}
+                            {{ import_form.import_params }}
+                        {% endfor %}
                     </div>
                 </div>
             </div>

@@ -37,6 +37,10 @@
     flex-direction: row-reverse;
 }
 
+.close-popup:hover {
+    cursor: pointer;
+}
+
 .loading-icon {
     height: 20px;
 }

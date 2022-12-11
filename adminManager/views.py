@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
 from django.db import transaction
+from django.forms import modelformset_factory
 
 from . import models
 from . import forms
 
+from adminImporter.models import DatasetImporter
 from adminImporter.forms import DatasetImporterForm
 
 import json
@@ -12,9 +14,13 @@ import json
 
 def datasources(request):
     datasets = models.AdminSource.objects.filter(type='DataSource')
+    DatasetImporterFormset = modelformset_factory(DatasetImporter, 
+                                        form=DatasetImporterForm,
+                                        extra=1)
+    importer_forms = DatasetImporterFormset(queryset=models.AdminSource.objects.none())
     context = {'datasets':datasets,
                 'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource'}),
-                'import_params_form': DatasetImporterForm(),
+                'importer_forms': importer_forms,
                 }
     return render(request, 'adminManager/sources_data.html', context=context)
 
@@ -28,14 +34,12 @@ def datasource(request, pk):
 
     assert src.type == 'DataSource'
     
-    import_params = src.importer.import_params
-    try: import_params = json.dumps(import_params, indent=4)
-    except: pass
-    context['import_params'] = import_params
     return render(request, 'adminManager/source_data.html', context)
 
 def datasource_add(request):
     if request.method == 'GET':
+        jkllkjljljljlj
+
         # create empty form
         form = forms.AdminSourceForm(initial={'type':'DataSource'})
         context = {'form': form}
@@ -46,17 +50,27 @@ def datasource_add(request):
             # save form data
             data = request.POST
             print(data)
+
             form = forms.AdminSourceForm(data)
             if form.is_valid():
                 form.save()
                 source = form.instance
-                # save importer
-                from adminImporter.models import DatasetImporter
-                print(data['import_params'])
-                import_params = json.loads(data['import_params'])
-                importer = DatasetImporter(source=source, import_params=import_params)
-                importer.save()
-                return redirect('source', source.pk)
+                # add saved source to importer forms data
+                formsetdata = {k:v for k,v in data.items() if k.startswith('form-')}
+                for i in range(int(formsetdata['form-TOTAL_FORMS'])):
+                    formsetdata[f'form-{i}-source'] = source.id
+                # save importers
+                DatasetImporterFormset = modelformset_factory(DatasetImporter, 
+                                                            form=DatasetImporterForm,
+                                                            extra=0)
+                importer_forms = DatasetImporterFormset(formsetdata)
+                if importer_forms.is_valid():
+                    importer_forms.save()
+                else:
+                    print(importer_forms.errors)
+                    raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
+
+                return redirect('dataset', source.pk)
             else:
                 raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
                 return render(request, 'adminManager/source_data_add.html', {'form':form})
