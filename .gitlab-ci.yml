@@ -1,0 +1,3 @@
+include:
+- project: 'it/shared-ci'
+  file: 'docker/default-build-anywhere.yaml'
