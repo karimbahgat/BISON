@@ -11,19 +11,15 @@
 <section>
     <div class="content">
         <header>
+            <button style="float:right" type="submit" form="form1">Save</button>
+            <a class="button" style="float:right" href="{% url 'dataset' form.instance.pk %}">Cancel</a>
+
             <div class="row">
                 <img height="30px" src="{% static 'images/dataset.png' %}">
                 <h2 style="text-align:left">
                     Editing Data Source
                 </h2>
             </div>
-
-            <button style="float:right" type="submit" form="form1">Save</button>
-            <a class="button" style="float:right" href="{% url 'dataset' form.instance.pk %}">Cancel</a>
-
-            <p>
-                Some instructions here... 
-            </p>
         </header>
 
         <div>
@@ -33,7 +29,7 @@
                 <div id="tabs">
                     <ul class='etabs'>
                         <li class='tab'><a href="#metadata-tab">Metadata</a></li>
-                        <li class='tab'><a href="#import-tab">Import</a></li>
+                        <li class='tab'><a href="#import-tab">Inputs</a></li>
                     </ul>
                     <div class="tab-container">
                         <div id="metadata-tab" class="panel-container">

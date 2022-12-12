@@ -11,62 +11,66 @@
 <section>
     <div class="content">
         <header>
-            <div class="row">
-                <img height="30px" src="{% static 'images/dataset.png' %}">
-                <h2 style="text-align:left">
-                    Dataset: &nbsp;&nbsp;{{ source.name }}
-                </h2>
+
+            <div id="dataset-header-div">
+                <div class="row">
+                    <img height="30px" src="{% static 'images/dataset.png' %}">
+                    <h2 style="text-align:left">
+                        Dataset: &nbsp;&nbsp;{{ source.name }}
+                    </h2>
+                </div>
+                <div>
+                    <a class="button" href="{% url 'dataset_edit' source.pk %}">Edit</a>
+                </div>
             </div>
 
-            <a class="button" style="float:right" href="{% url 'dataset_edit' source.pk %}">Edit</a>
+            <div class="box">
 
-            <div id="tabs">
-                <ul class='etabs'>
-                    <li class='tab'><a href="#overview-tab">Overview</a></li>
-                    <li class='tab'><a href="#import-tab">Import</a></li>
-                </ul>
-                <div class="tab-container">
-                    <div id="overview-tab" class="panel-container">
-                        <div id="map-info-div">
-                            <div id="map"></div>
-                            <p id="map-info">
-                                <span style="vertical-align:top">URL: 
-                                <a href="{{ source.url }}">{{ source.url }}</a>
-                                </span>
+                <div id="map-info-div">
 
-                                <br>
+                    <div id="map"></div>
 
-                                <span style="vertical-align:top">Valid from: 
-                                {{ source.valid_from }}
-                                </span>
+                    <div id="map-info">
 
-                                <br>
+                        <span style="vertical-align:top">URL: 
+                        <a href="{{ source.url }}">{{ source.url|slice:":60" }}...</a>
+                        </span>
 
-                                <span style="vertical-align:top">Valid to: 
-                                {{ source.valid_to }}
-                                </span>
+                        <br>
 
-                                <br>
-                            
-                                <span style="vertical-align:top">Citation: 
-                                {{ source.citation }}
-                                </span>
+                        <span style="vertical-align:top">Valid from: 
+                        {{ source.valid_from }}
+                        </span>
 
-                                <br>
-                            
-                                <span style="vertical-align:top">Source Note: 
-                                {{ source.note }}
-                                </span>
-                            </p>
-                        </div>
-                    </div>
+                        <br>
 
-                    <div id="import-tab" class="panel-container">
-                        <p>Dataset is sourced through {{ source.importers.all.count }} import actions.</p>
-                        <table>
+                        <span style="vertical-align:top">Valid to: 
+                        {{ source.valid_to }}
+                        </span>
+
+                        <br>
+                    
+                        <span style="vertical-align:top">Citation: 
+                        {{ source.citation }}
+                        </span>
+
+                        <br>
+                    
+                        <span style="vertical-align:top">Source Note: 
+                        {{ source.note }}
+                        </span>
+
+                        <br>
+
+                        <span style="vertical-align:top">Input Data ({{ source.importers.all.count }}): 
+                        </span>
+
+                        <br>
+
+                        <table id="dataset-input-table">
                             <thead>
                                 <tr>
-                                    <th>Path</th>
+                                    <th>File URL</th>
                                     <th>Levels</th>
                                     <th>Last imported</th>
                                 </tr>
@@ -81,15 +85,10 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
 
+                    </div>
                 </div>
             </div>
-
-            <script>
-                // init easytabs
-                $('#tabs').easytabs({animate:false});
-            </script>
 
     </div>
 </section>

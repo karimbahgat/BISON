@@ -34,3 +34,13 @@ class DatasetImporter(models.Model):
 # class ImportJob(models.Model):
 #     importer = models.OneToOneField('DatasetImporter', related_name='importer')
 #     created = models.DateTimeField(autoadd_now=True)
+
+# OR
+
+# class ImportRunner(models.Model):
+#     represents a process that imports data from one or more importers
+#     stores its own progress and deletes itself after completing
+#     can be used to display if a dataset is currently importing and its status
+#     waits to run until next in line
+#     BUT maybe in fact we just use the DatasetImporter class
+#     and just add an import_status and import_details field to it.... 
