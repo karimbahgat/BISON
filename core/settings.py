@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from decouple import config
 import dj_database_url
@@ -23,11 +24,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
+if os.path.isfile(SECRET_KEY):
+    with open(SECRET_KEY, 'r') as secret_key_file:
+        SECRET_KEY = secret_key_file.read().rstrip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -85,11 +89,17 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+db_url = config('DATABASE_URL')
+if os.path.isfile(db_url):
+    with open(db_url, 'r') as db_url_file:
+        db_url = db_url_file.read().rstrip()
+
 DATABASES = {
-    'default': dj_database_url.config(default=config('DATABASE_URL'))
+    'default': dj_database_url.config(default=db_url)
 }
 
-if 'mysql' in DATABASES['default']['ENGINE']:
+if not os.path.isfile(db_url):
+    # ie local testing against personal mysql db
     # add remote ssl certificate for azure mysql
     SSL_CA_PATH = BASE_DIR / 'data/azure-mysql-DigiCertGlobalRootCA.crt.pem'
     DATABASES['default']['OPTIONS'] = {'ssl_ca':SSL_CA_PATH, 
