@@ -16,7 +16,7 @@ def datasources(request):
     datasets = models.AdminSource.objects.filter(type='DataSource')
     DatasetImporterFormset = modelformset_factory(DatasetImporter, 
                                         form=DatasetImporterForm,
-                                        extra=1)
+                                        extra=10)
     importer_forms = DatasetImporterFormset(queryset=models.AdminSource.objects.none())
     context = {'datasets':datasets,
                 'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource'}),
@@ -65,11 +65,24 @@ def datasource_add(request):
                                                             form=DatasetImporterForm,
                                                             extra=0)
                 importer_forms = DatasetImporterFormset(formsetdata)
-                if importer_forms.is_valid():
-                    importer_forms.save()
-                else:
-                    print(importer_forms.errors)
-                    raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
+
+                for import_form in importer_forms:
+                    if import_form.is_valid() and import_form.has_changed():
+                        #print(import_form.cleaned_data)
+                        # validate import params
+                        import_params = import_form.cleaned_data['import_params']
+                        if import_params['path']:
+                            # probably should validate some more... 
+                            import_form.save()
+                    else:
+                        # not sure how to deal with invalid forms yet....
+                        pass
+
+                #if importer_forms.is_valid():
+                #    importer_forms.save()
+                #else:
+                #    print(importer_forms.errors)
+                #    raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
 
                 return redirect('dataset', source.pk)
 

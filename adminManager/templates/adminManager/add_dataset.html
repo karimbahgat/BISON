@@ -2,6 +2,7 @@
 {% load static %}
 
 <link rel="stylesheet" href="{% static 'adminManager/css/import_params.css' %}" type="text/css">
+<script src="{% static 'adminManager/js/import_forms.js' %}"></script>
 
 <section>
     <header>
@@ -36,13 +37,18 @@
                         </table>
                     </div>
                     <div id="import-tab" class="panel-container">
+
                         {{ importer_forms.0.media }}
                         {{ importer_forms.management_form }}
                         {% for import_form in importer_forms %}
-                            <h3>Input {{ forloop.counter }}</h3>
-                            {{ import_form.source }}
-                            {{ import_form.import_params }}
+                            <div id="input-id-{{ forloop.counter }}" class="input-form-div" {% if forloop.counter > importer_forms.initial_form_count %}style="display:none"{% endif %}>
+                                <h3>Input {{ forloop.counter }}</h3>
+                                {{ import_form.source }}
+                                {{ import_form.import_params }}
+                            </div>
                         {% endfor %}
+                        <button type="button" onclick="addInputForm()">+ Add Input</button>
+
                     </div>
                 </div>
             </div>
