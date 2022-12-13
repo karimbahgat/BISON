@@ -20,7 +20,7 @@ class DatasetImporter(models.Model):
         'type': 'dict',
         'keys': {
             'path': {'type':'string'},
-            'encoding': {'type':'string', 'default':'utf8'},
+            'encoding': {'type':'string'}, #'default':'utf8'},
             'levels': LEVELS_SCHEMA,
         }
     }

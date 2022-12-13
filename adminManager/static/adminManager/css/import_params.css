@@ -25,3 +25,10 @@
     max-width: 100% !important;
     width: 100% !important; 
 }
+
+input {
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+    opacity: unset !important;
+    margin-right: unset !important;
+}
