@@ -96,17 +96,17 @@ db_url = config('DATABASE_URL')
 if os.path.isfile(db_url):
     with open(db_url, 'r') as db_url_file:
         db_url = db_url_file.read().rstrip()
-
-DATABASES = {
-    'default': dj_database_url.parse(db_url)
-}
-
-if not os.path.isfile(db_url):
+else:
     # ie local testing against personal mysql db
     # add remote ssl certificate for azure mysql
     SSL_CA_PATH = BASE_DIR / 'data/azure-mysql-DigiCertGlobalRootCA.crt.pem'
     DATABASES['default']['OPTIONS'] = {'ssl_ca':SSL_CA_PATH, 
                                         'ssl_disabled':False,}
+
+DATABASES = {
+    'default': dj_database_url.parse(db_url)
+}
+
 
 # for troubleshooting, uncomment to test that direct db connection works
 # import pymysql
