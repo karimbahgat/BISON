@@ -95,7 +95,7 @@ if os.path.isfile(db_url):
         db_url = db_url_file.read().rstrip()
 
 DATABASES = {
-    'default': dj_database_url.config(default=db_url)
+    'default': dj_database_url.parse(db_url)
 }
 
 if not os.path.isfile(db_url):
