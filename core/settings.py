@@ -14,6 +14,9 @@ import os
 from pathlib import Path
 from decouple import config
 import dj_database_url
+import pymysql
+
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,17 +96,17 @@ db_url = config('DATABASE_URL')
 if os.path.isfile(db_url):
     with open(db_url, 'r') as db_url_file:
         db_url = db_url_file.read().rstrip()
-
-DATABASES = {
-    'default': dj_database_url.config(default=db_url)
-}
-
-if not os.path.isfile(db_url):
+else:
     # ie local testing against personal mysql db
     # add remote ssl certificate for azure mysql
     SSL_CA_PATH = BASE_DIR / 'data/azure-mysql-DigiCertGlobalRootCA.crt.pem'
     DATABASES['default']['OPTIONS'] = {'ssl_ca':SSL_CA_PATH, 
                                         'ssl_disabled':False,}
+
+DATABASES = {
+    'default': dj_database_url.parse(db_url)
+}
+
 
 # for troubleshooting, uncomment to test that direct db connection works
 # import pymysql

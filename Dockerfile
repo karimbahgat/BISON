@@ -2,7 +2,9 @@
 
 FROM python:3.7-slim-buster
 
-COPY . .
+WORKDIR /opt/boundarylookup
+
+COPY . /opt/boundarylookup
 
 RUN apt-get update &&\
     apt-get install -y git &&\
