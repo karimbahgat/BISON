@@ -18,6 +18,15 @@ import pymysql
 
 pymysql.install_as_MySQLdb()
 
+
+def config_wrapper(env_var, **kwargs):
+    '''Allow reading env vars from file pointers.'''
+    if os.path.isfile(env_var):
+        with open(env_var, 'r') as fobj:
+            env_var = fobj.read().rstrip()
+    return config(env_var, **kwargs)
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,13 +35,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
-if os.path.isfile(SECRET_KEY):
-    with open(SECRET_KEY, 'r') as secret_key_file:
-        SECRET_KEY = secret_key_file.read().rstrip()
+SECRET_KEY = config_wrapper('SECRET_KEY', default='abcdefghijklmnop')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config_wrapper('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
@@ -92,21 +98,17 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-db_url = config('DATABASE_URL')
-if os.path.isfile(db_url):
-    with open(db_url, 'r') as db_url_file:
-        db_url = db_url_file.read().rstrip()
-else:
-    # ie local testing against personal mysql db
-    # add remote ssl certificate for azure mysql
-    SSL_CA_PATH = BASE_DIR / 'data/azure-mysql-DigiCertGlobalRootCA.crt.pem'
-    DATABASES['default']['OPTIONS'] = {'ssl_ca':SSL_CA_PATH, 
-                                        'ssl_disabled':False,}
-
+db_url = config_wrapper('DATABASE_URL', default='sqlite:///db.sqlite3')
 DATABASES = {
     'default': dj_database_url.parse(db_url)
 }
 
+# add remote db ssl if specified
+db_ssl = config_wrapper('DATABASE_SSL_CA_PATH', default=None)
+if db_ssl:
+    db_ssl = BASE_DIR / db_ssl
+    DATABASES['default']['OPTIONS'] = {'ssl_ca':db_ssl, 
+                                        'ssl_disabled':False,}
 
 # for troubleshooting, uncomment to test that direct db connection works
 # import pymysql
@@ -158,12 +160,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # non-app specific static folders
 STATICFILES_DIRS = [
     BASE_DIR / 'core' / 'static',
-    BASE_DIR / 'adminGeocoder' / 'static',
-    BASE_DIR / 'adminManager' / 'static',
 ]
 
 # Default primary key field type
