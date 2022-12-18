@@ -21,9 +21,13 @@ pymysql.install_as_MySQLdb()
 
 def config_wrapper(env_var, **kwargs):
     '''Allow reading env vars from file pointers.'''
+    # if env var is a file, read value and set as env var (so can be read by decouple)
     if os.path.isfile(env_var):
         with open(env_var, 'r') as fobj:
-            env_var = fobj.read().rstrip()
+            os.environ[env_var] = fobj.read().rstrip()
+    
+    # use decouple to read from either .env file or env vars
+    # and allow kwargs like cast and default
     return config(env_var, **kwargs)
 
 
