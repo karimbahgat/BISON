@@ -10,7 +10,6 @@ RUN apt-get update &&\
     apt-get install -y git &&\
     pip3 install -r requirements.txt &&\
     apt-get remove -y git &&\
-    apt autoremove -y &&\
-    python manage.py collectstatic
+    apt autoremove -y
 
 CMD ["gunicorn", "-w 2", "-b 0.0.0.0:8000", "core.wsgi", "--timeout", "300"]
