@@ -13,4 +13,4 @@ RUN apt-get update &&\
     apt autoremove -y &&\
     python manage.py collectstatic
 
-CMD ["gunicorn", "-w 2", "-b 0.0.0.0:8000", "core.wsgi", "--timeout", "300"]
+CMD ["sh", "start.sh"]
