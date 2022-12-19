@@ -19,18 +19,13 @@ import pymysql
 pymysql.install_as_MySQLdb()
 
 
-def config_wrapper(env_var, **kwargs):
-    '''Allow reading env vars from file pointers.'''
-    # use decouple to read from either .env file or env vars
-    # and allow kwargs like cast and default
-    val = config(env_var, **kwargs)
+def fromfile(value, **kwargs):
+    '''If value is a file path, read value from file contents.'''
+    if isinstance(value, str) and os.path.isfile(value):
+        with open(value, 'r') as fobj:
+            value = fobj.read().rstrip()
 
-    # if value of env var is a file path, read value from the file contents
-    if isinstance(val, str) and os.path.isfile(val):
-        with open(val, 'r') as fobj:
-            val = fobj.read().rstrip()
-
-    return val
+    return value
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -41,10 +36,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config_wrapper('SECRET_KEY', default='abcdefghijklmnop')
+SECRET_KEY = fromfile(config('SECRET_KEY', default='abcdefghijklmnop'))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config_wrapper('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
@@ -106,13 +101,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-db_url = config_wrapper('DATABASE_URL', default='sqlite:///db.sqlite3')
+db_url = fromfile(config('DATABASE_URL', default='sqlite:///db.sqlite3'))
 DATABASES = {
     'default': dj_database_url.parse(db_url)
 }
 
 # add remote db ssl if specified
-db_ssl = config_wrapper('DATABASE_SSL_CA_PATH', default=None)
+db_ssl = config('DATABASE_SSL_CA_PATH', default=None)
 if db_ssl:
     db_ssl = BASE_DIR / db_ssl
     DATABASES['default']['OPTIONS'] = {'ssl_ca':db_ssl, 
