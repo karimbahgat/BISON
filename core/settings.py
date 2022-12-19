@@ -26,7 +26,7 @@ def config_wrapper(env_var, **kwargs):
     val = config(env_var, **kwargs)
 
     # if value of env var is a file path, read value from the file contents
-    if os.path.isfile(val):
+    if isinstance(val, str) and os.path.isfile(val):
         with open(val, 'r') as fobj:
             val = fobj.read().rstrip()
 
