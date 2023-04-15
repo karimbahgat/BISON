@@ -20,6 +20,7 @@
                     </h2>
                 </div>
                 <div>
+                    <a class="button" href="{% url 'dataset_delete' source.pk %}" onclick="return confirm('This will delete the source and all of its data.')">Delete</a>
                     <a class="button" href="{% url 'dataset_edit' source.pk %}">Edit</a>
                 </div>
             </div>
@@ -62,26 +63,30 @@
 
                         <br>
 
-                        <span style="vertical-align:top">Input Data ({{ source.importers.all.count }}): 
-                        </span>
-
-                        <br>
+                        <div id="import-menu">
+                            <span>Processed: {{ processed_count }} of {{ source.importers.all.count }}</span>
+                            <span>Failed: {{ fail_count }}</span>
+                            <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')">Clear Data</a>
+                            <a class="button small" href="{% url 'datasource_import' source.pk %}">Import Pending</a>
+                        </div>
 
                         <div id="dataset-input-table">
                         <table>
                             <thead>
                                 <tr>
                                     <th>File URL</th>
-                                    <th>Levels</th>
-                                    <th>Last imported</th>
+                                    <th>Level</th>
+                                    <th>Status</th>
+                                    <th>Status updated</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for importer in source.importers.all %}
                                     <tr>
-                                        <td>{{ importer.import_params.path }}</td>
-                                        <td>{{ importer.import_params.levels|length }}</td>
-                                        <td>{{ importer.last_imported }}</td>
+                                        <td><a href="{{ importer.import_params.path }}" target="_blank">{{ importer.import_params.path|slice:"-16:" }}</a></td>
+                                        <td>{% with importer.import_params.levels|last as last %}{{ last.level }}{% endwith %}</td>
+                                        <td><span class="importer-status" data-status="{{ importer.import_status }}">{{ importer.import_status }}<span></td>
+                                        <td>{{ importer.status_updated }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -96,5 +101,12 @@
 </section>
 
 <script src="{% static 'adminManager/js/source_data.js' %}"></script>
+
+<script>
+    // add src geojson to map
+    coll = "{{ toplevel_geojson|safe }}";
+    feats = new ol.format.GeoJSON().readFeatures(coll, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+    resultLayer.getSource().addFeatures(feats);
+</script>
 
 {% endblock %}

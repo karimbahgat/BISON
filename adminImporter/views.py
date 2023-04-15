@@ -1,15 +1,15 @@
-import enum
 from django.shortcuts import render, redirect
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.db.models.functions import Upper
 
 import os
 import csv
 import logging
 import traceback
 
-from .models import DatasetImporter #, ImportJob
+from .models import DatasetImporter
 from adminManager import models
 
 # Create your views here.
@@ -35,9 +35,8 @@ from adminManager import models
 #         except Exception as err:
 #             print('error importing source:', err)
 
-@csrf_exempt
-def datasource_import(request, pk):
-    '''Import all DatasetImporters defined for a source'''
+def datasource_clear(request, pk):
+    '''Delete all boundaries from a source'''
     source = models.AdminSource(pk=pk)
 
     # start db transaction
@@ -45,18 +44,41 @@ def datasource_import(request, pk):
         # drop all existing source data
         source.admins.all().delete()
 
-        # loop all related importers
+        # reset all importers
+        importers = list(source.importers.all())
+        for importer in importers:
+            importer.import_status = 'Pending'
+            importer.status_updated = timezone.now()
+        DatasetImporter.objects.bulk_update(importers, ['import_status','status_updated'])
 
-        # schedule import job
+    return redirect('dataset', source.pk)
+
+def datasource_import(request, pk):
+    '''Import all DatasetImporters defined for a source'''
+    source = models.AdminSource(pk=pk)
+
+    # loop all pending importers
+    for importer in source.importers.filter(import_status='Pending'):
+        # update status
+        importer.import_status = 'Importing'
+        importer.status_updated = timezone.now()
+        importer.save()
+
+        # run the import
+        try:
+            run_importer(importer)
+            importer.import_status = 'Imported'
+        except:
+            print('ERROR:', traceback.format_exc())
+            importer.import_status = 'Failed'
+
+        # update status
+        importer.status_updated = timezone.now()
+        importer.save()
 
 @csrf_exempt
-def schedule_importer(request, pk):
-    '''Schedule running a DatasetImporter by adding an ImportJob to a queue'''
-    fsdfsdfd
-
-def run_importjob(job):
-    '''Runs a specific ImportJob'''
-    importer = job.importer
+def run_importer(importer):
+    '''Runs a specific Importer, this is done by a backend, not a user'''
     source = importer.source
 
     #if request.method == 'GET':
@@ -64,143 +86,122 @@ def run_importjob(job):
 
     #elif request.method == 'POST':
 
-    if True:
-        import shapefile
-        import tempfile
+    import shapefile
+    import tempfile
 
-        # required post args:
-        # - date
-        # - name_field (str or list)
-        # - iso or iso_field: shortcut to lookup name for level 0
+    # required post args:
+    # - date
+    # - name_field (str or list)
+    # - iso or iso_field: shortcut to lookup name for level 0
 
-        print('POST', request.POST)
+    #print('POST', request.POST)
 
-        # load import params
-        params = importer.import_params.copy()
-        print('params', params)
+    # load import params
+    params = importer.import_params.copy()
+    print('params', params)
 
-        # load country data
-        # WARNING: globals vars is not very good
-        global iso2_to_3, iso3_to_name, name_to_iso3
-        iso2_to_3 = {}
-        iso3_to_name = {}
-        name_to_iso3 = {}
-        filedir = os.path.dirname(__file__)
-        with open(os.path.join(filedir, 'scripts/countries_codes_and_coordinates.csv'), encoding='utf8', newline='') as f:
-            csvreader = csv.DictReader(f)
-            for row in csvreader:
-                name = row['Country'].strip().strip('"')
-                iso2 = row['Alpha-2 code'].strip().strip('"')
-                iso3 = row['Alpha-3 code'].strip().strip('"')
-                iso2_to_3[iso2] = iso3
-                iso3_to_name[iso3] = name
-                name_to_iso3[name] = iso3
+    # load country data
+    # WARNING: globals vars is not very good
+    global iso2_to_3, iso3_to_name, name_to_iso3
+    iso2_to_3 = {}
+    iso3_to_name = {}
+    name_to_iso3 = {}
+    filedir = os.path.dirname(__file__)
+    with open(os.path.join(filedir, 'scripts/countries_codes_and_coordinates.csv'), encoding='utf8', newline='') as f:
+        csvreader = csv.DictReader(f)
+        for row in csvreader:
+            name = row['Country'].strip().strip('"')
+            iso2 = row['Alpha-2 code'].strip().strip('"')
+            iso3 = row['Alpha-3 code'].strip().strip('"')
+            iso2_to_3[iso2] = iso3
+            iso3_to_name[iso3] = name
+            name_to_iso3[name] = iso3
 
-        # # load country
-        # iso = request.POST.get('iso', '')
-        # iso = iso2_to_3[iso] if len(iso)==2 else iso
-        
-        # stream any uploaded zipfile to disk (to avoid memory crash)
-        temps = []
-        for input_name,fobj in request.FILES.items():
-            filename = fobj.name
-            if not filename.endswith('.zip'):
-                raise Exception('Uploaded file must end with .zip, not: {}'.format(filename))
-            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp:
-                temps.append(temp)
-                temppath = temp.name
-                for chunk in fobj.chunks():
-                    temp.write(chunk)
+    # # load country
+    # iso = request.POST.get('iso', '')
+    # iso = iso2_to_3[iso] if len(iso)==2 else iso
+    
+    # stream any uploaded zipfile to disk (to avoid memory crash)
+    # temps = []
+    # for input_name,fobj in request.FILES.items():
+    #     filename = fobj.name
+    #     if not filename.endswith('.zip'):
+    #         raise Exception('Uploaded file must end with .zip, not: {}'.format(filename))
+    #     with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp:
+    #         temps.append(temp)
+    #         temppath = temp.name
+    #         for chunk in fobj.chunks():
+    #             temp.write(chunk)
 
-        # parse date
-        def parse_date(dateval):
-            '''Can be a year, year-month, or year-month-day'''
-            dateparts = dateval.split('-')
-            if len(dateparts) == 1:
-                yr = dateparts[0]
-                start = '{}-01-01'.format(yr)
-                end = '{}-12-31'.format(yr)
-            elif len(dateparts) == 2:
-                yr,mn = dateparts
-                start = '{}-{}-01'.format(yr,mn)
-                end = '{}-{}-31'.format(yr,mn)
-            elif len(dateparts) == 3:
-                start = end = dateval
-            else:
-                raise Exception('"{}" is not a valid date'.format(dateval))
-            return start,end
-
-        if params['valid_from'] and params['valid_to']:
-            start1,end1 = parse_date(str(params['valid_from']))
-            start2,end2 = parse_date(str(params['valid_to']))
-            start = min(start1,start2)
-            end = max(end1, end2)
+    # parse date
+    def parse_date(dateval):
+        '''Can be a year, year-month, or year-month-day'''
+        dateparts = dateval.split('-')
+        if len(dateparts) == 1:
+            yr = dateparts[0]
+            start = '{}-01-01'.format(yr)
+            end = '{}-12-31'.format(yr)
+        elif len(dateparts) == 2:
+            yr,mn = dateparts
+            start = '{}-{}-01'.format(yr,mn)
+            end = '{}-{}-31'.format(yr,mn)
+        elif len(dateparts) == 3:
+            start = end = dateval
         else:
-            start = end = None
+            raise Exception('"{}" is not a valid date'.format(dateval))
+        return start,end
 
-        # get source
-        # source_name = params['source'][0]
-        # source = models.BoundarySource.objects.filter(name=source_name).first()
-        # if not source:
-        #     source_cite = request.POST.get('source_citation', '')
-        #     source_note = request.POST.get('source_note', '')
-        #     source_url = request.POST.get('source_url', '')
-        #     source = models.BoundarySource(type="DataSource",
-        #                                     name=source_name,
-        #                                     citation=source_cite,
-        #                                     note=source_note,
-        #                                     url=source_url,
-        #                                     )
-        #     source.save()
+    # TODO: i think maybe this should be from the source instead? 
+    if False: #params['valid_from'] and params['valid_to']:
+        start1,end1 = parse_date(str(params['valid_from']))
+        start2,end2 = parse_date(str(params['valid_to']))
+        start = min(start1,start2)
+        end = max(end1, end2)
+    else:
+        start = end = None
 
-        # nest multiple inputs
-        if 'input' not in params:
-            raise Exception("metadata file doesn't have correct format")
-        input_arg = params.pop('input')
-        if isinstance(input_arg, str):
-            inputs = [{'path':input_arg}]
-        elif isinstance(input_arg, list):
-            inputs = input_arg
-        else:
-            raise Exception("metadata file contains an error (input arg must be either string or list of dicts)")
+    # get source
+    # source_name = params['source'][0]
+    # source = models.BoundarySource.objects.filter(name=source_name).first()
+    # if not source:
+    #     source_cite = request.POST.get('source_citation', '')
+    #     source_note = request.POST.get('source_note', '')
+    #     source_url = request.POST.get('source_url', '')
+    #     source = models.BoundarySource(type="DataSource",
+    #                                     name=source_name,
+    #                                     citation=source_cite,
+    #                                     note=source_note,
+    #                                     url=source_url,
+    #                                     )
+    #     source.save()
 
-        # run one or more imports
-        error_count = 0
-        for sub_params in inputs:
-            _params = params.copy()
-            _params.update(sub_params)
-            _params['input_path'] = _params.pop('path') # rename path arg
-            print('')
-            print('-'*30)
-            print('import args', _params)
+    # run import
+    _params = params
+    _params['input_path'] = _params.pop('path') # rename path arg
+    print('')
+    print('-'*30)
+    print('import args', _params)
 
-            try:
-                # open and parse data
-                reader,data = parse_data(**_params)
+    # open and parse data
+    reader,data = parse_data(**_params)
 
-                # add to db
-                print('adding to db')
-                common = {'source':source, 'start':start, 'end':end}
-                add_to_db(reader, common, data)
+    # add to db
+    print('adding to db')
+    common = {'source':source, 'start':start, 'end':end}
+    with transaction.atomic():
+        add_to_db(reader, common, data)
 
-            except Exception as err:
-                error_count += 1
-                logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
-                continue
+    #except Exception as err:
+    #    error_count += 1
+    #    logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
+    #    continue
 
-        # report errors
-        print(f'all inputs processed, of which {error_count} had errors and were skipped')
+    # delete tempfiles
+    # for temp in temps:
+    #     os.remove(temp.name)
 
-        # update last imported
-        importer.last_imported = timezone.now()
-        importer.save()
-
-        # delete tempfiles
-        for temp in temps:
-            os.remove(temp.name)
-
-        # redirect
-        return redirect('source', pk)
+    # redirect
+    #return redirect('source', source.pk)
 
 def download_file(urlpath):
     from urllib.request import urlretrieve
@@ -335,7 +336,15 @@ def parse_data(**params):
             # override all level 0 with a single iso country lookup
             # WARNING: this assumes that id_field is iso code if is set for level0
             if level == 0 and groupval:
-                level_def['name'] = iso3_to_name[groupval]
+                try:
+                    if len(groupval) == 2:
+                        level_def['name'] = iso3_to_name[iso2_to_3[groupval]]
+                    elif len(groupval) == 3:
+                        level_def['name'] = iso3_to_name[groupval]
+                    else:
+                        continue
+                except KeyError:
+                    continue
             # item
             item = {'id':groupval, 'level':level_def['level'], 
                     'positions':_subset}
@@ -388,7 +397,7 @@ def add_to_db(reader, common, entries, parent=None):
     start = common['start']
     end = common['end']
     for entry in entries:
-        #print(entry['item'])
+        print(entry['item'])
 
         groupval = entry['item']['id']
         level = entry['item']['level']
@@ -396,7 +405,14 @@ def add_to_db(reader, common, entries, parent=None):
         subset = entry['item']['positions']
         if not name:
             continue
-        name_obj,created = models.AdminName.objects.get_or_create(name=name)
+        #name_obj,created = models.AdminName.objects.get_or_create(name__iexact=name.upper())
+        try:
+            name_obj = models.AdminName.objects.alias(name_upper=Upper('name')).get(name_upper=name.upper())
+            #print('name found')
+        except:
+            name_obj = models.AdminName(name=name)
+            name_obj.save()
+            #print('name created')
 
         if entry['children']:
             print(entry['item'])

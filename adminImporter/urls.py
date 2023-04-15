@@ -19,6 +19,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('datasource/clear/<int:pk>/', views.datasource_clear, name='datasource_clear'),
     path('datasource/import/<int:pk>/', views.datasource_import, name='datasource_import'),
     #path('datasource/import_all/', views.datasource_import_all, name='datasource_import_all'),
 ]

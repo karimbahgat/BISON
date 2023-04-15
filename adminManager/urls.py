@@ -23,4 +23,5 @@ urlpatterns = [
     path('datasets/<int:pk>/', views.datasource, name='dataset'),
     path('datasets/add/', views.datasource_add, name='dataset_add'),
     path('datasets/<int:pk>/edit/', views.datasource_edit, name='dataset_edit'),
+    path('datasets/<int:pk>/delete/', views.datasource_delete, name='dataset_delete'),
 ]

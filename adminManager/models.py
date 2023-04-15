@@ -92,11 +92,11 @@ class AdminName(models.Model):
     name = models.CharField(max_length=100)
 
     # for now just manually add index w collate nocase
-    #class Meta:
-    #    indexes = [
-    #        models.Index(Upper('name'),
-    #                    name='adminManage_name_upper_idx'), 
-    #    ]
+    class Meta:
+        indexes = [
+            models.Index(Upper('name'),
+                        name='admin_name_upper_idx'), 
+        ]
 
     def __str__(self):
         return f'{self.name}'
@@ -114,3 +114,19 @@ class AdminSource(models.Model):
     citation = models.TextField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
     url = models.URLField(blank=True, null=True)
+
+    def toplevel_geojson(self):
+        toplevel = self.admins.filter(parent=None, geom__isnull=False)
+        print(toplevel.count())
+        feats = []
+        for admin in toplevel:
+            try:
+                info = admin.serialize(geom=True)
+                geom = info.pop('geom')
+                feat = {'type':'Feature', 'properties':info, 'geometry':geom}
+                feats.append(feat)
+            except Exception as err:
+                print('feature error', err)
+        coll = {'type':'FeatureCollection', 'features':feats}
+        return coll
+

@@ -27,14 +27,27 @@ def datasources(request):
 def datasource(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)
-    toplevel_refs = src.admins.filter(parent=None)
-    context = {'source':src, 'toplevel_refs':toplevel_refs}
+    processed_count = src.importers.filter(import_status__in=["Imported","Failed"]).count()
+    fail_count = src.importers.filter(import_status="Failed").count()
+    context = {
+        'source':src,
+        'processed_count':processed_count,
+        'fail_count':fail_count,
+        'toplevel_geojson':'', #json.dumps(src.toplevel_geojson()),
+    }
 
     print('typ',src,repr(src.type))
+    print([imp.import_params for imp in src.importers.all()])
 
     assert src.type == 'DataSource'
     
     return render(request, 'adminManager/source_data.html', context)
+
+def datasource_delete(request, pk):
+    '''Delete a source'''
+    src = models.AdminSource.objects.get(pk=pk)
+    src.delete()
+    return redirect('datasets')
 
 def datasource_add(request):
     if request.method == 'GET':

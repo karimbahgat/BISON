@@ -30,4 +30,35 @@
     overflow: auto;
 }
 
+#import-menu {
+    display: flex;
+    justify-content: space-between;
+}
+
+.importer-status {
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.importer-status[data-status="Pending"] {
+    background-color: gray;
+    color: white;
+}
+
+.importer-status[data-status="Importing"] {
+    background-color: orange;
+    color: white;
+}
+
+.importer-status[data-status="Imported"] {
+    background-color: green;
+    color: white;
+}
+
+.importer-status[data-status="Failed"] {
+    background-color: orangered;
+    color: white;
+}
+
+
 
