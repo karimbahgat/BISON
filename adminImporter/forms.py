@@ -5,7 +5,7 @@ from .models import DatasetImporter
 class DatasetImporterForm(ModelForm):
     class Meta:
         model = DatasetImporter
-        exclude = ['last_imported']
+        exclude = ['import_status', 'status_updated']
         widgets = {
             'source': HiddenInput()
         }

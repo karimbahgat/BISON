@@ -8,6 +8,7 @@ import os
 import csv
 import logging
 import traceback
+import threading
 
 from .models import DatasetImporter
 from adminManager import models
@@ -55,6 +56,11 @@ def datasource_clear(request, pk):
 
 def datasource_import(request, pk):
     '''Import all DatasetImporters defined for a source'''
+    thread = threading.Thread(target=_datasource_import, args=(pk,))
+    thread.start()
+    return redirect('dataset', pk)
+
+def _datasource_import(pk):
     source = models.AdminSource(pk=pk)
 
     # loop all pending importers
@@ -330,7 +336,7 @@ def parse_data(**params):
         # ...The adm level has to be explicitly defined by level_def['level'].
         data = []
         level_def = level_defs[level]
-        group_field = level_def['id_field'] if level_def['level'] > 0 else level_def.get('id_field', None) # id not required for adm0
+        group_field = level_def['id_field'] if int(level_def['level']) > 0 else level_def.get('id_field', None) # id not required for adm0
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, subset):
             # override all level 0 with a single iso country lookup
@@ -397,7 +403,7 @@ def add_to_db(reader, common, entries, parent=None):
     start = common['start']
     end = common['end']
     for entry in entries:
-        print(entry['item'])
+        #print(entry['item'])
 
         groupval = entry['item']['id']
         level = entry['item']['level']

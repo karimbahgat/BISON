@@ -37,7 +37,6 @@ def datasource(request, pk):
     }
 
     print('typ',src,repr(src.type))
-    print([imp.import_params for imp in src.importers.all()])
 
     assert src.type == 'DataSource'
     
@@ -80,7 +79,7 @@ def datasource_add(request):
                 importer_forms = DatasetImporterFormset(formsetdata)
 
                 for import_form in importer_forms:
-                    if import_form.is_valid() and import_form.has_changed():
+                    if import_form.is_valid():
                         #print(import_form.cleaned_data)
                         # validate import params
                         import_params = import_form.cleaned_data['import_params']
@@ -89,7 +88,7 @@ def datasource_add(request):
                             import_form.save()
                     else:
                         # not sure how to deal with invalid forms yet....
-                        pass
+                        raise Exception(f'invalid form: {import_form.errors}')
 
                 #if importer_forms.is_valid():
                 #    importer_forms.save()
@@ -135,20 +134,21 @@ def datasource_edit(request, pk):
                                                             extra=0, can_delete=True)
                 importer_forms = DatasetImporterFormset(data)
                 for import_form in importer_forms:
-                    if import_form.is_valid() and import_form.has_changed():
-                        #print(import_form.cleaned_data)
-                        # check for deletion
-                        if import_form.cleaned_data['DELETE']:
-                            import_form.instance.delete()
-                            continue
-                        # validate import params
-                        import_params = import_form.cleaned_data['import_params']
-                        if import_params['path']:
-                            # probably should validate some more... 
-                            import_form.save()
+                    if import_form.is_valid():
+                        if import_form.has_changed():
+                            #print(import_form.cleaned_data)
+                            # check for deletion
+                            if import_form.cleaned_data['DELETE']:
+                                import_form.instance.delete()
+                                continue
+                            # validate import params
+                            import_params = import_form.cleaned_data['import_params']
+                            if import_params['path']:
+                                # probably should validate some more... 
+                                import_form.save()
                     else:
                         # not sure how to deal with invalid forms yet....
-                        pass
+                        raise Exception(f'invalid form: {import_form.errors}')
                         
                 #if importer_forms.is_valid():
                 #    importer_forms.save()
