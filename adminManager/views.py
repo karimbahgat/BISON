@@ -33,7 +33,7 @@ def datasource(request, pk):
         'source':src,
         'processed_count':processed_count,
         'fail_count':fail_count,
-        'toplevel_geojson':'', #json.dumps(src.toplevel_geojson()),
+        'toplevel_geojson':json.dumps(src.toplevel_geojson()),
     }
 
     print('typ',src,repr(src.type))

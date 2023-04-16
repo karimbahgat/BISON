@@ -385,13 +385,18 @@ def dissolve(geoms, dissolve_buffer=None):
     print('dissolving',len(geoms))
     # dissolve into one geometry
     if len(geoms) > 1:
+        #print('loading shape')
         geoms = [shape(geom) for geom in geoms]
+        #print('buffering')
         geoms = [geom.buffer(dissolve_buffer) for geom in geoms] # fill in gaps prior to merging to avoid nasty holes causing geometry invalidity
+        #print('unioning')
         dissolved = cascaded_union(geoms)
+        #print('finishing')
         dissolved = dissolved.buffer(-dissolve_buffer) # shrink back the buffer after gaps have been filled and merged
         # attempt to fix any remaining invalid result
         if not dissolved.is_valid:
             dissolved = dissolved.buffer(0)
+        #print('geo interface')
         dissolved_geom = dissolved.__geo_interface__
     else:
         dissolved_geom = geoms[0]['geometry']
@@ -421,7 +426,7 @@ def add_to_db(reader, common, entries, parent=None):
             #print('name created')
 
         if entry['children']:
-            print(entry['item'])
+            print('parent node:', entry['item'])
 
             # create parent node
             ref = models.Admin(parent=parent, source=source, level=level)
@@ -433,7 +438,7 @@ def add_to_db(reader, common, entries, parent=None):
 
         else:
             # reached leaf node
-            #print('leaf node!')
+            print('leaf node:', entry['item'])
             # get geometry, dissolve if multiple with same id
             assert len(subset) >= 1
             if len(subset) == 1:
@@ -445,6 +450,7 @@ def add_to_db(reader, common, entries, parent=None):
                         for i in subset]
                 geom = dissolve(geoms) #, dissolve_buffer)
             # create ref
+            #print('saving')
             ref = models.Admin(parent=parent, source=source, level=level, 
                                 geom=geom, valid_from=start, valid_to=end)
             ref.save()

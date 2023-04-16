@@ -98,7 +98,7 @@ def api_search_name_hierarchy(request):
 
     # search admins that match on name (lowest level)
     matches = models.Admin.objects.filter(names__name__istartswith=searches[0], 
-                                        minx__isnull=False) # only those with geoms
+                                        geom__isnull=False) # only those with geoms
     matches = list(matches)
     print('db fetched',len(matches))
 

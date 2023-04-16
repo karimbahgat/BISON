@@ -83,7 +83,7 @@
                             <tbody>
                                 {% for importer in source.importers.all %}
                                     <tr>
-                                        <td><a href="{{ importer.import_params.path }}" target="_blank">{{ importer.import_params.path|slice:"-16:" }}</a></td>
+                                        <td><a href="{{ importer.import_params.path }}" target="_blank">...{{ importer.import_params.path|slice:"-16:" }}</a></td>
                                         <td>{% with importer.import_params.levels|last as last %}{{ last.level }}{% endwith %}</td>
                                         <td><span class="importer-status" data-status="{{ importer.import_status }}">{{ importer.import_status }}<span></td>
                                         <td>{{ importer.status_updated }}</td>
@@ -104,9 +104,10 @@
 
 <script>
     // add src geojson to map
-    coll = "{{ toplevel_geojson|safe }}";
+    coll = `{{ toplevel_geojson|safe }}`;
     feats = new ol.format.GeoJSON().readFeatures(coll, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
     resultLayer.getSource().addFeatures(feats);
+    zoomMapToAllResults();
 </script>
 
 {% endblock %}

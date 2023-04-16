@@ -54,10 +54,10 @@ var resultLabelStyle = new ol.style.Style({
 
 // layer
 function getStyle(feature) {
-    var labelStyle = resultLabelStyle.clone();
-    label = `${feature.getId()}: ${feature.get('displayName')}`;
-    labelStyle.getText().setText(label);
-    return [resultStyle,labelStyle];
+    //var labelStyle = resultLabelStyle.clone();
+    //label = `${feature.getId()}: ${feature.get('displayName')}`;
+    //labelStyle.getText().setText(label);
+    return [resultStyle]; //,labelStyle];
 }
 var resultLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),

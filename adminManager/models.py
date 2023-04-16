@@ -3,7 +3,11 @@ from django.db.models.functions import Upper
 
 from django.forms.models import model_to_dict
 
-from djangowkb.fields import GeometryField
+#from djangowkb.fields import GeometryField
+from .fields import GeometryField
+from .geometry import WKBGeometry
+
+import traceback
 
 # Create your models here.
 
@@ -16,7 +20,7 @@ class Admin(models.Model):
     level = models.IntegerField(null=True, blank=True) # just to indicate the self-described admin-level of the ref
     valid_from = models.DateField(null=True, blank=True)
     valid_to = models.DateField(null=True, blank=True)
-    geom = GeometryField() #null=True, blank=True)
+    geom = GeometryField(null=True, blank=True)
 
     minx = models.FloatField(null=True, blank=True)
     miny = models.FloatField(null=True, blank=True)
@@ -34,8 +38,10 @@ class Admin(models.Model):
 
     def save(self, *args, **kwargs):
         # auto set bbox attrs
-        #if self.geom and self.geom.wkb: # TODO: need to fix django-wkb to handle empty wkb strings and/or use None instead
-        #    self.minx,self.miny,self.maxx,self.maxy = self.geom.bbox()
+        if self.geom: 
+            if not isinstance(self.geom, WKBGeometry):
+                self.geom = WKBGeometry(self.geom)
+            self.minx,self.miny,self.maxx,self.maxy = self.geom.bbox()
         # normal save
         super(Admin, self).save(*args, **kwargs)
 
@@ -117,16 +123,36 @@ class AdminSource(models.Model):
 
     def toplevel_geojson(self):
         toplevel = self.admins.filter(parent=None, geom__isnull=False)
-        print(toplevel.count())
+        #print(toplevel.count())
+        toplevel_sql = toplevel.query
+
+        from django.db import connection
+        import json
+        cur = connection.cursor()
+        sql = f'select id, st_asgeojson(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
+        cur.execute(sql)
+
         feats = []
-        for admin in toplevel:
+        for id,geom in cur:
             try:
-                info = admin.serialize(geom=True)
-                geom = info.pop('geom')
+                info = {} #admin.serialize(geom=True)
+                geom = json.loads(geom)
                 feat = {'type':'Feature', 'properties':info, 'geometry':geom}
                 feats.append(feat)
-            except Exception as err:
-                print('feature error', err)
+            except:
+                print('feature error:', traceback.format_exc())
+
+        # feats = []
+        # for admin in toplevel:
+        #     try:
+        #         info = {} #admin.serialize(geom=True)
+        #         geom = admin.geom #info.pop('geom')
+        #         feat = {'type':'Feature', 'properties':info, 'geometry':geom}
+        #         feats.append(feat)
+        #     except:
+        #         print('feature error:', traceback.format_exc())
+
         coll = {'type':'FeatureCollection', 'features':feats}
+        print(repr(coll)[:100])
         return coll
 
