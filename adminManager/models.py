@@ -32,9 +32,9 @@ class Admin(models.Model):
             models.Index(fields=['minx','miny','maxx','maxy']), 
         ]
 
-    def __str__(self):
-        hierarchy_names = [p.names.first().name for p in self.get_all_parents()]
-        return f'{", ".join(hierarchy_names)}'
+    #def __str__(self):
+    #    hierarchy_names = [p.names.first().name for p in self.get_all_parents()]
+    #    return f'{", ".join(hierarchy_names)}'
 
     def save(self, *args, **kwargs):
         # auto set bbox attrs

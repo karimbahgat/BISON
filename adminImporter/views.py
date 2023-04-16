@@ -9,6 +9,7 @@ import csv
 import logging
 import traceback
 import threading
+import itertools
 
 from .models import DatasetImporter
 from adminManager import models
@@ -408,10 +409,13 @@ def dissolve(geoms, dissolve_buffer=None):
     
     return dissolved_geom
 
-def add_to_db(reader, common, entries, parent=None):
+def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=None):
     source = common['source']
     start = common['start']
     end = common['end']
+    admins = admins or []
+    names = names or []
+    save_every = 100  # bulk save when admins gets bigger than X
     for entry in entries:
         #print(entry['item'])
 
@@ -419,6 +423,8 @@ def add_to_db(reader, common, entries, parent=None):
         level = entry['item']['level']
         name = entry['item']['name']
         subset = entry['item']['positions']
+
+        # get names
         if not name:
             continue
         #name_obj,created = models.AdminName.objects.get_or_create(name__iexact=name.upper())
@@ -427,19 +433,19 @@ def add_to_db(reader, common, entries, parent=None):
             #print('name found')
         except:
             name_obj = models.AdminName(name=name)
-            name_obj.save()
+            names.append(name_obj) #name_obj.save()
             #print('name created')
 
         if entry['children']:
             print('parent node:', entry['item'])
 
             # create parent node
-            ref = models.Admin(parent=parent, source=source, level=level)
-            ref.save()
-            ref.names.add(name_obj)
+            admin = models.Admin(parent=parent, source=source, level=level)
+            admins.append({'obj':admin, 'names':[name_obj], 'depth':depth}) #admin.save()
+            #admin.names.add(name_obj)
 
             # process all children one level deeper
-            add_to_db(reader, common, entry['children'], parent=ref)
+            add_to_db(reader, common, entry['children'], parent=admin, depth=depth+1, admins=admins, names=names)
 
         else:
             # reached leaf node
@@ -456,7 +462,34 @@ def add_to_db(reader, common, entries, parent=None):
                 geom = dissolve(geoms) #, dissolve_buffer)
             # create ref
             #print('saving')
-            ref = models.Admin(parent=parent, source=source, level=level, 
+            admin = models.Admin(parent=parent, source=source, level=level, 
                                 geom=geom, valid_from=start, valid_to=end)
-            ref.save()
-            ref.names.add(name_obj)
+            admins.append({'obj':admin, 'names':[name_obj], 'depth':depth}) #admin.save()
+            #admin.names.add(name_obj)
+
+        if len(admins) >= 100:
+            print(f'saving {len(names)} names, {len(admins)} admins...')
+            if names:
+                models.AdminName.objects.bulk_create(names)
+            depth_key = lambda x: x['depth']
+            for _depth,_admins in itertools.groupby(sorted(admins, key=depth_key), key=depth_key):
+                print(_depth, [(x['obj'],x['obj'].parent) for x in _admins])
+                models.Admin.objects.bulk_create([x['obj'] for x in _admins])
+                print(_depth, [(x['obj'],x['obj'].parent) for x in _admins])
+            for x in admins:
+                print(x['obj'], x['names'])
+                x['obj'].names.add(*x['names'])
+            admins = []
+            names = []
+
+    # save any remaining objects
+    print(f'saving {len(names)} names, {len(admins)} admins...')
+    if names:
+        models.AdminName.objects.bulk_create(names)
+    depth_key = lambda x: x['depth']
+    for _depth,_admins in itertools.groupby(sorted(admins, key=depth_key), key=depth_key):
+        print(_depth, [(x['obj'],x['obj'].parent) for x in _admins])
+        models.Admin.objects.bulk_create([x['obj'] for x in _admins])
+    for x in admins:
+        print(x['obj'], x['names'])
+        x['obj'].names.add(*x['names'])
