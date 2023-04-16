@@ -36,18 +36,6 @@ class DatasetImporter(models.Model):
     import_params = JSONField(schema=IMPORT_PARAMS_SCHEMA,
                                 blank=True, null=True)
     import_status = models.CharField(max_length=100, choices=STATUS_CHOICES, default="Pending")
+    import_details = models.TextField(blank=True, null=True)
     status_updated = models.DateTimeField(null=True, blank=True)
 
-# class ImportJob(models.Model):
-#     importer = models.OneToOneField('DatasetImporter', related_name='importer')
-#     created = models.DateTimeField(autoadd_now=True)
-
-# OR
-
-# class ImportRunner(models.Model):
-#     represents a process that imports data from one or more importers
-#     stores its own progress and deletes itself after completing
-#     can be used to display if a dataset is currently importing and its status
-#     waits to run until next in line
-#     BUT maybe in fact we just use the DatasetImporter class
-#     and just add an import_status and import_details field to it.... 

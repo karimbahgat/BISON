@@ -7,7 +7,6 @@ whitenoise
 gunicorn
 requests
 
-git+https://github.com/karimbahgat/django-wkb
 pyshp==2.2.*
 shapely==1.*
 dateparser==1.1.*

@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # thirdparty packages
-    'djangowkb',
     'django_jsonform',
 
     # apps

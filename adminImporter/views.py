@@ -49,8 +49,9 @@ def datasource_clear(request, pk):
         importers = list(source.importers.all())
         for importer in importers:
             importer.import_status = 'Pending'
+            importer.import_details = ''
             importer.status_updated = timezone.now()
-        DatasetImporter.objects.bulk_update(importers, ['import_status','status_updated'])
+        DatasetImporter.objects.bulk_update(importers, ['import_status','import_details','status_updated'])
 
     return redirect('dataset', source.pk)
 
@@ -67,6 +68,7 @@ def _datasource_import(pk):
     for importer in source.importers.filter(import_status='Pending'):
         # update status
         importer.import_status = 'Importing'
+        importer.import_details = ''
         importer.status_updated = timezone.now()
         importer.save()
 
@@ -74,9 +76,12 @@ def _datasource_import(pk):
         try:
             run_importer(importer)
             importer.import_status = 'Imported'
+            importer.import_details = ''
         except:
-            print('ERROR:', traceback.format_exc())
+            msg = traceback.format_exc()
+            print('ERROR:', msg)
             importer.import_status = 'Failed'
+            importer.import_details = msg
 
         # update status
         importer.status_updated = timezone.now()

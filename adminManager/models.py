@@ -153,6 +153,5 @@ class AdminSource(models.Model):
         #         print('feature error:', traceback.format_exc())
 
         coll = {'type':'FeatureCollection', 'features':feats}
-        print(repr(coll)[:100])
         return coll
 
