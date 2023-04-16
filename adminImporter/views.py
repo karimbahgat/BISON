@@ -3,6 +3,8 @@ from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db.models.functions import Upper
+from django.db.models import Max
+from django.core.exceptions import ObjectDoesNotExist
 
 import os
 import csv
@@ -10,6 +12,8 @@ import logging
 import traceback
 import threading
 import itertools
+
+from adminManager.geometry import WKBGeometry
 
 from .models import DatasetImporter
 from adminManager import models
@@ -47,7 +51,7 @@ def datasource_clear(request, pk):
         source.admins.all().delete()
 
         # reset all importers
-        importers = list(source.importers.all())
+        importers = list(source.importers.exclude(import_status='Pending'))
         for importer in importers:
             importer.import_status = 'Pending'
             importer.import_details = ''
@@ -413,9 +417,48 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
     source = common['source']
     start = common['start']
     end = common['end']
-    admins = admins or []
-    names = names or []
+    if admins is None:
+        admins = []
+    if names is None:
+        names = []
     save_every = 100  # bulk save when admins gets bigger than X
+
+    def bulk_add(admins, names):
+        # copy the lists so that clearing the lists doesn't affect the bulk create
+        admins = list(admins)
+        names = list(names)
+        print(f'--> saving {len(names)} names, {len(admins)} admins...')
+        # names
+        if names:
+            max_id = models.AdminName.objects.all().aggregate(max_id=Max('pk'))['max_id'] or 1
+            for i,n in enumerate(names):
+                # manually set pk since we're not using save()
+                n.pk = max_id + i + 1
+            #print(names)
+            models.AdminName.objects.bulk_create(names)
+        # admins
+        max_id = models.Admin.objects.all().aggregate(max_id=Max('pk'))['max_id'] or 1
+        for i,x in enumerate(admins):
+            # manually set pk since we're not using save()
+            x['obj'].pk = max_id + i + 1
+            # also manually set bbox
+            if x['obj'].geom:
+                xmin,ymin,xmax,ymax = x['obj'].geom.bbox()
+                x['obj'].minx = xmin
+                x['obj'].miny = ymin
+                x['obj'].maxx = xmax
+                x['obj'].maxy = ymax
+        # bulk create lowest depths first, since parent admins must already exist
+        depth_key = lambda x: x['depth']
+        for _depth,_admins in itertools.groupby(sorted(admins, key=depth_key), key=depth_key):
+            #print(_depth, [(x['obj'],x['obj'].parent) for x in _admins])
+            models.Admin.objects.bulk_create([x['obj'] for x in _admins])
+        # admin-name links
+        #print('saved names',names)
+        for x in admins:
+            #print('name links', x['obj'], [(n.name,n.pk) for n in x['names']])
+            x['obj'].names.add(*x['names'])
+
     for entry in entries:
         #print(entry['item'])
 
@@ -428,13 +471,19 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
         if not name:
             continue
         #name_obj,created = models.AdminName.objects.get_or_create(name__iexact=name.upper())
-        try:
-            name_obj = models.AdminName.objects.alias(name_upper=Upper('name')).get(name_upper=name.upper())
-            #print('name found')
-        except:
-            name_obj = models.AdminName(name=name)
-            names.append(name_obj) #name_obj.save()
-            #print('name created')
+        #print('looking for', name)
+        # first see if name matches any of the yet to be created name objects
+        name_matches = (n for n in names if n.name==name)
+        name_obj = next(name_matches, None)
+        # or see if name exists in db
+        if name_obj is None:
+            try:
+                name_obj = models.AdminName.objects.get(name__iexact=name)
+                #print('name found', name_obj.name, name_obj.pk)
+            except ObjectDoesNotExist:
+                name_obj = models.AdminName(name=name)
+                names.append(name_obj) #name_obj.save()
+                #print('name to be created', name_obj.name, name_obj.pk, names)
 
         if entry['children']:
             print('parent node:', entry['item'])
@@ -449,7 +498,7 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
 
         else:
             # reached leaf node
-            print('leaf node:', entry['item'])
+            #print('leaf node:', entry['item'])
             # get geometry, dissolve if multiple with same id
             assert len(subset) >= 1
             if len(subset) == 1:
@@ -462,34 +511,21 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
                 geom = dissolve(geoms) #, dissolve_buffer)
             # create ref
             #print('saving')
+            geom = WKBGeometry(geom)
             admin = models.Admin(parent=parent, source=source, level=level, 
                                 geom=geom, valid_from=start, valid_to=end)
             admins.append({'obj':admin, 'names':[name_obj], 'depth':depth}) #admin.save()
             #admin.names.add(name_obj)
 
         if len(admins) >= 100:
-            print(f'saving {len(names)} names, {len(admins)} admins...')
-            if names:
-                models.AdminName.objects.bulk_create(names)
-            depth_key = lambda x: x['depth']
-            for _depth,_admins in itertools.groupby(sorted(admins, key=depth_key), key=depth_key):
-                print(_depth, [(x['obj'],x['obj'].parent) for x in _admins])
-                models.Admin.objects.bulk_create([x['obj'] for x in _admins])
-                print(_depth, [(x['obj'],x['obj'].parent) for x in _admins])
-            for x in admins:
-                print(x['obj'], x['names'])
-                x['obj'].names.add(*x['names'])
-            admins = []
-            names = []
+            print('limit reached')
+            bulk_add(admins, names)
+            admins[:] = []
+            names[:] = []
 
-    # save any remaining objects
-    print(f'saving {len(names)} names, {len(admins)} admins...')
-    if names:
-        models.AdminName.objects.bulk_create(names)
-    depth_key = lambda x: x['depth']
-    for _depth,_admins in itertools.groupby(sorted(admins, key=depth_key), key=depth_key):
-        print(_depth, [(x['obj'],x['obj'].parent) for x in _admins])
-        models.Admin.objects.bulk_create([x['obj'] for x in _admins])
-    for x in admins:
-        print(x['obj'], x['names'])
-        x['obj'].names.add(*x['names'])
+    # save any remaining objects before exiting the top level
+    if depth == 0:
+        print('final bulk add')
+        bulk_add(admins, names)
+        admins[:] = []
+        names[:] = []

@@ -129,14 +129,18 @@ class AdminSource(models.Model):
         from django.db import connection
         import json
         cur = connection.cursor()
-        sql = f'select id, st_asgeojson(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
+        sql = f'select id, st_asbinary(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
+        #sql = f'select id, st_asgeojson(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
         cur.execute(sql)
 
         feats = []
+        from .geometry import WKBGeometry
         for id,geom in cur:
             try:
+                # NOTE: the geom simplify might break the geom and result in None values
+                geom = WKBGeometry(geom).__geo_interface__
+                #geom = json.loads(geom)
                 info = {} #admin.serialize(geom=True)
-                geom = json.loads(geom)
                 feat = {'type':'Feature', 'properties':info, 'geometry':geom}
                 feats.append(feat)
             except:
