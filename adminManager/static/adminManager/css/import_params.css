@@ -21,6 +21,10 @@
     display: flex;
 }
 
+.rjf-form-row label {
+    width: 100% !important;
+}
+
 .rjf-form-row input {
     max-width: 100% !important;
     width: 100% !important; 

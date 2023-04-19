@@ -51,7 +51,7 @@ def datasource_clear(request, pk):
         source.admins.all().delete()
 
         # reset all importers
-        importers = list(source.imports_processed()) #ers.exclude(import_status='Pending'))
+        importers = list(source.imports_all().exclude(import_status='Pending'))
         for importer in importers:
             importer.import_status = 'Pending'
             importer.import_details = ''
@@ -312,7 +312,7 @@ def parse_data(**params):
             reader_opts['encoding'] = encoding
         
     # define nested shapefile groups reading
-    def iter_shapefile_groups(reader, group_field=None, subset=None):
+    def iter_shapefile_groups(reader, group_field=None, group_delim=None, group_index=None, subset=None):
         if group_field:
             # return in groups
             def iterRecords():
@@ -329,7 +329,10 @@ def parse_data(**params):
             vals = ((rec[0],rec.oid) for rec in iterRecords())
             # group oids by group value
             import itertools
-            key = lambda x: x[0]
+            if group_delim:
+                key = lambda x: group_delim.join(x[0].split(group_delim)[:group_index+1])
+            else:
+                key = lambda x: x[0]
             for groupval,items in itertools.groupby(sorted(vals, key=key), key=key):
                 # yield each group value with list of index positions
                 positions = [oid for _,oid in items]
@@ -348,8 +351,10 @@ def parse_data(**params):
         data = []
         level_def = level_defs[level]
         group_field = level_def['id_field'] if int(level_def['level']) > 0 else level_def.get('id_field', None) # id not required for adm0
+        group_delim = level_def.get('id_delimiter', None)
+        group_index = int(level_def['id_index']) if 'id_index' in level_def else None
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
-        for groupval,_subset in iter_shapefile_groups(reader, group_field, subset):
+        for groupval,_subset in iter_shapefile_groups(reader, group_field, group_delim, group_index, subset):
             # override all level 0 with a single iso country lookup
             # WARNING: this assumes that id_field is iso code if is set for level0
             if level == 0 and groupval:
@@ -359,8 +364,10 @@ def parse_data(**params):
                     elif len(groupval) == 3:
                         level_def['name'] = iso3_to_name[groupval]
                     else:
+                        print(f'Country id {groupval} is not an ISO code, skipping')
                         continue
                 except KeyError:
+                    print(f'Country id {groupval} could not be found in ISO lookup, skipping')
                     continue
             # item
             item = {'id':groupval, 'level':level_def['level'], 

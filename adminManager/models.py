@@ -175,6 +175,9 @@ class AdminSource(models.Model):
         return reversed(self.get_all_parents(include_self))
 
     def imports_all(self, importers=None, filters=None):
+        # TODO: disabled for now, slow
+        #return {'count':0}
+
         # if has child sources, recursively fetch all importers defined on any child sources
         if self.children.all().count():
             for src in self.children.all():

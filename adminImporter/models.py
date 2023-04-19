@@ -10,8 +10,10 @@ class DatasetImporter(models.Model):
         'items': {
             'type': 'dict',
             'keys': {
-                "level": {'type':'string'}, # should be integer
+                "level": {'type':'string'}, # should be integer but weird styling
                 "id_field": {'type':'string'},
+                "id_delimiter": {'type':'string'},
+                "id_index": {'type':'string'}, # should be integer but weird styling
                 "name_field": {'type':'string'}
             }
         }
