@@ -5,9 +5,9 @@ from .models import AdminSource
 class AdminSourceForm(ModelForm):
     class Meta:
         model = AdminSource
-        fields = ['type','name','url',
+        fields = ['parent','type','name','url',
                 'valid_from','valid_to',
-                'citation', 'note'
+                'description', 'note'
                 ]
-        widgets = {'type': HiddenInput()}
+        widgets = {'type': HiddenInput(), 'parent':HiddenInput()}
 

@@ -114,12 +114,15 @@ class AdminSource(models.Model):
     ]
     type = models.CharField(max_length=50,
                             choices=SOURCE_TYPES)
+    parent = models.ForeignKey('AdminSource', related_name='children', on_delete=models.CASCADE, 
+                                blank=True, null=True)
     name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
     valid_from = models.DateField(null=True, blank=True)
     valid_to = models.DateField(null=True, blank=True)
-    citation = models.TextField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
     url = models.URLField(blank=True, null=True)
+    sources = models.ManyToManyField("AdminSource", blank=True, null=True)
 
     def toplevel_geojson(self):
         toplevel = self.admins.filter(parent=None, geom__isnull=False)
@@ -159,3 +162,48 @@ class AdminSource(models.Model):
         coll = {'type':'FeatureCollection', 'features':feats}
         return coll
 
+    def get_all_parents(self, include_self=True):
+        '''Returns a list of all parents, starting with and including self.'''
+        refs = [self]
+        cur = self
+        while cur.parent:
+            cur = cur.parent
+            refs.append(cur)
+        return refs
+
+    def get_all_parents_reversed(self, include_self=True):
+        return reversed(self.get_all_parents(include_self))
+
+    def imports_all(self, importers=None, filters=None):
+        # if has child sources, recursively fetch all importers defined on any child sources
+        if self.children.all().count():
+            for src in self.children.all():
+                if importers:
+                    _importers = src.imports_all(importers, filters=filters)
+                    importers = importers.union(_importers)
+                else:
+                    importers = src.imports_all(filters=filters)
+            
+        # otherwise fetch importers defined on this sources
+        else:
+            if filters:
+                importers = self.importers.filter(**filters)
+            else:
+                importers = self.importers.all()
+
+        return importers
+
+    def imports_pending(self):
+        filters = {'import_status': "Pending"}
+        pending = self.imports_all(filters=filters)
+        return pending
+
+    def imports_processed(self):
+        filters = {'import_status__in': ["Imported","Failed"]}
+        processed = self.imports_all(filters=filters)
+        return processed
+
+    def imports_failed(self):
+        filters = {'import_status': "Failed"}
+        failed = self.imports_all(filters=filters)
+        return failed

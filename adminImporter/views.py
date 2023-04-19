@@ -51,7 +51,7 @@ def datasource_clear(request, pk):
         source.admins.all().delete()
 
         # reset all importers
-        importers = list(source.importers.exclude(import_status='Pending'))
+        importers = list(source.imports_processed()) #ers.exclude(import_status='Pending'))
         for importer in importers:
             importer.import_status = 'Pending'
             importer.import_details = ''
@@ -70,7 +70,8 @@ def _datasource_import(pk):
     source = models.AdminSource(pk=pk)
 
     # loop all pending importers
-    for importer in source.importers.filter(import_status='Pending'):
+    importers = source.imports_pending()
+    for importer in importers:
         # update status
         importer.import_status = 'Importing'
         importer.import_details = ''
@@ -470,11 +471,12 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
         # get names
         if not name:
             continue
-        #name_obj,created = models.AdminName.objects.get_or_create(name__iexact=name.upper())
-        #print('looking for', name)
+        
         # first see if name matches any of the yet to be created name objects
+        #print('looking for', name)
         name_matches = (n for n in names if n.name==name)
         name_obj = next(name_matches, None)
+
         # or see if name exists in db
         if name_obj is None:
             try:
@@ -486,6 +488,7 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
                 #print('name to be created', name_obj.name, name_obj.pk, names)
 
         if entry['children']:
+            # reached parent node
             print('parent node:', entry['item'])
 
             # create parent node
@@ -509,7 +512,8 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
                 geoms = [reader.shape(i).__geo_interface__
                         for i in subset]
                 geom = dissolve(geoms) #, dissolve_buffer)
-            # create ref
+
+            # create admin
             #print('saving')
             geom = WKBGeometry(geom)
             admin = models.Admin(parent=parent, source=source, level=level, 
@@ -517,13 +521,14 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
             admins.append({'obj':admin, 'names':[name_obj], 'depth':depth}) #admin.save()
             #admin.names.add(name_obj)
 
+        # bulk add if limit reached
         if len(admins) >= 100:
             print('limit reached')
             bulk_add(admins, names)
             admins[:] = []
             names[:] = []
 
-    # save any remaining objects before exiting the top level
+    # bulk add any remaining objects before exiting the top level
     if depth == 0:
         print('final bulk add')
         bulk_add(admins, names)

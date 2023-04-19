@@ -11,18 +11,39 @@
 <section>
     <div class="content">
         <header>
-
             <div id="dataset-header-div">
                 <div class="row">
-                    <img height="30px" src="{% static 'images/dataset.png' %}">
+                    <a href="{% url 'datasets' %}">
+                        <img height="30px" src="{% static 'images/dataset.png' %}">
+                    </a>
                     <h2 style="text-align:left">
-                        Dataset: &nbsp;&nbsp;{{ source.name }}
+                        Dataset: 
                     </h2>
                 </div>
                 <div>
                     <a class="button" href="{% url 'dataset_delete' source.pk %}" onclick="return confirm('This will delete the source and all of its data.')">Delete</a>
                     <a class="button" href="{% url 'dataset_edit' source.pk %}">Edit</a>
+                    <a class="button" onclick="openAddDatasetPopup()">Add</a>
                 </div>
+            </div>
+
+            <div id="dataset-subheader-div">
+                <div id="dataset-name-div">
+                {% for src in source.get_all_parents_reversed %}
+                    <a class="button" href="{% url 'dataset' src.pk %}">{{ src.name }}</a>
+                {% endfor %}
+                </div>
+
+                <div id="dataset-description-div">
+                    <p>
+                    {% if source.description %}
+                        {{ source.description }}
+                    {% else %}
+                        &lt;No description&gt;
+                    {% endif %}
+                    </p>
+                </div>
+
             </div>
 
             <div class="box">
@@ -34,7 +55,7 @@
                     <div id="map-info">
 
                         <span style="vertical-align:top">URL: 
-                        <a href="{{ source.url }}">{{ source.url|slice:":60" }}...</a>
+                        <a href="{{ source.url }}" target="_blank">{{ source.url|slice:":60" }}...</a>
                         </span>
 
                         <br>
@@ -51,47 +72,68 @@
 
                         <br>
                     
-                        <span style="vertical-align:top">Citation: 
-                        {{ source.citation }}
-                        </span>
-
-                        <br>
-                    
-                        <span style="vertical-align:top">Source Note: 
+                        <span style="vertical-align:top">Notes: 
                         {{ source.note }}
                         </span>
 
                         <br>
 
                         <div id="import-menu">
-                            <span>Processed: {{ processed_count }} of {{ source.importers.all.count }}</span>
-                            <span>Failed: {{ fail_count }}</span>
-                            <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')">Clear Data</a>
-                            <a class="button small" href="{% url 'datasource_import' source.pk %}">Import Pending</a>
+                            <span>Processed: {{ source.imports_processed.count }} of {{ source.imports_all.count }}</span>
+                            <span>Failed: {{ source.imports_failed.count }}</span>
+                            <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')" title="Clear all imported data">&#8634; Reset</a>
+                            <a class="button small" href="{% url 'datasource_import' source.pk %}" title="Run all pending imports">&#9658; Run</a>
                         </div>
 
-                        <div id="dataset-input-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>File URL</th>
-                                    <th>Level</th>
-                                    <th>Status</th>
-                                    <th>Status updated</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for importer in source.importers.all %}
+                        {% if source.children.all.count %}
+
+                            <div id="dataset-sources-table">
+                            <table>
+                                <thead>
                                     <tr>
-                                        <td><a href="{{ importer.import_params.path }}" target="_blank">...{{ importer.import_params.path|slice:"-16:" }}</a></td>
-                                        <td>{% with importer.import_params.levels|last as last %}{{ last.level }}{% endwith %}</td>
-                                        <td><span class="importer-status" data-status="{{ importer.import_status }}" title="{{ importer.import_details }}">{{ importer.import_status }}<span></td>
-                                        <td>{{ importer.status_updated }}</td>
+                                        <th>Source</th>
+                                        <th>Processed</th>
+                                        <th>Failed</th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        </div>
+                                </thead>
+                                <tbody>
+                                    {% for child_source in source.children.all %}
+                                        <tr>
+                                            <td><a href="{% url 'dataset' child_source.pk %}" class="button small">{{ child_source.name }}</a></td>
+                                            <td>{{ child_source.imports_processed.count }} of {{ child_source.imports_all.count }}</td>
+                                            <td>{{ child_source.imports_failed.count }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            </div>
+
+                        {% else %}
+
+                            <div id="dataset-importers-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>File URL</th>
+                                        <th>Level</th>
+                                        <th>Status</th>
+                                        <th>Status updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for importer in source.importers.all %}
+                                        <tr>
+                                            <td><a href="{{ importer.import_params.path }}" target="_blank">...{{ importer.import_params.path|slice:"-16:" }}</a></td>
+                                            <td>{% with importer.import_params.levels|last as last %}{{ last.level }}{% endwith %}</td>
+                                            <td><span class="importer-status" data-status="{{ importer.import_status }}" title="{{ importer.import_details }}">{{ importer.import_status }}<span></td>
+                                            <td>{{ importer.status_updated }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            </div>
+
+                        {% endif %}
 
                     </div>
                 </div>
@@ -99,6 +141,10 @@
 
     </div>
 </section>
+
+
+<!----------------------->
+<!-- Mapping -->
 
 <script src="{% static 'adminManager/js/source_data.js' %}"></script>
 
@@ -109,5 +155,33 @@
     resultLayer.getSource().addFeatures(feats);
     zoomMapToAllResults();
 </script>
+
+
+<!----------------------->
+<!-- Popups -->
+
+<!-- Add dataset -->
+
+<div id="add-dataset-popup" class="popup is-hidden">
+    <div class="popup-content" style="overflow:auto">
+
+        <div class="popup-buttons">
+            <a class="close-popup" onclick="closeAddDatasetPopup()">x</a>
+        </div>
+
+        {% include 'adminManager/add_dataset.html' with form=add_dataset_form %}
+
+    </div>
+</div>
+
+<script>
+    function openAddDatasetPopup() {
+        document.getElementById('add-dataset-popup').className = 'popup';
+    }
+    function closeAddDatasetPopup() {
+        document.getElementById('add-dataset-popup').className = 'popup is-hidden';
+    }
+</script>
+
 
 {% endblock %}

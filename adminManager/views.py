@@ -13,26 +13,18 @@ import json
 # Create your views here.
 
 def datasources(request):
-    datasets = models.AdminSource.objects.filter(type='DataSource')
-    DatasetImporterFormset = modelformset_factory(DatasetImporter, 
-                                        form=DatasetImporterForm,
-                                        extra=10)
-    importer_forms = DatasetImporterFormset(queryset=models.AdminSource.objects.none())
+    datasets = models.AdminSource.objects.filter(type='DataSource', parent=None)
     context = {'datasets':datasets,
                 'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource'}),
-                'importer_forms': importer_forms,
                 }
     return render(request, 'adminManager/sources_data.html', context=context)
 
 def datasource(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)
-    processed_count = src.importers.filter(import_status__in=["Imported","Failed"]).count()
-    fail_count = src.importers.filter(import_status="Failed").count()
     context = {
         'source':src,
-        'processed_count':processed_count,
-        'fail_count':fail_count,
+        'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource', 'parent':pk}),
         'toplevel_geojson':json.dumps(src.toplevel_geojson()),
     }
 
@@ -69,26 +61,26 @@ def datasource_add(request):
                 form.save()
                 source = form.instance
                 # add saved source to importer forms data
-                formsetdata = {k:v for k,v in data.items() if k.startswith('form-')}
-                for i in range(int(formsetdata['form-TOTAL_FORMS'])):
-                    formsetdata[f'form-{i}-source'] = source.id
+                # formsetdata = {k:v for k,v in data.items() if k.startswith('form-')}
+                # for i in range(int(formsetdata['form-TOTAL_FORMS'])):
+                #     formsetdata[f'form-{i}-source'] = source.id
                 # save importers
-                DatasetImporterFormset = modelformset_factory(DatasetImporter, 
-                                                            form=DatasetImporterForm,
-                                                            extra=0)
-                importer_forms = DatasetImporterFormset(formsetdata)
+                # DatasetImporterFormset = modelformset_factory(DatasetImporter, 
+                #                                             form=DatasetImporterForm,
+                #                                             extra=0)
+                # importer_forms = DatasetImporterFormset(formsetdata)
 
-                for import_form in importer_forms:
-                    if import_form.is_valid():
-                        #print(import_form.cleaned_data)
-                        # validate import params
-                        import_params = import_form.cleaned_data['import_params']
-                        if import_params['path']:
-                            # probably should validate some more... 
-                            import_form.save()
-                    else:
-                        # not sure how to deal with invalid forms yet....
-                        raise Exception(f'invalid form: {import_form.errors}')
+                # for import_form in importer_forms:
+                #     if import_form.is_valid():
+                #         #print(import_form.cleaned_data)
+                #         # validate import params
+                #         import_params = import_form.cleaned_data['import_params']
+                #         if import_params['path']:
+                #             # probably should validate some more... 
+                #             import_form.save()
+                #     else:
+                #         # not sure how to deal with invalid forms yet....
+                #         raise Exception(f'invalid form: {import_form.errors}')
 
                 #if importer_forms.is_valid():
                 #    importer_forms.save()

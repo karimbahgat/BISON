@@ -30,7 +30,9 @@
                 <div id="tabs">
                     <ul class='etabs'>
                         <li class='tab'><a href="#metadata-tab">Metadata</a></li>
+                        {% if form.instance.children.all.count == 0 %}
                         <li class='tab'><a href="#import-tab">Inputs</a></li>
+                        {% endif %}
                     </ul>
                     <div class="tab-container">
                         <div id="metadata-tab" class="panel-container">
@@ -38,6 +40,7 @@
                                 {{ form.as_table }}
                             </table>
                         </div>
+                        {% if form.instance.children.all.count == 0 %}
                         <div id="import-tab" class="panel-container">
                             {{ importer_forms.0.media }}
                             {{ importer_forms.management_form }}
@@ -55,6 +58,7 @@
                             {% endfor %}
                             <button type="button" onclick="addInputForm()">+ Add Input</button>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 

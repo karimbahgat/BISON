@@ -8,6 +8,25 @@
     margin: 3px !important;
 }
 
+#dataset-header-div > a {
+    text-decoration: none;
+}
+
+#dataset-subheader-div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#dataset-description-div {
+    margin: 0 10px;
+}
+
+#dataset-description-div p {
+    display: table-cell;
+    vertical-align: middle;
+}
+
 #map-info-div {
     display: flex;
 }
@@ -23,7 +42,7 @@
     height: 470px;
 }
 
-#dataset-input-table {
+#dataset-importers-table {
     margin-top: 20px;
     margin-left: 20px;
     max-height: 300px;

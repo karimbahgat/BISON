@@ -28,27 +28,12 @@
             <div id="tabs">
                 <ul class='etabs'>
                     <li class='tab'><a href="#metadata-tab">Metadata</a></li>
-                    <li class='tab'><a href="#import-tab">Import</a></li>
                 </ul>
                 <div class="tab-container">
                     <div id="metadata-tab" class="panel-container">
                         <table>
                             {{ form.as_table }}
                         </table>
-                    </div>
-                    <div id="import-tab" class="panel-container">
-
-                        {{ importer_forms.0.media }}
-                        {{ importer_forms.management_form }}
-                        {% for import_form in importer_forms %}
-                            <div id="input-id-{{ forloop.counter }}" class="input-form-div" {% if forloop.counter > importer_forms.initial_form_count %}style="display:none"{% endif %}>
-                                <h3>Input {{ forloop.counter }}</h3>
-                                {{ import_form.source }}
-                                {{ import_form.import_params }}
-                            </div>
-                        {% endfor %}
-                        <button type="button" onclick="addInputForm()">+ Add Input</button>
-
                     </div>
                 </div>
             </div>
