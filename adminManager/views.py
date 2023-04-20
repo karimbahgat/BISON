@@ -23,8 +23,12 @@ def datasource(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)
     importers = src.imports_all()
+
+    children = src.children_with_stats()
+
     context = {
         'source':src,
+        'children':children,
         'imports_processed': importers.filter(import_status__in=['Imported','Failed']).count(),
         'imports_failed': importers.filter(import_status='Failed').count(),
         'imports_total': importers.count(),

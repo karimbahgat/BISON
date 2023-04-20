@@ -124,6 +124,83 @@ class AdminSource(models.Model):
     url = models.URLField(blank=True, null=True)
     sources = models.ManyToManyField("AdminSource", blank=True, null=True)
 
+    def children_with_stats(self):
+        '''Immediate children with stats as a list of (child,stats) tuples'''
+        # NOTE: this is very messy and probably not the best approach
+
+        # get immediate children
+        from django.db import connection
+        curs = connection.cursor()
+        children = self.children.all()
+        child_ids = [c.pk for c in children]
+        if not child_ids:
+            return []
+
+        # custom aggregation with group by
+        curs.execute('''
+            WITH RECURSIVE recurs AS
+            (
+                SELECT id, id AS root_id FROM {sources_table} WHERE id IN {child_ids}
+
+                UNION ALL
+
+                SELECT s.id, recurs.root_id FROM recurs
+                INNER JOIN {sources_table} AS s
+                ON s.parent_id = recurs.id
+            )
+            SELECT root_id AS id, COUNT(admins.id) AS admin_count
+            FROM recurs
+            INNER JOIN {admin_table} AS admins 
+            WHERE admins.source_id = recurs.id AND admins.geom IS NOT NULL
+            GROUP BY root_id
+            '''.format(
+                        child_ids='('+','.join(map(str,child_ids))+')',
+                        sources_table=AdminSource._meta.db_table,
+                        admin_table=Admin._meta.db_table,
+                        )
+        )
+
+        # create id stats lookup
+        stats_lookup = {}
+        for row in curs.fetchall():
+            child_id = row[0]
+            row_stats = {'admin_count':row[1]}
+            stats_lookup[child_id] = row_stats
+            
+        # create child,stats list
+        child_stats = [(ch,stats_lookup.get(ch.pk, {})) for ch in children]
+        return child_stats
+
+    def all_children(self):
+        sources = AdminSource.objects.raw('''
+            WITH RECURSIVE recurs AS
+            (
+                SELECT id FROM {sources_table} WHERE id = {root_id}
+
+                UNION ALL
+
+                SELECT s.id FROM recurs
+                INNER JOIN {sources_table} AS s
+                ON s.parent_id = recurs.id
+            )
+            SELECT id FROM recurs
+            '''.format(
+                        root_id=self.pk,
+                        sources_table=AdminSource._meta.db_table,
+                        )
+        )
+        return sources
+
+    def all_admins(self):
+        sources = self.all_children()
+        source_ids = [s.id for s in sources]
+        admins = Admin.objects.exclude(
+            geom=None,
+        ).filter(
+            source__in=source_ids,
+        )
+        return admins
+
     def toplevel_geojson(self):
         toplevel = self.admins.filter(parent=None, geom__isnull=False)
         #print(toplevel.count())
@@ -175,23 +252,7 @@ class AdminSource(models.Model):
         return reversed(self.get_all_parents(include_self))
 
     def imports_all(self):
-        sources = AdminSource.objects.raw('''
-            WITH RECURSIVE recurs AS
-            (
-                SELECT id FROM {sources_table} WHERE id = {root_id}
-
-                UNION ALL
-
-                SELECT s.id FROM recurs
-                INNER JOIN {sources_table} AS s
-                ON s.parent_id = recurs.id
-            )
-            SELECT id FROM recurs
-            '''.format(
-                        root_id=self.pk,
-                        sources_table=AdminSource._meta.db_table,
-                        )
-        )
+        sources = self.all_children()
         from adminImporter.models import DatasetImporter
         source_ids = [s.id for s in sources]
         importers = DatasetImporter.objects.filter(
