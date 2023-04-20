@@ -1,26 +1,39 @@
 
 import os
 import json
-import requests
+from urllib.request import urlopen
 
 from . import utils
 
-def get_gb_meta(iso, level):
-    url = f"https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/gbOpen/{iso}/ADM{level}/geoBoundaries-{iso}-ADM{level}.shp"
-    meta = requests.get(url).json()
-    return meta
+import urllib.request
+from zipfile import ZipFile
+import io
+from csv import DictReader
 
-def generate_import_params(iso, level):
+def iter_country_level_rows():
+    # access the geoboundary (open) csv file
+    root = 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/v5.0.0'
+    csv_path = 'releaseData/geoBoundariesOpen-meta.csv'
+    url = f'{root}/{csv_path}'
+    raw = [l.decode('utf8') for l in urllib.request.urlopen(url).readlines()]
+    reader = DictReader(raw, delimiter=',', quotechar='"')
+
+    for row in reader:
+        iso = row['boundaryISO']
+        level = int(row['boundaryType'][-1])
+        url = f'https://github.com/wmgeolab/geoBoundaries/raw/v5.0.0/releaseData/gbOpen/{iso}/ADM{level}/geoBoundaries-{iso}-ADM{level}.shp'
+        yield iso,level,url,row
+
+def generate_import_params(file_path, iso, level):
     # add
     params = {
         "encoding": "utf8",
-        "path": f"https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/gbOpen/{iso}/ADM{level}/geoBoundaries-{iso}-ADM{level}.shp",
-        #"path": f"https://media.githubusercontent.com/media/wmgeolab/geoContrast/stable/{path}/gadm40_{iso}_{level}.shp",
+        "path": file_path,
         "levels": [
             {
                 "level": 0,
                 "id_field": 'shapeGroup', 
-                "name_field": "shapeGroup",
+                "name_field": "shapeName",
             }
         ]
     }
@@ -34,9 +47,8 @@ def generate_import_params(iso, level):
         )
     return params
 
-
-if __name__ == '__main__':
-
+def main():
+    '''Run this function via python manage.py shell to populate the db'''
     from adminManager import models
     from adminImporter.models import DatasetImporter
 
@@ -45,44 +57,68 @@ if __name__ == '__main__':
 
     with transaction.atomic():
 
-        # common params
-        source_params = {
-            "type": "DataSource",
-            "name": "geoBoundaries (Open)",
-            "valid_from": None,
-            "valid_to": None,
-            "url": "https://www.geoboundaries.org/",
+        # get top source
+        root_source = models.AdminSource.objects.get(name='geoBoundaries')
+
+        # create version source
+        meta = {
+            'parent': root_source,
+            'name': 'v5.0.0',
+            'url': 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/v5.0.0',
+            'type': 'DataSource',
+            #'updated': '2022-12-19',
         }
-        print(source_params)
-        src = models.AdminSource(**source_params)
-        src.save()
+        vsource = models.AdminSource(**meta)
+        vsource.save()
 
         # iterate github country zipfiles
-        owner,repo = 'wmgeolab', 'geoBoundaries'
-        for iso_path in utils.iter_git_folders(owner, repo, 'releaseData/gbOpen'):
+        key = lambda x: x[:2]
+        for iso,level,url,row in sorted(iter_country_level_rows(), key=key):
             print('--------')
-            print(iso_path)
-            iso = os.path.basename(iso_path)
+            print(iso, level, url)
 
-            # generate input params for each level path
-            #for lvl_num in range(4+1):
-            #    lvl = f'ADM{lvl_num}'
-            for lvl_path in utils.iter_git_folders(owner, repo, iso_path):
-                lvl = os.path.basename(lvl_path)
+            # TOTO: fetch and create derived sources...
+            # ie from boundarySource and boundarySourceUrl
+            # ... 
 
-                meta = get_gb_meta(iso, lvl)
-                yr = meta['boundaryYear']
-                start = f'{yr}-01-01'
-                end = f'{yr}-12-31'
+            # create source for that country
+            yr = row['boundaryYearRepresented']
+            if len(yr) != 4:
+                # TODO: hardcoded for the only known example Bahamas ADM1
+                print('ERROR: unknown year', yr)
+                yr = None
+            start = f'{yr}-01-01' if yr else None
+            end = f'{yr}-12-31' if yr else None
+            meta = {
+                'parent': vsource,
+                'name': f'{row["boundaryName"]} ADM{level}',
+                'url': url,
+                'valid_from': start,
+                'valid_to': end,
+                'type': 'DataSource',
+                #'updated': '2022-12-19',
+            }
+            print(meta)
+            src = models.AdminSource(**meta)
+            src.save()
 
-                dfsdfs
+            # create importer
+            import_params = generate_import_params(url, iso, level)
+            import_params['encoding'] = meta.get('encoding', 'utf8')
+            print(import_params)
 
-                meta['boundarySource']
-                meta['boundarySourceURL']
+            importer = DatasetImporter(
+                source=src,
+                import_params=import_params,
+                import_status='Pending',
+                status_updated=timezone.now(),
+            )
+            importer.save()
 
-                source_params = get_source_params_from_meta(meta)
 
-                import_params = generate_import_params(iso, int(lvl[-1]))
-                print(import_params)
-                import_params['input'].append(import_params)
-
+'''
+python manage.py shell
+from adminImporter.scripts.import_geoboundaries import main
+main()
+ 
+'''

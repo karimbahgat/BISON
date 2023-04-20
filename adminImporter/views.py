@@ -94,9 +94,8 @@ def _datasource_import(pk):
         importer.status_updated = timezone.now()
         importer.save()
 
-    print('cleanup')
-    for url in DOWNLOAD_CACHE.keys():
-        del DOWNLOAD_CACHE[url]
+    # cleanup downloads
+    cleanup_downloads()
 
 @csrf_exempt
 def run_importer(importer):
@@ -231,7 +230,7 @@ def run_importer(importer):
     with transaction.atomic():
         add_to_db(reader, common, data)
 
-    print(f'{repr(importer)} finished')
+    print(f'finished {repr(importer)}')
 
     #except Exception as err:
     #    error_count += 1
@@ -248,42 +247,45 @@ def run_importer(importer):
 
 DOWNLOAD_CACHE = OrderedDict()
 
-class TempFileWrapper(object):
-    '''Temporary file wrapper that removes the file from disk on delete or garbage collection'''
-    def __init__(self, *args, **kwargs):
-        import tempfile
-        self.fobj = tempfile.NamedTemporaryFile(*args, **kwargs)
-
-    def __del__(self):
-        os.remove(self.fobj.name)
-
 def download_file(urlpath):
     if urlpath in DOWNLOAD_CACHE:
         # return temp file from cache
         print(f'getting {urlpath} from cache')
         print(f'(cache size {len(DOWNLOAD_CACHE)})')
-        temp = DOWNLOAD_CACHE[urlpath]
-        return temp.fobj.name
+        temp_path = DOWNLOAD_CACHE[urlpath]
+        return temp_path
     else:
         # doesnt exists in cache, download url
         print('downloading', urlpath)
         from urllib.request import Request, urlopen
         import tempfile
         import shutil
-        _,ext = os.path.splitext(urlpath)
+        import hashlib
         # open url as fobj
         req = Request(urlpath, headers={'User-agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'})
         fobj = urlopen(req)
-        # create custom temp file class which will be deleted on garbagecollection in case of failure
-        temp = TempFileWrapper(mode='w+b', suffix=ext, delete=False)
-        shutil.copyfileobj(fobj, temp.fobj) # stream url fobj to temp file
-        temp.fobj.close()
+        # create temp file based on a hash of url base name
+        # (so that files with different extensions get same hashname)
+        urlpath_base,ext = os.path.splitext(urlpath)
+        urlhash = hashlib.md5(urlpath_base.encode('utf8')).hexdigest()
+        temp_path = os.path.join(tempfile.gettempdir(), urlhash + ext)
+        # stream url fobj to temp file
+        with open(temp_path, mode='w+b') as temp:
+            shutil.copyfileobj(fobj, temp)
         # store tempfile in cache
-        DOWNLOAD_CACHE[urlpath] = temp
+        DOWNLOAD_CACHE[urlpath] = temp_path
         # make sure cache doesn't get too big
         if len(DOWNLOAD_CACHE) > 10:
-            del DOWNLOAD_CACHE[list(DOWNLOAD_CACHE.keys())[0]]
-        return temp.fobj.name
+            oldest_urlhash,oldest_temp_path = DOWNLOAD_CACHE.popitem(last=False)
+            os.remove(oldest_temp_path)
+        return temp_path
+
+def cleanup_downloads():
+    print('cleanup')
+    while len(DOWNLOAD_CACHE):
+        oldest_urlhash,oldest_temp_path = DOWNLOAD_CACHE.popitem(last=False)
+        os.remove(oldest_temp_path)
+    print('done')
 
 def detect_shapefile_encoding(path):
     print('detecting encoding')
