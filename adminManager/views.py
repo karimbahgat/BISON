@@ -22,8 +22,12 @@ def datasources(request):
 def datasource(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)
+    importers = src.imports_all()
     context = {
         'source':src,
+        'imports_processed': importers.filter(import_status__in=['Imported','Failed']).count(),
+        'imports_failed': importers.filter(import_status='Failed').count(),
+        'imports_total': importers.count(),
         'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource', 'parent':pk}),
         'toplevel_geojson':json.dumps(src.toplevel_geojson()),
     }

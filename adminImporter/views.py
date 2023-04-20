@@ -1,3 +1,4 @@
+from typing import OrderedDict
 from django.shortcuts import render, redirect
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
@@ -70,7 +71,7 @@ def _datasource_import(pk):
     source = models.AdminSource(pk=pk)
 
     # loop all pending importers
-    importers = source.imports_pending()
+    importers = source.imports_all().filter(import_status='Pending')
     for importer in importers:
         # update status
         importer.import_status = 'Importing'
@@ -93,6 +94,10 @@ def _datasource_import(pk):
         importer.status_updated = timezone.now()
         importer.save()
 
+    print('cleanup')
+    for url in DOWNLOAD_CACHE.keys():
+        del DOWNLOAD_CACHE[url]
+
 @csrf_exempt
 def run_importer(importer):
     '''Runs a specific Importer, this is done by a backend, not a user'''
@@ -105,6 +110,7 @@ def run_importer(importer):
 
     import shapefile
     import tempfile
+    temps = []
 
     # required post args:
     # - date
@@ -139,7 +145,6 @@ def run_importer(importer):
     # iso = iso2_to_3[iso] if len(iso)==2 else iso
     
     # stream any uploaded zipfile to disk (to avoid memory crash)
-    # temps = []
     # for input_name,fobj in request.FILES.items():
     #     filename = fobj.name
     #     if not filename.endswith('.zip'):
@@ -149,6 +154,24 @@ def run_importer(importer):
     #         temppath = temp.name
     #         for chunk in fobj.chunks():
     #             temp.write(chunk)
+
+    # download data if needed
+    path = params['path']
+    if path.startswith('http'):
+        urlpath = path
+        if '.zip' in urlpath:
+            # only download the highest level zipfile
+            urlpath,relpath = urlpath.split('.zip')[:2]
+            urlpath += '.zip'
+            path = download_file(urlpath)
+            params['path'] = path + relpath
+        elif urlpath.endswith('.shp'):
+            for ext in ('.shp','.shx','.dbf'):
+                path = download_file(urlpath.replace('.shp',ext))
+                if ext == '.shp':
+                    params['path'] = path
+        else:
+            raise Exception('External input data must be shapefile or zipfile')
 
     # parse date
     def parse_date(dateval):
@@ -208,24 +231,59 @@ def run_importer(importer):
     with transaction.atomic():
         add_to_db(reader, common, data)
 
+    print(f'{repr(importer)} finished')
+
     #except Exception as err:
     #    error_count += 1
     #    logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
     #    continue
 
     # delete tempfiles
+    # print('cleanup')
     # for temp in temps:
     #     os.remove(temp.name)
 
     # redirect
     #return redirect('source', source.pk)
 
+DOWNLOAD_CACHE = OrderedDict()
+
+class TempFileWrapper(object):
+    '''Temporary file wrapper that removes the file from disk on delete or garbage collection'''
+    def __init__(self, *args, **kwargs):
+        import tempfile
+        self.fobj = tempfile.NamedTemporaryFile(*args, **kwargs)
+
+    def __del__(self):
+        os.remove(self.fobj.name)
+
 def download_file(urlpath):
-    from urllib.request import urlretrieve
-    _,ext = os.path.splitext(urlpath)
-    path,headers = urlretrieve(urlpath)
-    os.rename(path, path+ext)
-    return path+ext
+    if urlpath in DOWNLOAD_CACHE:
+        # return temp file from cache
+        print(f'getting {urlpath} from cache')
+        print(f'(cache size {len(DOWNLOAD_CACHE)})')
+        temp = DOWNLOAD_CACHE[urlpath]
+        return temp.fobj.name
+    else:
+        # doesnt exists in cache, download url
+        print('downloading', urlpath)
+        from urllib.request import Request, urlopen
+        import tempfile
+        import shutil
+        _,ext = os.path.splitext(urlpath)
+        # open url as fobj
+        req = Request(urlpath, headers={'User-agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'})
+        fobj = urlopen(req)
+        # create custom temp file class which will be deleted on garbagecollection in case of failure
+        temp = TempFileWrapper(mode='w+b', suffix=ext, delete=False)
+        shutil.copyfileobj(fobj, temp.fobj) # stream url fobj to temp file
+        temp.fobj.close()
+        # store tempfile in cache
+        DOWNLOAD_CACHE[urlpath] = temp
+        # make sure cache doesn't get too big
+        if len(DOWNLOAD_CACHE) > 10:
+            del DOWNLOAD_CACHE[list(DOWNLOAD_CACHE.keys())[0]]
+        return temp.fobj.name
 
 def detect_shapefile_encoding(path):
     print('detecting encoding')
@@ -251,12 +309,12 @@ def detect_shapefile_encoding(path):
         # normal path
         basepath = os.path.splitext(path)[0]
         for ext in ['.cpg','.CPG']:
-                try: 
-                    with archive.open(relpath+ext) as cpg:
-                        encoding = cpg.read().decode('utf8')
-                    break
-                except:
-                    pass
+            try: 
+                with archive.open(relpath+ext) as cpg:
+                    encoding = cpg.read().decode('utf8')
+                break
+            except:
+                pass
     
     # not sure about the format of expected names
     # so just check for some common ones
@@ -279,25 +337,7 @@ def detect_shapefile_encoding(path):
     #        continue
 
 def parse_data(**params):
-    # read shapefile from temporary zipfile
-    # (name_field is a list of one or more name_field inputs from a form)
-
-    # download data if needed
-    # path = params['input_path']
-    # if path.startswith('http'):
-    #     urlpath = path
-    #     if '.zip' in urlpath:
-    #         # only download the highest level zipfile
-    #         urlpath,relpath = urlpath.split('.zip')[:2]
-    #         urlpath += '.zip'
-    #         path = download_file(urlpath)
-    #         params['input_path'] = path + relpath
-    #     elif urlpath.endswith('.shp'):
-    #         for ext in ('.shp','.shx','.dbf'):
-    #             path = download_file(urlpath.replace('.shp',ext))
-    #             params['input_path'] = path
-    #     else:
-    #         raise Exception('External input data must be inside zipfile')
+    # read shapefile from local file
 
     # get shapefile encoding
     reader_opts = {}
@@ -385,6 +425,7 @@ def parse_data(**params):
         return data
 
     # begin reading shapefile
+    print('creating shapefile')
     import shapefile
     reader = shapefile.Reader(params['input_path'], **reader_opts)
     print(reader)

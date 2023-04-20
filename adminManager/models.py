@@ -174,39 +174,64 @@ class AdminSource(models.Model):
     def get_all_parents_reversed(self, include_self=True):
         return reversed(self.get_all_parents(include_self))
 
-    def imports_all(self, importers=None, filters=None):
-        # TODO: disabled for now, slow
-        #return {'count':0}
+    def imports_all(self):
+        sources = AdminSource.objects.raw('''
+            WITH RECURSIVE recurs AS
+            (
+                SELECT id FROM {sources_table} WHERE id = {root_id}
 
-        # if has child sources, recursively fetch all importers defined on any child sources
-        if self.children.all().count():
-            for src in self.children.all():
-                if importers:
-                    _importers = src.imports_all(importers, filters=filters)
-                    importers = importers.union(_importers)
-                else:
-                    importers = src.imports_all(filters=filters)
-            
-        # otherwise fetch importers defined on this sources
-        else:
-            if filters:
-                importers = self.importers.filter(**filters)
-            else:
-                importers = self.importers.all()
+                UNION ALL
 
+                SELECT s.id FROM recurs
+                INNER JOIN {sources_table} AS s
+                ON s.parent_id = recurs.id
+            )
+            SELECT id FROM recurs
+            '''.format(
+                        root_id=self.pk,
+                        sources_table=AdminSource._meta.db_table,
+                        )
+        )
+        from adminImporter.models import DatasetImporter
+        source_ids = [s.id for s in sources]
+        importers = DatasetImporter.objects.filter(
+            source__in=source_ids,
+        )
         return importers
 
-    def imports_pending(self):
-        filters = {'import_status': "Pending"}
-        pending = self.imports_all(filters=filters)
-        return pending
+        # OLD: too slow
+        # # if has child sources, recursively fetch all importers defined on any child sources
+        # if self.children.all().count():
+        #     for src in self.children.all():
+        #         if importers:
+        #             _importers = src.imports_all(importers, filters=filters)
+        #             importers = importers.union(_importers)
+        #         else:
+        #             importers = src.imports_all(filters=filters)
+            
+        # # otherwise fetch importers defined on this sources
+        # else:
+        #     if filters:
+        #         importers = self.importers.filter(**filters)
+        #     else:
+        #         importers = self.importers.all()
 
-    def imports_processed(self):
-        filters = {'import_status__in': ["Imported","Failed"]}
-        processed = self.imports_all(filters=filters)
-        return processed
+        # return importers
 
-    def imports_failed(self):
-        filters = {'import_status': "Failed"}
-        failed = self.imports_all(filters=filters)
-        return failed
+    # def imports_pending(self):
+    #     if not hasattr(self, '_imports_pending'):
+    #         filters = {'import_status': "Pending"}
+    #         self._imports_pending = self.imports_all(filters=filters)
+    #     return self._imports_pending
+
+    # def imports_processed(self):
+    #     if not hasattr(self, '_imports_processed'):
+    #         filters = {'import_status__in': ["Imported","Failed"]}
+    #         self._imports_processed = self.imports_all(filters=filters)
+    #     return self._imports_processed
+
+    # def imports_failed(self):
+    #     if not hasattr(self, '_imports_failed'):
+    #         filters = {'import_status': "Failed"}
+    #         self._imports_failed = self.imports_all(filters=filters)
+    #     return self._imports_failed

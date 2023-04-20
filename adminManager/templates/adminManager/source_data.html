@@ -79,8 +79,8 @@
                         <br>
 
                         <div id="import-menu">
-                            <span>Processed: {{ source.imports_processed.count }} of {{ source.imports_all.count }}</span>
-                            <span>Failed: {{ source.imports_failed.count }}</span>
+                            <span>Processed: {{ imports_processed }} of {{ imports_total }}</span>
+                            <span>Failed: {{ imports_failed }}</span>
                             <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')" title="Clear all imported data">&#8634; Reset</a>
                             <a class="button small" href="{% url 'datasource_import' source.pk %}" title="Run all pending imports">&#9658; Run</a>
                         </div>
@@ -100,8 +100,8 @@
                                     {% for child_source in source.children.all %}
                                         <tr>
                                             <td><a href="{% url 'dataset' child_source.pk %}" class="button small">{{ child_source.name }}</a></td>
-                                            <td>{{ child_source.imports_processed.count }} of {{ child_source.imports_all.count }}</td>
-                                            <td>{{ child_source.imports_failed.count }}</td>
+                                            <td>X of X</td>
+                                            <td>X</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
