@@ -83,9 +83,10 @@ class Admin(models.Model):
                         }
                         for p in self.get_all_parents()]
         source = self.source
+        source_name = ' - '.join((s.name for s in source.get_all_parents_reversed()))
         dct = {'id':self.pk,
                 'hierarchy':hierarchy,
-                'source':{'name':source.name, 'id':source.pk},
+                'source':{'name':source_name, 'id':source.pk},
                 'valid_from':self.valid_from,
                 'valid_to':self.valid_to,
                 'lineres':self.lineres,

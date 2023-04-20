@@ -39,7 +39,7 @@
                     {% if source.description %}
                         {{ source.description }}
                     {% else %}
-                        &lt;No description&gt;
+                        <!--comment &lt;No description&gt;-->
                     {% endif %}
                     </p>
                 </div>
@@ -60,20 +60,22 @@
 
                         <br>
 
-                        <span style="vertical-align:top">Valid from: 
-                        {{ source.valid_from }}
-                        </span>
-
-                        <br>
-
-                        <span style="vertical-align:top">Valid to: 
-                        {{ source.valid_to }}
+                        <span style="vertical-align:top">Time period: 
+                        {% if source.valid_from %}{{ source.valid_from }}{% else %}?{% endif %}
+                         &#8594; 
+                         {% if source.valid_to %}{{ source.valid_to }}{% else %}?{% endif %}
                         </span>
 
                         <br>
                     
                         <span style="vertical-align:top">Notes: 
-                        {{ source.note }}
+                        {% if source.note %}{{ source.note }}{% endif %}
+                        </span>
+
+                        <br>
+
+                        <span style="vertical-align:top">Boundaries: 
+                        {{ source.all_admins.count }}
                         </span>
 
                         <br>
@@ -92,7 +94,7 @@
                                 <thead>
                                     <tr>
                                         <th>Source</th>
-                                        <th>Admins</th>
+                                        <th>Boundaries</th>
                                     </tr>
                                 </thead>
                                 <tbody>

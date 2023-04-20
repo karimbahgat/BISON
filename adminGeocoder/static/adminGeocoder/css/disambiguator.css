@@ -43,6 +43,14 @@
 #disambiguation-geom-table {   
 }
 
+#disambiguation-geom-table tr a {
+    color: #7f888f;
+}
+
+#disambiguation-geom-table tr a:hover {
+    color: #7f888f !important;
+}
+
 #disambiguation-geom-table tbody tr:hover {   
     background-color: rgba(240, 178, 35, 0.33);
 }

@@ -285,17 +285,17 @@ def api_get_best_source_matches(request, id):
     matches = matches.annotate(bbox_simil=F('overlap')/F('union'))
 
     # get the admin w highest bbox simil in each source group
-    matches = list(matches.values('id', 'names__name', 'source__name', 'bbox_simil'))
+    matches = list(matches.values('id', 'names__name', 'source__id', 'source__name', 'bbox_simil'))
     best_matches = {}
-    key = lambda m: m['source__name']
+    key = lambda m: m['source__id']
     grouped = itertools.groupby(sorted(matches, key=key), key=key)
-    for src,group in grouped:
+    for src_id,group in grouped:
         #print(src)
         group = list(group)
         most_similar = sorted(group, key=lambda m: m['bbox_simil'], reverse=True)
         #print(most_similar)
         best_match = most_similar[0]
-        best_matches[src] = best_match
+        best_matches[src_id] = best_match
     print('bbox overlaps done')
 
     # calc true overlap for the best source matches
@@ -314,8 +314,8 @@ def api_get_best_source_matches(request, id):
         return simil
     # begin
     shp = getshp(admin, simplify=True)
-    for src,best in best_matches.items():
-        print(src,best)
+    for src_id,best in best_matches.items():
+        print(src_id,best)
         best_obj = models.Admin.objects.get(pk=best['id'])
         best['obj'] = best_obj
         best['simil'] = similarity(shp, getshp(best_obj))

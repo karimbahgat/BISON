@@ -81,7 +81,7 @@ function addGeomToDisambiguationTable(adminId, result) {
     tr.innerHTML = `
     <td class="admin-name-div">
         <span class="admin-name">&#9654; ${getDisplayName(result)}</span>
-        <div class="admin-source">${result.source.name}</div>
+        <div class="admin-source"><a href="/datasets/${result.source.id}" target="_blank">${result.source.name}</a></div>
     </td>
     <td class="admin-level" title="Administrative level"><div><img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(result)}</div></td>
     <td class="admin-time" title="Representative of year(s)"><div><img src="static/images/time.png">${getAdminYears(result)}</div></td>
@@ -300,7 +300,7 @@ function addSimilarGeomsToTable(entries) {
         tr.innerHTML = `
         <td class="admin-name-div">
             <span class="admin-name">${getDisplayName(entry)}</span>
-            <div class="admin-source">(${entry.source.name})</div>
+            <div class="admin-source"><a href="/datasets/${entry.source.id}" target="_blank">(${entry.source.name})</a></div>
         </td>
         <td class="admin-level" title="Administrative level"><div><img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(entry)}</div></td>
         <td class="admin-time" title="Representative of year(s)"><div><img src="static/images/time.png">${getAdminYears(entry)}</div></td>
