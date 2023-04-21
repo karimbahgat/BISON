@@ -75,7 +75,7 @@
                         <br>
 
                         <span style="vertical-align:top">Boundaries: 
-                        {{ source.all_admins.count }}
+                        {% comment %} {{ source.all_admins.count }} {% endcomment %}
                         </span>
 
                         <br>
@@ -87,7 +87,7 @@
                             <a class="button small" href="{% url 'datasource_import' source.pk %}" title="Run all pending imports">&#9658; Run</a>
                         </div>
 
-                        {% if source.children.all.count %}
+                        {% if children %}
 
                             <div id="dataset-sources-table">
                             <table>
@@ -125,7 +125,7 @@
                                         <tr>
                                             <td><a href="{{ importer.import_params.path }}" target="_blank">...{{ importer.import_params.path|slice:"-16:" }}</a></td>
                                             <td>{% with importer.import_params.levels|last as last %}{{ last.level }}{% endwith %}</td>
-                                            <td><span class="importer-status" data-status="{{ importer.import_status }}" title="{{ importer.import_details }}">{{ importer.import_status }}<span></td>
+                                            <td><span class="importer-status" data-status="{{ importer.import_status }}" title="...{{ importer.import_details|slice:"-800:" }}">{{ importer.import_status }}<span></td>
                                             <td>{{ importer.status_updated }}</td>
                                         </tr>
                                     {% endfor %}

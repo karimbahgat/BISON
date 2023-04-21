@@ -24,14 +24,14 @@ def datasource(request, pk):
     src = models.AdminSource.objects.get(pk=pk)
     importers = src.imports_all()
 
-    children = src.children_with_stats()
+    children = [(c,{'admin_count':'X'}) for c in src.children.all()] #src.children_with_stats()
 
     context = {
         'source':src,
         'children':children,
-        'imports_processed': importers.filter(import_status__in=['Imported','Failed']).count(),
-        'imports_failed': importers.filter(import_status='Failed').count(),
-        'imports_total': importers.count(),
+        'imports_processed': 'X', #importers.filter(import_status__in=['Imported','Failed']).count(),
+        'imports_failed': 'X', #importers.filter(import_status='Failed').count(),
+        'imports_total': 'X', #importers.count(),
         'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource', 'parent':pk}),
         'toplevel_geojson':json.dumps(src.toplevel_geojson()),
     }

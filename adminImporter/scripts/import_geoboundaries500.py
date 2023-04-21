@@ -9,6 +9,7 @@ import urllib.request
 from zipfile import ZipFile
 import io
 from csv import DictReader
+import itertools
 
 def iter_country_level_rows():
     # access the geoboundary (open) csv file
@@ -72,48 +73,64 @@ def main():
         vsource.save()
 
         # iterate github country zipfiles
-        key = lambda x: x[:2]
-        for iso,level,url,row in sorted(iter_country_level_rows(), key=key):
+        key = lambda x: x[0]
+        for iso,group in itertools.groupby(sorted(iter_country_level_rows(), key=key), key=key):
             print('--------')
-            print(iso, level, url)
+            print(iso)
 
-            # TOTO: fetch and create derived sources...
-            # ie from boundarySource and boundarySourceUrl
-            # ... 
+            group = list(group)
+            firstrow = group[0][-1]
 
-            # create source for that country
-            yr = row['boundaryYearRepresented']
-            if len(yr) != 4:
-                # TODO: hardcoded for the only known example Bahamas ADM1
-                print('ERROR: unknown year', yr)
-                yr = None
-            start = f'{yr}-01-01' if yr else None
-            end = f'{yr}-12-31' if yr else None
+            # create source for this country
             meta = {
                 'parent': vsource,
-                'name': f'{row["boundaryName"]} ADM{level}',
-                'url': url,
-                'valid_from': start,
-                'valid_to': end,
+                'name': f'{firstrow["boundaryName"]}',
                 'type': 'DataSource',
                 #'updated': '2022-12-19',
             }
             print(meta)
-            src = models.AdminSource(**meta)
-            src.save()
+            cosource = models.AdminSource(**meta)
+            cosource.save()
 
-            # create importer
-            import_params = generate_import_params(url, iso, level)
-            import_params['encoding'] = meta.get('encoding', 'utf8')
-            print(import_params)
+            for iso,level,url,row in group:
 
-            importer = DatasetImporter(
-                source=src,
-                import_params=import_params,
-                import_status='Pending',
-                status_updated=timezone.now(),
-            )
-            importer.save()
+                # TOTO: fetch and create derived sources...
+                # ie from boundarySource and boundarySourceUrl
+                # ... 
+
+                # create source for this level
+                yr = row['boundaryYearRepresented']
+                if len(yr) != 4:
+                    # TODO: hardcoded for the only known example Bahamas ADM1
+                    print('ERROR: unknown year', yr)
+                    yr = None
+                start = f'{yr}-01-01' if yr else None
+                end = f'{yr}-12-31' if yr else None
+                meta = {
+                    'parent': cosource,
+                    'name': f'ADM{level}',
+                    'url': url,
+                    'valid_from': start,
+                    'valid_to': end,
+                    'type': 'DataSource',
+                    #'updated': '2022-12-19',
+                }
+                print(meta)
+                src = models.AdminSource(**meta)
+                src.save()
+
+                # create importer
+                import_params = generate_import_params(url, iso, level)
+                import_params['encoding'] = meta.get('encoding', 'utf8')
+                print(import_params)
+
+                importer = DatasetImporter(
+                    source=src,
+                    import_params=import_params,
+                    import_status='Pending',
+                    status_updated=timezone.now(),
+                )
+                importer.save()
 
 
 '''
