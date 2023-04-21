@@ -158,19 +158,21 @@ def run_importer(importer):
     path = params['path']
     if path.startswith('http'):
         urlpath = path
-        if '.zip' in urlpath:
-            # only download the highest level zipfile
-            urlpath,relpath = urlpath.split('.zip')[:2]
-            urlpath += '.zip'
-            path = download_file(urlpath)
-            params['path'] = path + relpath
+        if '.zip' in urlpath or params.get('path_ext', '') == '.zip':
+            # relative paths inside zipfiles are no longer supported
+            # instead give a distinct zip 'path' along with 'path_zipped_file'
+            # and override with path_ext if provided (eg dynamic urls that dont use filenames)
+            loc_path = download_file(urlpath, params.get('path_ext'))
+            params['path'] = loc_path
         elif urlpath.endswith('.shp'):
             for ext in ('.shp','.shx','.dbf'):
-                path = download_file(urlpath.replace('.shp',ext))
+                loc_path = download_file(urlpath.replace('.shp',ext))
                 if ext == '.shp':
-                    params['path'] = path
+                    params['path'] = loc_path
         else:
-            raise Exception('External input data must be shapefile or zipfile')
+            raise Exception(f'External input data must be of type .zip or .shp, not {urlpath}')
+    else:
+        raise Exception(f'Only http based file paths are supported for now, not {path}')
 
     # parse date
     def parse_date(dateval):
@@ -190,14 +192,19 @@ def run_importer(importer):
             raise Exception('"{}" is not a valid date'.format(dateval))
         return start,end
 
-    # TODO: i think maybe this should be from the source instead? 
-    if False: #params['valid_from'] and params['valid_to']:
-        start1,end1 = parse_date(str(params['valid_from']))
-        start2,end2 = parse_date(str(params['valid_to']))
-        start = min(start1,start2)
-        end = max(end1, end2)
+    # get time period
+    # i think maybe this should be from the source instead? 
+    start = end = None
+    if False: 
+        # determine from start_field, end_field
+        pass
+        
     else:
-        start = end = None
+        # determine time period from source
+        if source.valid_from:
+            start = parse_date(str(source.valid_from))[0]
+        if source.valid_to:
+            end = parse_date(str(source.valid_to))[-1]
 
     # get source
     # source_name = params['source'][0]
@@ -216,7 +223,6 @@ def run_importer(importer):
 
     # run import
     _params = params
-    _params['input_path'] = _params.pop('path') # rename path arg
     print('')
     print('-'*30)
     print('import args', _params)
@@ -234,7 +240,7 @@ def run_importer(importer):
 
     #except Exception as err:
     #    error_count += 1
-    #    logging.warning("error importing data for '{}': {}".format(_params['input_path'], traceback.format_exc()))
+    #    logging.warning("error importing data for '{}': {}".format(_params['path'], traceback.format_exc()))
     #    continue
 
     # delete tempfiles
@@ -247,7 +253,7 @@ def run_importer(importer):
 
 DOWNLOAD_CACHE = OrderedDict()
 
-def download_file(urlpath):
+def download_file(urlpath, file_ext=None):
     if urlpath in DOWNLOAD_CACHE:
         # return temp file from cache
         print(f'getting {urlpath} from cache')
@@ -267,6 +273,8 @@ def download_file(urlpath):
         # create temp file based on a hash of url base name
         # (so that files with different extensions get same hashname)
         urlpath_base,ext = os.path.splitext(urlpath)
+        if file_ext:
+            ext = file_ext # override file ext if provided
         urlhash = hashlib.md5(urlpath_base.encode('utf8')).hexdigest()
         temp_path = os.path.join(tempfile.gettempdir(), urlhash + ext)
         # stream url fobj to temp file
@@ -341,6 +349,12 @@ def detect_shapefile_encoding(path):
 def parse_data(**params):
     # read shapefile from local file
 
+    # if path_zipped_file is given, add to end of path
+    # which is handled natively by pyshp
+    if 'path_zipped_file' in params:
+        relpath = params['path_zipped_file']
+        params['path'] = f"{params['path']}/{relpath}"
+
     # get shapefile encoding
     reader_opts = {}
     encoding = params.get('encoding', None)
@@ -349,7 +363,7 @@ def parse_data(**params):
         reader_opts['encoding'] = encoding
     else:
         # otherwise try to autodetect
-        encoding = detect_shapefile_encoding(params['input_path'])
+        encoding = detect_shapefile_encoding(params['path'])
         if encoding:
             reader_opts['encoding'] = encoding
         
@@ -397,6 +411,9 @@ def parse_data(**params):
         group_index = int(level_def['id_index']) if 'id_index' in level_def else None
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, group_delim, group_index, subset):
+            # get hardcoded group val if group_field not set
+            if not group_field and 'id' in level_def:
+                groupval = level_def['id']
             # override all level 0 with a single iso country lookup
             # WARNING: this assumes that id_field is iso code if is set for level0
             if level == 0 and groupval:
@@ -427,10 +444,11 @@ def parse_data(**params):
         return data
 
     # begin reading shapefile
-    print('creating shapefile')
+    print('loading shapefile')
     import shapefile
-    reader = shapefile.Reader(params['input_path'], **reader_opts)
+    reader = shapefile.Reader(params['path'], **reader_opts)
     print(reader)
+    print('fields:', [f[0] for f in reader.fields])
 
     # parse nested structure
     print('parsing shapefile nested structure')
