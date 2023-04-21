@@ -157,8 +157,8 @@ function getAdminLevel(adminData) {
 function getAdminYears(adminData) {
     // get the admin year(s) of validity as text
     if (adminData.valid_from != null & adminData.valid_to != null) {
-        fromYear = adminData.valid_from.slice(1,4);
-        toYear = adminData.valid_to.slice(1,4);
+        fromYear = adminData.valid_from.slice(0,4);
+        toYear = adminData.valid_to.slice(0,4);
         if (fromYear == toYear) {
             return `${fromYear}`;
         } else {

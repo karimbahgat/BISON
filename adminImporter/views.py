@@ -233,6 +233,7 @@ def run_importer(importer):
     # add to db
     print('adding to db')
     common = {'source':source, 'start':start, 'end':end}
+    print(common)
     with transaction.atomic():
         add_to_db(reader, common, data)
 
