@@ -211,6 +211,9 @@ def main():
                 cosource = models.AdminSource(**meta)
                 cosource.save()
 
+                # TODO: parse and create source lineage
+                # ... 
+
                 # loop file downloads
                 for fromdate,todate,ziplink in page_downloads:
                     
