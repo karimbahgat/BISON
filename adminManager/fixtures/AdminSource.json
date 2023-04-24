@@ -6455,7 +6455,7 @@
     "fields": {
         "type": "DataSource",
         "parent": 3497,
-        "name": "Saint Barthélemy",
+        "name": "Saint Barth lemy",
         "description": null,
         "valid_from": null,
         "valid_to": null,
@@ -7385,7 +7385,7 @@
     "fields": {
         "type": "DataSource",
         "parent": 3497,
-        "name": "Côte d'Ivoire",
+        "name": "C te d'Ivoire",
         "description": null,
         "valid_from": null,
         "valid_to": null,
@@ -8015,7 +8015,7 @@
     "fields": {
         "type": "DataSource",
         "parent": 3497,
-        "name": "Curaçao",
+        "name": "Cura ao",
         "description": null,
         "valid_from": null,
         "valid_to": null,
@@ -15575,7 +15575,7 @@
     "fields": {
         "type": "DataSource",
         "parent": 3497,
-        "name": "Réunion",
+        "name": "R union",
         "description": null,
         "valid_from": null,
         "valid_to": null,
