@@ -24,9 +24,6 @@ def datasource(request, pk):
     src = models.AdminSource.objects.get(pk=pk)
     #importers = src.imports_all()
 
-    for a in src.admins.all():
-        print(a, a.valid_from, a.valid_to)
-
     children = [(c,{'admin_count':'X'}) for c in src.children.all()] #src.children_with_stats()
 
     context = {

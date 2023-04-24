@@ -61,6 +61,10 @@ def main():
             print('')
             print(iso)
 
+            # those without org/src seem to be based on thirdparty data
+            if not row['src_org']:
+                continue
+
             # get sources
             source_url = row['src_url']
             if not source_url:
@@ -124,6 +128,12 @@ def main():
                     zipname = link.split('/')[-1]
                     if '_admall_' in zipname.lower():
                         continue
+                    if 'server' in zipname.lower():
+                        continue
+                    if '_emf.' in zipname.lower():
+                        continue
+                    if '.gdb' in zipname.lower() or '_gdb' in zipname.lower():
+                        continue
 
                     # look for shapefiles in zipfile
                     print('fetching:', link)
@@ -143,9 +153,12 @@ def main():
                                 continue
 
                             # levels
-                            matches = re.findall('_adm(\d)', subfile)
+                            subfile_file = subfile.split('/')[-1]
+                            matches = re.findall('_adm(\d)', subfile_file)
                             if not matches:
-                                matches = re.findall('_(\d)[_.]', subfile)
+                                matches = re.findall('_admin(\d)', subfile_file)
+                            if not matches:
+                                matches = re.findall('_(\d)[_.]', subfile_file)
                             if not matches:
                                 warnings.warn(f'Unable to determine adm level from filename: {subfile}')
                                 continue
