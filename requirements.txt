@@ -13,4 +13,4 @@ dateparser==1.1.*
 django-jsonform
 numpy
 pyproj
-importpyxl
+openpyxl
