@@ -5,7 +5,7 @@ from .geometry import WKBGeometry
 
 import json
 
-class GeometryField(models.Field):
+class GeometryField(models.BinaryField):
     '''Custom geometry field that is set with WKBGeometry, 
     converts the WKBGeometry to the backend database's geometry type,
     and reads it back from the database as WKBGeometry.'''
@@ -14,27 +14,25 @@ class GeometryField(models.Field):
     def db_type(self, connection):
         return "Geometry"
 
-    def get_prep_value(self, value):
-        """Used to standardize all values when storing on the model's attribute."""
-        if value is None:
-            return value
+    # def get_prep_value(self, value):
+    #     """Used to standardize all values when storing on the model's attribute."""
+    #     if value is None:
+    #         return value
 
-        if not isinstance(value, WKBGeometry):
-            value = WKBGeometry(value)
+    #     print('get prep val',value)
+    #     if not isinstance(value, WKBGeometry):
+    #         value = WKBGeometry(value)
+    #     print('get prep val2',value)
 
-        return value
+    #     return value
 
     def get_db_prep_value(self, value, connection, prepared=False):
         """Used to convert the model's attribute value to a format required by the db."""
-        value = super().get_db_prep_value(value, connection, prepared)
-        
-        # convert to wkb bytes
+        # convert to custom class wkb bytes
         if isinstance(value, WKBGeometry):
             value = value.wkb
 
-        if value is not None:
-            value = connection.Database.Binary(value)
-            
+        value = super().get_db_prep_value(value, connection, prepared)
         return value
 
     def get_placeholder(self, value, compiler, connection):

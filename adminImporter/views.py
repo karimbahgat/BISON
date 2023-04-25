@@ -132,7 +132,7 @@ def datasource_import(request, pk):
     background_datasource_import(pk) #scheduled to run in background
     return redirect('dataset', pk)
 
-@background(schedule=5) # schedule to run in 5 seconds
+@background(schedule=0) # schedule to run in 5 seconds
 def background_datasource_import(pk):
     source = models.AdminSource(pk=pk)
 
