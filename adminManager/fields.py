@@ -40,7 +40,8 @@ class GeometryField(models.BinaryField):
         Return the placeholder for the spatial column for the
         given value.
         """
-        sql = 'ST_GeomFromWKB(%s)'
+        sql = super().get_placeholder(value, compiler, connection)
+        sql = 'ST_GeomFromWKB({})'.format(sql)
         return sql
 
     def from_db_value(self, value, expression, connection):

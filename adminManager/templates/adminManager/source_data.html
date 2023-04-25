@@ -129,7 +129,7 @@
                                             <td><a href="{{ importer.import_params.path }}" target="_blank">...{{ importer.import_params.path|slice:"-16:" }}</a></td>
                                             <td>{% with importer.import_params.levels|last as last %}{{ last.level }}{% endwith %}</td>
                                             <td><span class="importer-status" data-status="{{ importer.import_status }}" title="...{{ importer.import_details|slice:"-800:" }}">{{ importer.import_status }}<span></td>
-                                            <td>{{ importer.status_updated }}</td>
+                                            <td title="{{ importer.status_updated }}">{{ importer.status_updated|timesince }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
