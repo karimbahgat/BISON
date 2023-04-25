@@ -6,6 +6,9 @@ from django.utils import timezone
 from django.db.models.functions import Upper
 from django.db.models import Max
 from django.core.exceptions import ObjectDoesNotExist
+from django.forms import modelformset_factory
+
+from background_task import background
 
 import os
 import csv
@@ -17,7 +20,10 @@ import itertools
 from adminManager.geometry import WKBGeometry
 
 from .models import DatasetImporter
+from .forms import DatasetImporterForm
 from adminManager import models
+
+
 
 # Create your views here.
 
@@ -42,6 +48,64 @@ from adminManager import models
 #         except Exception as err:
 #             print('error importing source:', err)
 
+def datasource_importers_edit(request, pk):
+    '''Edit the importers of a data source'''
+    src = models.AdminSource.objects.get(pk=pk)
+    initial = {'source':src}
+
+    if request.method == 'GET':
+        # create editable import forms
+        DatasetImporterFormset = modelformset_factory(DatasetImporter, 
+                                                    form=DatasetImporterForm,
+                                                    extra=10, can_delete=True)
+        queryset = src.importers.all()
+        importer_forms = DatasetImporterFormset(queryset=queryset, 
+                                                initial=[initial]*10) # one for each 'extra' form
+        context = {'src':src, 'importer_forms': importer_forms}
+        return render(request, 'adminImporter/source_importers_edit.html', context)
+
+
+    elif request.method == 'POST':
+        with transaction.atomic():
+            # save form data
+            data = request.POST
+            print(data)
+
+            # save importers
+            DatasetImporterFormset = modelformset_factory(DatasetImporter, 
+                                                        form=DatasetImporterForm,
+                                                        extra=0, can_delete=True)
+            importer_forms = DatasetImporterFormset(data)
+            for import_form in importer_forms:
+                if import_form.is_valid():
+                    if import_form.has_changed():
+                        #print(import_form.cleaned_data)
+                        # check for deletion
+                        if import_form.cleaned_data['DELETE']:
+                            import_form.instance.delete()
+                            continue
+                        # validate import params
+                        import_params = import_form.cleaned_data['import_params']
+                        if import_params['path']:
+                            # probably should validate some more... 
+                            import_form.save()
+                else:
+                    # not sure how to deal with invalid forms yet....
+                    raise Exception(f'invalid form: {import_form.errors}')
+                        
+                #if importer_forms.is_valid():
+                #    importer_forms.save()
+                #else:
+                #    print(importer_forms.errors)
+                #    raise Exception('Need better input form error handling...')
+                #    return render(request, 'adminManager/source_data_edit.html', {'form':form, 'importer_forms':importer_forms})
+
+                return redirect('dataset', src.pk)
+
+            else:
+                context = {'src':src, 'importer_forms':importer_forms}
+                return render(request, 'adminManager/source_importers_edit.html', context)
+
 def datasource_clear(request, pk):
     '''Delete all boundaries from a source'''
     source = models.AdminSource(pk=pk)
@@ -63,11 +127,13 @@ def datasource_clear(request, pk):
 
 def datasource_import(request, pk):
     '''Import all DatasetImporters defined for a source'''
-    thread = threading.Thread(target=_datasource_import, args=(pk,))
-    thread.start()
+    #thread = threading.Thread(target=_datasource_import, args=(pk,))
+    #thread.start()
+    background_datasource_import(pk) #scheduled to run in background
     return redirect('dataset', pk)
 
-def _datasource_import(pk):
+@background(schedule=5) # schedule to run in 5 seconds
+def background_datasource_import(pk):
     source = models.AdminSource(pk=pk)
 
     # loop all pending importers
@@ -352,7 +418,7 @@ def parse_data(**params):
 
     # if path_zipped_file is given, add to end of path
     # which is handled natively by pyshp
-    if 'path_zipped_file' in params:
+    if params.get('path_zipped_file', None):
         relpath = params['path_zipped_file']
         params['path'] = f"{params['path']}/{relpath}"
 
@@ -409,7 +475,7 @@ def parse_data(**params):
         level_def = level_defs[level]
         group_field = level_def['id_field'] if int(level_def['level']) > 0 else level_def.get('id_field', None) # id not required for adm0
         group_delim = level_def.get('id_delimiter', None)
-        group_index = int(level_def['id_index']) if 'id_index' in level_def else None
+        group_index = int(level_def['id_index']) if level_def.get('id_index',None) != None else None
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, group_delim, group_index, subset):
             # get hardcoded group val if group_field not set

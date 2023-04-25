@@ -11,6 +11,7 @@ class DatasetImporter(models.Model):
             'type': 'dict',
             'keys': {
                 "level": {'type':'string'}, # should be integer but weird styling
+                "id": {'type':'string'},
                 "id_field": {'type':'string'},
                 "id_delimiter": {'type':'string'},
                 "id_index": {'type':'string'}, # should be integer but weird styling
@@ -22,6 +23,8 @@ class DatasetImporter(models.Model):
         'type': 'dict',
         'keys': {
             'path': {'type':'string'},
+            'path_zipped_file': {'type':'string'},
+            'path_ext': {'type':'string'},
             'encoding': {'type':'string'}, #'default':'utf8'},
             'levels': LEVELS_SCHEMA,
         }

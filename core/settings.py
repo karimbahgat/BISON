@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 
     # thirdparty packages
     'django_jsonform',
+    'background_task',
 
     # apps
     'adminManager',

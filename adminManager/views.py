@@ -33,7 +33,7 @@ def datasource(request, pk):
         'imports_failed': 'X', #importers.filter(import_status='Failed').count(),
         'imports_total': 'X', #importers.count(),
         'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource', 'parent':pk}),
-        'toplevel_geojson':json.dumps(src.toplevel_geojson()),
+        'toplevel_geojson':json.dumps({'type':'FeatureCollection','features':[]}), #src.toplevel_geojson()),
     }
 
     print('typ',src,repr(src.type))
@@ -161,4 +161,3 @@ def datasource_edit(request, pk):
 
             else:
                 return render(request, 'adminManager/source_data_edit.html', {'form':form, 'importer_forms':importer_forms})
-

@@ -45,7 +45,7 @@ def iter_gadm_country_zip_shapefiles(url):
             level = int(level)
             yield level, filename
 
-def generate_import_params(file_path, iso, level):
+def generate_import_params(file_path, subfile_path, iso, level):
     # add
     #iso = os.path.basename(zip_path).split('.')[0]
     # def getidfield(lvl, level):
@@ -58,6 +58,7 @@ def generate_import_params(file_path, iso, level):
     params = {
         "encoding": "utf8",
         "path": file_path,
+        "path_zipped_file": subfile_path,
         "levels": [
             {
                 "level": lvl,
@@ -115,8 +116,7 @@ def main():
             for level,filename in iter_gadm_country_zip_shapefiles(zip_url):
                 print(level, filename)
 
-                file_path = f'{zip_url}/{filename}'
-                import_params = generate_import_params(file_path, iso, level)
+                import_params = generate_import_params(zip_url, filename, iso, level)
                 import_params['encoding'] = meta.get('encoding', 'utf8')
                 print(import_params)
                 

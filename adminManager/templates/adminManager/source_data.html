@@ -84,6 +84,9 @@
                             <span>Imported: {{ imports_processed }} of {{ imports_total }}</span>
                             <span>Failed: {{ imports_failed }}</span>
                             <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')" title="Clear all imported data">&#8634; Reset</a>
+                            {% if not children %}
+                            <a class="button small" href="{% url 'datasource_importers_edit' source.pk %}" title="Edit source importers">Edit</a>
+                            {% endif %}
                             <a class="button small" href="{% url 'datasource_import' source.pk %}" title="Run all pending imports">&#9658; Run</a>
                         </div>
 
