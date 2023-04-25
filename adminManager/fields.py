@@ -32,6 +32,9 @@ class GeometryField(models.Field):
         if isinstance(value, WKBGeometry):
             value = value.wkb
 
+        if value is not None:
+            value = connection.Database.Binary(value)
+            
         return value
 
     def get_placeholder(self, value, compiler, connection):

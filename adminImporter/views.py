@@ -335,8 +335,13 @@ def download_file(urlpath, file_ext=None):
         import shutil
         import hashlib
         # open url as fobj
-        req = Request(urlpath, headers={'User-agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'})
-        fobj = urlopen(req)
+        timeout = 60 * 10 # 10 mins
+        headers = {
+            'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36',
+            'Connection': 'keep-alive',
+        }
+        req = Request(urlpath, headers=headers)
+        fobj = urlopen(req, timeout=timeout)
         # create temp file based on a hash of url base name
         # (so that files with different extensions get same hashname)
         urlpath_base,ext = os.path.splitext(urlpath)
