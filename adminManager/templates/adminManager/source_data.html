@@ -50,7 +50,10 @@
 
                 <div id="map-info-div">
 
-                    <div id="map"></div>
+                    <div id="map-div">
+                        <div id="map"></div>
+                        <div id="map-loading">Loading...</div>
+                    </div>
 
                     <div id="map-info">
 
@@ -153,10 +156,13 @@
 
 <script>
     // add src geojson to map
-    coll = `{{ toplevel_geojson|safe }}`;
-    feats = new ol.format.GeoJSON().readFeatures(coll, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
-    resultLayer.getSource().addFeatures(feats);
-    zoomMapToAllResults();
+    //coll = `{{ toplevel_geojson|safe }}`;
+    //feats = new ol.format.GeoJSON().readFeatures(coll, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+    //resultLayer.getSource().addFeatures(feats);
+    //zoomMapToAllResults();
+    source = {{ source.pk }};
+    firstFetch = true;
+    fetching = false;
 </script>
 
 

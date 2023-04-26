@@ -105,6 +105,9 @@ db_url = fromfile(config('DATABASE_URL', default='sqlite:///db.sqlite3'))
 DATABASES = {
     'default': dj_database_url.parse(db_url)
 }
+DATABASES['default']['OPTIONS'] = {
+    'charset': 'utf8_unicode_ci',
+}
 
 # add remote db ssl if specified
 db_ssl = config('DATABASE_SSL_CA_PATH', default=None)

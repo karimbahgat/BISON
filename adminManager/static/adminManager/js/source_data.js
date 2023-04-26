@@ -3,18 +3,40 @@
 // main country map
 
 // style
-var resultStyle = new ol.style.Style({
-    fill: new ol.style.Fill({
-        color: 'rgb(6,75,52)'
-    }),
-    stroke: new ol.style.Stroke({
-        color: 'white',
-        width: 0.5,
-    }),
+var fill = new ol.style.Fill({
+    color: 'rgb(6,75,52)'
 });
+var lineColor = 'rgba(255, 0, 0, 0.8)'; //'rgb(29,107,191)';
+var lineStrokes = [
+    new ol.style.Stroke({
+        color: lineColor,
+        width: 3,
+    }),
+    new ol.style.Stroke({
+        color: lineColor,
+        width: 2,
+        lineDash: [3,9]
+    }),
+    new ol.style.Stroke({
+        color: lineColor,
+        width: 1.5,
+        lineDash: [5,5]
+    }),
+    new ol.style.Stroke({
+        color: lineColor,
+        width: 1,
+        lineDash: [5,5]
+    }),
+    new ol.style.Stroke({
+        color: lineColor,
+        width: 0.5,
+        lineDash: [5,5]
+    }),
+];
+
 
 // labelling
-var resultLabelStyle = new ol.style.Style({
+var labelStyle = new ol.style.Style({
     geometry: function(feature) {
         // create a geometry that defines where the label will be display
         var geom = feature.getGeometry();
@@ -57,9 +79,15 @@ function getStyle(feature) {
     //var labelStyle = resultLabelStyle.clone();
     //label = `${feature.getId()}: ${feature.get('displayName')}`;
     //labelStyle.getText().setText(label);
-    return [resultStyle]; //,labelStyle];
+    level = feature.get('level');
+    console.log(level)
+    style = new ol.style.Style({
+        fill: null,
+        stroke: lineStrokes[level],
+    });
+    return [style]; //,labelStyle];
 }
-var resultLayer = new ol.layer.Vector({
+var layer = new ol.layer.Vector({
     source: new ol.source.Vector(),
     style: getStyle,
 });
@@ -79,7 +107,7 @@ var map = new ol.Map({
             maxZoom: 20,
             crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
         })}),
-        resultLayer
+        layer
     ],
     view: new ol.View({
         center: ol.proj.fromLonLat([0,0]),
@@ -114,44 +142,90 @@ map.on('pointermove', function(evt) {
 });
 */
 
-function addResultToMap(searchId2, matchData) {
-    props = {'geomId': matchData.id,
-            'displayName': getDisplayName(matchData)
-            };
-    feat = {'type': 'Feature',
-            'id': searchId2,
-            'properties': props,
-            'geometry': matchData['geom']};
-    feat = new ol.format.GeoJSON().readFeature(feat, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+function onMoveEnd() {
+    fetchAdmins(source);
+}
 
-    existingFeat = resultLayer.getSource().getFeatureById(searchId2);
-    if (existingFeat != null) {
-        // update existing feat
-        existingFeat.setGeometry(feat.getGeometry());
-        existingFeat.setProperties(feat.getProperties());
-        map.getView().fit(feat.getGeometry().getExtent());
-        map.getView().setZoom(map.getView().getZoom()-1);
+function getMapBounds() {
+    extent = map.getView().calculateExtent();
+    return ol.proj.transformExtent(extent, 'EPSG:3857','EPSG:4326');
+}
+
+function getAdminIds() {
+    ids = [];
+    layer.getSource().forEachFeature(function (feat) {
+        ids.push(feat.get('id'));
+    });
+    return ids;
+}
+
+function fetchAdmins(source_id) {
+    if (fetching) {
+        // already fetching
+        return
     } else {
-        // add new feat
-        resultLayer.getSource().addFeature(feat);
-        map.getView().fit(feat.getGeometry().getExtent());
-        map.getView().setZoom(map.getView().getZoom()-1);
-    }
-};
+        fetching = true;
+        document.getElementById('map-loading').style.visibility = 'visible';
+    };
 
-function zoomMapToSearchId(searchId2) {
-    feat = resultLayer.getSource().getFeatureById(searchId2);
-    map.getView().fit(feat.getGeometry().getExtent());
-    map.getView().setZoom(map.getView().getZoom()-1);
+    [minx, miny, maxx, maxy] = getMapBounds();
+    //currentAdminIds = getAdminIds();
+    urlParams = new URLSearchParams();
+    urlParams.set('source', source_id);
+    //urlParams.set('exclude', currentAdminIds.join(','));
+    if (firstFetch) {
+        urlParams.set('summary_only', 'true');
+        urlParams.set('geom', 'false');
+    } else {
+        urlParams.set('xmin', minx);
+        urlParams.set('ymin', miny);
+        urlParams.set('xmax', maxx);
+        urlParams.set('ymax', maxy);
+        urlParams.set('minimum_extent_fraction', 20);
+    };
+    url = '/api/admins?' + urlParams.toString();
+    console.log(url);
+    fetch(url).then(resp=>resp.json()).then(data=>receiveAdmins(data));
 }
 
-function removeResultFromMap(searchId2, matchData) {
-    feat = resultLayer.getSource().getFeatureById(searchId2);
-    resultLayer.getSource().removeFeature(feat);
+function receiveAdmins(data) {
+    console.log(data)
+    setLayerData(data);
+    if (firstFetch) {
+        zoomMapToBbox(data.bbox);
+        firstFetch = false;
+    };
+    // open for new fetches
+    fetching = false;
+    document.getElementById('map-loading').style.visibility = 'hidden';
 }
 
-function zoomMapToAllResults() {
-    map.getView().fit(resultLayer.getSource().getExtent());
+function setLayerData(data) {
+    src = layer.getSource();
+    // clear existing layer
+    src.clear();
+    // add to layer
+    wktReader = new ol.format.WKT();
+    for (info of data.result) {
+        geom = wktReader.readGeometry(info.wkt, {dataProjection:'EPSG:4326', featureProjection:'EPSG:3857'});
+        delete info.wkt;
+        info.geometry = geom;
+        feat = new ol.Feature(info);
+        src.addFeature(feat);
+    };
+}
+
+function zoomMapToLayer(lyr) {
+    map.getView().fit(lyr.getSource().getExtent());
     map.getView().setZoom(map.getView().getZoom()-0.5);
 }
 
+function zoomMapToBbox(bbox) {
+    bbox = ol.proj.transformExtent(bbox, 'EPSG:4326', 'EPSG:3857');
+    map.getView().fit(bbox);
+    map.getView().setZoom(map.getView().getZoom()-0.5);
+}
+
+// fetch admins when map has moved
+
+map.on('moveend', onMoveEnd);

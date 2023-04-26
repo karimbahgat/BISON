@@ -37,9 +37,17 @@
     padding-top: 0;
 }
 
+#map-div {
+    width: 100%;
+}
+
 #map {
     width: 100%;
     height: 470px;
+}
+
+#map-loading {
+    text-align: center;
 }
 
 #dataset-importers-table {

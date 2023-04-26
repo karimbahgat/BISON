@@ -29,7 +29,12 @@ class Admin(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['minx','miny','maxx','maxy']), 
+            models.Index(fields=['parent']), 
+            models.Index(fields=['source']), 
+            models.Index(fields=['minx']), 
+            models.Index(fields=['miny']), 
+            models.Index(fields=['maxx']), 
+            models.Index(fields=['maxy']), 
         ]
 
     #def __str__(self):
@@ -202,43 +207,44 @@ class AdminSource(models.Model):
         )
         return admins
 
-    def toplevel_geojson(self):
-        toplevel = self.admins.filter(parent=None, geom__isnull=False)
-        #print(toplevel.count())
-        toplevel_sql = toplevel.query
+    # def toplevel_geojson(self):
+    #     toplevel = self.admins.filter(geom__isnull=False) # parent=None
+    #     #print(toplevel.count())
+    #     toplevel_sql = toplevel.query
 
-        from django.db import connection
-        import json
-        cur = connection.cursor()
-        sql = f'select id, st_asbinary(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
-        #sql = f'select id, st_asgeojson(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
-        cur.execute(sql)
+    #     from django.db import connection
+    #     import json
+    #     cur = connection.cursor()
+    #     sql = f'select id, st_asbinary(st_envelope(geom)) as geom from ({toplevel_sql}) as sub'
+    #     #sql = f'select id, st_asbinary(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
+    #     #sql = f'select id, st_asgeojson(st_simplify(geom, 0.1)) as geom from ({toplevel_sql}) as sub'
+    #     cur.execute(sql)
 
-        feats = []
-        from .geometry import WKBGeometry
-        for id,geom in cur:
-            try:
-                # NOTE: the geom simplify might break the geom and result in None values
-                geom = WKBGeometry(geom).__geo_interface__
-                #geom = json.loads(geom)
-                info = {} #admin.serialize(geom=True)
-                feat = {'type':'Feature', 'properties':info, 'geometry':geom}
-                feats.append(feat)
-            except:
-                print('feature error:', traceback.format_exc())
+    #     feats = []
+    #     from .geometry import WKBGeometry
+    #     for id,geom in cur:
+    #         try:
+    #             # NOTE: the geom simplify might break the geom and result in None values
+    #             geom = WKBGeometry(geom).__geo_interface__
+    #             #geom = json.loads(geom)
+    #             info = {} #admin.serialize(geom=True)
+    #             feat = {'type':'Feature', 'properties':info, 'geometry':geom}
+    #             feats.append(feat)
+    #         except:
+    #             print('feature error:', traceback.format_exc())
 
-        # feats = []
-        # for admin in toplevel:
-        #     try:
-        #         info = {} #admin.serialize(geom=True)
-        #         geom = admin.geom #info.pop('geom')
-        #         feat = {'type':'Feature', 'properties':info, 'geometry':geom}
-        #         feats.append(feat)
-        #     except:
-        #         print('feature error:', traceback.format_exc())
+    #     # feats = []
+    #     # for admin in toplevel:
+    #     #     try:
+    #     #         info = {} #admin.serialize(geom=True)
+    #     #         geom = admin.geom #info.pop('geom')
+    #     #         feat = {'type':'Feature', 'properties':info, 'geometry':geom}
+    #     #         feats.append(feat)
+    #     #     except:
+    #     #         print('feature error:', traceback.format_exc())
 
-        coll = {'type':'FeatureCollection', 'features':feats}
-        return coll
+    #     coll = {'type':'FeatureCollection', 'features':feats}
+    #     return coll
 
     def get_all_parents(self, include_self=True):
         '''Returns a list of all parents, starting with and including self.'''
