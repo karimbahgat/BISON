@@ -49,8 +49,7 @@ from adminManager import models
 #             print('error importing source:', err)
 
 def process_tasks(request):
-    import os
-    os.system("python manage.py process_tasks", shell=True)
+    os.system("python manage.py process_tasks")
 
 def datasource_importers_edit(request, pk):
     '''Edit the importers of a data source'''
@@ -120,7 +119,7 @@ def datasource_clear(request, pk):
         source.admins.all().delete()
 
         # reset all importers
-        importers = list(source.imports_all().exclude(import_status='Pending'))
+        importers = list(source.all_imports().exclude(import_status='Pending'))
         for importer in importers:
             importer.import_status = 'Pending'
             importer.import_details = ''
@@ -141,7 +140,7 @@ def background_datasource_import(pk):
     source = models.AdminSource(pk=pk)
 
     # loop all pending importers
-    importers = source.imports_all().filter(import_status='Pending')
+    importers = source.all_imports().filter(import_status='Pending')
     for importer in importers:
         # update status
         importer.import_status = 'Importing'

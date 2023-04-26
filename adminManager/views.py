@@ -22,17 +22,34 @@ def datasources(request):
 def datasource(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)
-    #importers = src.imports_all()
+    #importers = src.all_imports()
 
-    children = [(c,{'admin_count':'X'}) for c in src.children.all()] #src.children_with_stats()
+    #children = [(c,{'admin_count':'X'}) for c in src.children.all()]
+    children = src.children_with_stats()
+    if children:
+        # total status counts for immediate children
+        imported = sum(stats['status_counts']['Imported'] for c,stats in children)
+        importing = sum(stats['status_counts']['Importing'] for c,stats in children)
+        failed = sum(stats['status_counts']['Failed'] for c,stats in children)
+        pending = sum(stats['status_counts']['Pending'] for c,stats in children)
+    else:
+        # no children, total status counts for self
+        imports = list(src.importers.all())
+        imported = sum((1 for i in imports if i.import_status == 'Imported'))
+        importing = sum((1 for i in imports if i.import_status == 'Importing'))
+        failed = sum((1 for i in imports if i.import_status == 'Failed'))
+        pending = sum((1 for i in imports if i.import_status == 'Pending'))
 
     context = {
         'source':src,
         'children':children,
         'boundary_count': src.admin_count(),
-        'imports_processed': 'X', #importers.filter(import_status__in=['Imported','Failed']).count(),
-        'imports_failed': 'X', #importers.filter(import_status='Failed').count(),
-        'imports_total': 'X', #importers.count(),
+        
+        'imported': imported,
+        'pending': pending,
+        'failed': failed,
+        'importing': importing,
+
         'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource', 'parent':pk}),
         #'toplevel_geojson':json.dumps({'type':'FeatureCollection','features':[]}),
         #'toplevel_geojson':json.dumps(src.toplevel_geojson())

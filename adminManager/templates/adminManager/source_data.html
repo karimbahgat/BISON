@@ -79,20 +79,40 @@
 
                         <br>
 
-                        <span style="vertical-align:top">Boundaries: 
-                            {{ boundary_count }}
+                        <span style="vertical-align:top">
+                            {{ boundary_count|floatformat:"g" }} boundaries
+                        </span>
+
+                        <br>
+
+                        <span style="vertical-align:top">
+                             {{ pending|add:importing|add:failed|add:imported }} input files
                         </span>
 
                         <br>
 
                         <div id="import-menu">
-                            <span>Imported: {{ imports_processed }} of {{ imports_total }}</span>
-                            <span>Failed: {{ imports_failed }}</span>
-                            <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')" title="Clear all imported data">&#8634; Reset</a>
-                            {% if not children %}
-                            <a class="button small" href="{% url 'datasource_importers_edit' source.pk %}" title="Edit source importers">Edit</a>
-                            {% endif %}
-                            <a class="button small" href="{% url 'datasource_import' source.pk %}" title="Run all pending imports">&#9658; Run</a>
+                            <div id="import-stats">
+                                {% if pending %}
+                                <span class="importer-status" data-status="Pending">{{ pending }} Pending</span>
+                                {% endif %}
+                                {% if importing %}
+                                <span class="importer-status" data-status="Importing">{{ importing }} Importing</span>
+                                {% endif %}
+                                {% if failed %}
+                                <span class="importer-status" data-status="Failed">{{ failed }} Failed</span>
+                                {% endif %}
+                                {% if imported %}
+                                <span class="importer-status" data-status="Imported">{{ imported }} Imported</span>
+                                {% endif %}
+                            </div>
+                            <div id="import-buttons">
+                                <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')" title="Clear all imported data">&#8634; Reset</a>
+                                {% if not children %}
+                                <a class="button small" href="{% url 'datasource_importers_edit' source.pk %}" title="Edit source importers">Edit</a>
+                                {% endif %}
+                                <a class="button small" href="{% url 'datasource_import' source.pk %}" title="Run all pending imports">&#9658; Run</a>
+                            </div>
                         </div>
 
                         {% if children %}
@@ -102,14 +122,26 @@
                                 <thead>
                                     <tr>
                                         <th>Source</th>
-                                        <th>Boundaries</th>
+                                        <th>Import Status</th>
+                                        <th>Latest Activity</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for child_source,child_stats in children %}
                                         <tr>
                                             <td><a href="{% url 'dataset' child_source.pk %}" class="button small">{{ child_source.name }}</a></td>
-                                            <td>{{ child_stats.admin_count }}</td>
+                                            <td>
+                                            {% with allstatus='Pending Importing Failed Imported' %}
+                                            {% for status in allstatus.split %}
+                                                {% for key,count in child_stats.status_counts.items %}
+                                                    {% if key == status and count %}
+                                                        <span class="importer-status" data-status="{{ status }}">{{ count }} {{ status }}</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endfor %}
+                                            {% endwith %}
+                                            </td>
+                                            <td>{{ child_stats.status_latest|timesince }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

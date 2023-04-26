@@ -3,6 +3,8 @@ from django.db.models.functions import Upper
 
 from django.forms.models import model_to_dict
 
+from adminImporter.models import DatasetImporter
+
 #from djangowkb.fields import GeometryField
 from .fields import GeometryField
 from .geometry import WKBGeometry
@@ -133,48 +135,67 @@ class AdminSource(models.Model):
 
     def children_with_stats(self):
         '''Immediate children with stats as a list of (child,stats) tuples'''
-        # NOTE: this is very messy and probably not the best approach
+        # NOTE: this is very messy and maybe not the best approach
 
         # get immediate children
         from django.db import connection
         curs = connection.cursor()
-        children = self.children.all()
-        child_ids = [c.pk for c in children]
-        if not child_ids:
-            return []
+        # children = self.children.all()
+        # child_ids = [c.pk for c in children]
+        # if not child_ids:
+        #     return []
 
         # custom aggregation with group by
-        curs.execute('''
-            WITH RECURSIVE recurs AS
-            (
-                SELECT id, id AS root_id FROM {sources_table} WHERE id IN {child_ids}
+        sql = '''
+        WITH RECURSIVE recurs AS
+        (
+            SELECT id, id AS root_id
+            FROM {sources_table} WHERE parent_id = {src_id}
 
-                UNION ALL
+            UNION ALL
 
-                SELECT s.id, recurs.root_id FROM recurs
-                INNER JOIN {sources_table} AS s
-                ON s.parent_id = recurs.id
-            )
-            SELECT root_id AS id, COUNT(admins.id) AS admin_count
+            SELECT s.id, recurs.root_id FROM recurs
+            INNER JOIN {sources_table} AS s
+            ON s.parent_id = recurs.id
+        ),
+        importers AS
+        (
+            SELECT recurs.root_id,
+                   imports.status_updated,
+                   (CASE WHEN imports.import_status = 'Imported' THEN 1 ELSE 0 END) AS imported,
+                   (CASE WHEN imports.import_status = 'Pending' THEN 1 ELSE 0 END) AS pending,
+                   (CASE WHEN imports.import_status = 'Failed' THEN 1 ELSE 0 END) AS failed,
+                   (CASE WHEN imports.import_status = 'Importing' THEN 1 ELSE 0 END) AS importing
             FROM recurs
-            INNER JOIN {admin_table} AS admins 
-            WHERE admins.source_id = recurs.id AND admins.geom IS NOT NULL
-            GROUP BY root_id
-            '''.format(
-                        child_ids='('+','.join(map(str,child_ids))+')',
-                        sources_table=AdminSource._meta.db_table,
-                        admin_table=Admin._meta.db_table,
-                        )
+            INNER JOIN {imports_table} AS imports 
+            WHERE imports.source_id = recurs.id
         )
+        SELECT root_id, SUM(imported), SUM(pending),
+                        SUM(failed), SUM(importing), MAX(status_updated)
+        FROM importers
+        GROUP BY root_id
+        '''.format(
+                    sources_table=AdminSource._meta.db_table,
+                    imports_table=DatasetImporter._meta.db_table,
+                    src_id=self.pk,
+                    )
+        print(sql)
+        curs.execute(sql)
 
         # create id stats lookup
+        print('calc stats')
         stats_lookup = {}
-        for row in curs.fetchall():
-            child_id = row[0]
-            row_stats = {'admin_count':row[1]}
+        for row in curs:
+            child_id,imported,pending,failed,importing,updated = row
+            row_stats = {'status_counts': {'Imported':imported, 'Pending':pending, 
+                                           'Failed':failed, 'Importing':importing},
+                        'status_latest':updated}
             stats_lookup[child_id] = row_stats
             
         # create child,stats list
+        print('getting children')
+        child_ids = list(stats_lookup.keys())
+        children = AdminSource.objects.filter(id__in=child_ids)
         child_stats = [(ch,stats_lookup.get(ch.pk, {})) for ch in children]
         return child_stats
 
@@ -197,6 +218,15 @@ class AdminSource(models.Model):
                         )
         )
         return sources
+
+    def all_imports(self):
+        sources = self.all_children()
+        from adminImporter.models import DatasetImporter
+        source_ids = [s.id for s in sources]
+        importers = DatasetImporter.objects.filter(
+            source__in=source_ids,
+        )
+        return importers
 
     def all_admins(self):
         sources = self.all_children()
@@ -289,49 +319,3 @@ class AdminSource(models.Model):
     def get_all_parents_reversed(self, include_self=True):
         return reversed(self.get_all_parents(include_self))
 
-    def imports_all(self):
-        # TODO: rename to all_imports
-        sources = self.all_children()
-        from adminImporter.models import DatasetImporter
-        source_ids = [s.id for s in sources]
-        importers = DatasetImporter.objects.filter(
-            source__in=source_ids,
-        )
-        return importers
-
-        # OLD: too slow
-        # # if has child sources, recursively fetch all importers defined on any child sources
-        # if self.children.all().count():
-        #     for src in self.children.all():
-        #         if importers:
-        #             _importers = src.imports_all(importers, filters=filters)
-        #             importers = importers.union(_importers)
-        #         else:
-        #             importers = src.imports_all(filters=filters)
-            
-        # # otherwise fetch importers defined on this sources
-        # else:
-        #     if filters:
-        #         importers = self.importers.filter(**filters)
-        #     else:
-        #         importers = self.importers.all()
-
-        # return importers
-
-    # def imports_pending(self):
-    #     if not hasattr(self, '_imports_pending'):
-    #         filters = {'import_status': "Pending"}
-    #         self._imports_pending = self.imports_all(filters=filters)
-    #     return self._imports_pending
-
-    # def imports_processed(self):
-    #     if not hasattr(self, '_imports_processed'):
-    #         filters = {'import_status__in': ["Imported","Failed"]}
-    #         self._imports_processed = self.imports_all(filters=filters)
-    #     return self._imports_processed
-
-    # def imports_failed(self):
-    #     if not hasattr(self, '_imports_failed'):
-    #         filters = {'import_status': "Failed"}
-    #         self._imports_failed = self.imports_all(filters=filters)
-    #     return self._imports_failed
