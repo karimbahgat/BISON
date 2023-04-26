@@ -178,3 +178,6 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Background task options
+MAX_RUN_TIME = 60 * 60 * 24  # 1 day = 60 seconds per minute * mins per hour * hours per day

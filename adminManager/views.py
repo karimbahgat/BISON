@@ -29,6 +29,7 @@ def datasource(request, pk):
     context = {
         'source':src,
         'children':children,
+        'boundary_count': src.admin_count(),
         'imports_processed': 'X', #importers.filter(import_status__in=['Imported','Failed']).count(),
         'imports_failed': 'X', #importers.filter(import_status='Failed').count(),
         'imports_total': 'X', #importers.count(),
@@ -277,7 +278,10 @@ def api_admin_data(request):
             cur.execute(sql)
             count,xmin,ymin,xmax,ymax = cur.fetchone()
             print('summarized',count)
-            bbox = xmin,ymin,xmax,ymax
+            if count:
+                bbox = xmin,ymin,xmax,ymax
+            else:
+                bbox = None
             # result data
             result = {'count':count, 'bbox':bbox, 'result':[]}
 

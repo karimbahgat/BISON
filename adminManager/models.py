@@ -201,12 +201,42 @@ class AdminSource(models.Model):
     def all_admins(self):
         sources = self.all_children()
         source_ids = [s.id for s in sources]
-        admins = Admin.objects.exclude(
-            geom=None,
+        admins = Admin.objects.values(
+            'source', 'minx',
         ).filter(
             source__in=source_ids,
-        )
+        ).exclude(minx=None)
         return admins
+
+    def admin_count(self):
+        from django.db import connection
+        cur = connection.cursor()
+        # generate sql
+        sources_table = AdminSource._meta.db_table
+        sql = f'''
+            WITH RECURSIVE recurs AS
+            (
+                SELECT id FROM {sources_table} WHERE id = {self.pk}
+
+                UNION ALL
+
+                SELECT s.id FROM recurs
+                INNER JOIN {sources_table} AS s
+                ON s.parent_id = recurs.id
+            )
+            '''
+        admin_table = Admin._meta.db_table
+        sql += f'''
+            select count(a.id)
+            from {admin_table} as a, recurs as r
+            where a.source_id = r.id
+            and minx is not null
+        '''
+        # execute
+        cur.execute(sql)
+        count = cur.fetchone()[0]
+        print('count',count)
+        return count
 
     # def toplevel_geojson(self):
     #     toplevel = self.admins.filter(geom__isnull=False) # parent=None
@@ -260,6 +290,7 @@ class AdminSource(models.Model):
         return reversed(self.get_all_parents(include_self))
 
     def imports_all(self):
+        # TODO: rename to all_imports
         sources = self.all_children()
         from adminImporter.models import DatasetImporter
         source_ids = [s.id for s in sources]

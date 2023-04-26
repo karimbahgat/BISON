@@ -192,7 +192,9 @@ function receiveAdmins(data) {
     console.log(data)
     setLayerData(data);
     if (firstFetch) {
-        zoomMapToBbox(data.bbox);
+        if (data.bbox) {
+            zoomMapToBbox(data.bbox);
+        };
         firstFetch = false;
     };
     // open for new fetches

@@ -48,6 +48,10 @@ from adminManager import models
 #         except Exception as err:
 #             print('error importing source:', err)
 
+def process_tasks(request):
+    import os
+    os.system("python manage.py process_tasks", shell=True)
+
 def datasource_importers_edit(request, pk):
     '''Edit the importers of a data source'''
     src = models.AdminSource.objects.get(pk=pk)
@@ -132,7 +136,7 @@ def datasource_import(request, pk):
     background_datasource_import(pk) #scheduled to run in background
     return redirect('dataset', pk)
 
-@background(schedule=0) # schedule to run in 5 seconds
+@background(schedule=0) # add to queue to run now
 def background_datasource_import(pk):
     source = models.AdminSource(pk=pk)
 
