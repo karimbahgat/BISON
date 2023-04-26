@@ -181,7 +181,7 @@ function fetchAdmins(source_id) {
         urlParams.set('ymin', miny);
         urlParams.set('xmax', maxx);
         urlParams.set('ymax', maxy);
-        urlParams.set('minimum_extent_fraction', 20);
+        urlParams.set('minimum_extent_fraction', 30);
     };
     url = '/api/admins?' + urlParams.toString();
     console.log(url);

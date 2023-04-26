@@ -106,7 +106,7 @@ DATABASES = {
     'default': dj_database_url.parse(db_url)
 }
 DATABASES['default']['OPTIONS'] = {
-    'charset': 'utf8_unicode_ci',
+    'charset': 'utf8',
 }
 
 # add remote db ssl if specified

@@ -35,6 +35,7 @@ class Admin(models.Model):
             models.Index(fields=['miny']), 
             models.Index(fields=['maxx']), 
             models.Index(fields=['maxy']), 
+            models.Index(fields=['source','minx','maxx','miny','maxy'])
         ]
 
     #def __str__(self):

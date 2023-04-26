@@ -38,6 +38,7 @@
 }
 
 #map-div {
+    position: relative;
     width: 100%;
 }
 
@@ -47,7 +48,15 @@
 }
 
 #map-loading {
+    position: absolute;
+    top: 5px;
+    width: 100%;
     text-align: center;
+}
+
+#map-loading img {
+    width: 70px;
+    height: 70px;
 }
 
 #dataset-importers-table {
