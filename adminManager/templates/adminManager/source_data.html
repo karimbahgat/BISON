@@ -92,7 +92,7 @@
                         <br>
 
                         <div id="import-menu">
-                            <div id="import-stats">
+                            <div class="import-stats">
                                 {% if pending %}
                                 <span class="importer-status" data-status="Pending">{{ pending }} Pending</span>
                                 {% endif %}
@@ -131,15 +131,17 @@
                                         <tr>
                                             <td><a href="{% url 'dataset' child_source.pk %}" class="button small">{{ child_source.name }}</a></td>
                                             <td>
-                                            {% with allstatus='Pending Importing Failed Imported' %}
-                                            {% for status in allstatus.split %}
-                                                {% for key,count in child_stats.status_counts.items %}
-                                                    {% if key == status and count %}
-                                                        <span class="importer-status" data-status="{{ status }}">{{ count }} {{ status }}</span>
-                                                    {% endif %}
+                                                <div class="import-stats">
+                                                {% with allstatus='Pending Importing Failed Imported' %}
+                                                {% for status in allstatus.split %}
+                                                    {% for key,count in child_stats.status_counts.items %}
+                                                        {% if key == status and count %}
+                                                            <span class="importer-status" data-status="{{ status }}">{{ count }} {{ status }}</span>
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 {% endfor %}
-                                            {% endfor %}
-                                            {% endwith %}
+                                                {% endwith %}
+                                                </div>
                                             </td>
                                             <td>{{ child_stats.status_latest|timesince }}</td>
                                         </tr>

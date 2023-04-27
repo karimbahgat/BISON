@@ -81,9 +81,16 @@
     margin-left: 25px;
 }
 
+.import-stats {
+    display: flex;
+    flex-wrap: wrap;
+}
+
 .importer-status {
     padding: 3px;
     border-radius: 3px;
+    white-space: nowrap;
+    margin: 1px;
 }
 
 .importer-status[data-status="Pending"] {

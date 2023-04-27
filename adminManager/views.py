@@ -13,8 +13,14 @@ import json
 # Create your views here.
 
 def datasources(request):
-    datasets = models.AdminSource.objects.filter(type='DataSource', parent=None)
-    context = {'datasets':datasets,
+    top_datasets = models.AdminSource.objects.filter(type='DataSource', parent=None)
+    print(len(top_datasets),top_datasets)
+
+    from .utils import sources_with_stats
+    top_datasets = sources_with_stats([d.pk for d in top_datasets])
+    print(len(top_datasets), top_datasets)
+
+    context = {'datasets':top_datasets,
                 'add_dataset_form': forms.AdminSourceForm(initial={'type':'DataSource'}),
                 }
     return render(request, 'adminManager/sources_data.html', context=context)

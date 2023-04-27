@@ -135,69 +135,10 @@ class AdminSource(models.Model):
 
     def children_with_stats(self):
         '''Immediate children with stats as a list of (child,stats) tuples'''
-        # NOTE: this is very messy and maybe not the best approach
-
-        # get immediate children
-        from django.db import connection
-        curs = connection.cursor()
-        # children = self.children.all()
-        # child_ids = [c.pk for c in children]
-        # if not child_ids:
-        #     return []
-
-        # custom aggregation with group by
-        sql = '''
-        WITH RECURSIVE recurs AS
-        (
-            SELECT id, id AS root_id
-            FROM {sources_table} WHERE parent_id = {src_id}
-
-            UNION ALL
-
-            SELECT s.id, recurs.root_id FROM recurs
-            INNER JOIN {sources_table} AS s
-            ON s.parent_id = recurs.id
-        ),
-        importers AS
-        (
-            SELECT recurs.root_id,
-                   imports.status_updated,
-                   (CASE WHEN imports.import_status = 'Imported' THEN 1 ELSE 0 END) AS imported,
-                   (CASE WHEN imports.import_status = 'Pending' THEN 1 ELSE 0 END) AS pending,
-                   (CASE WHEN imports.import_status = 'Failed' THEN 1 ELSE 0 END) AS failed,
-                   (CASE WHEN imports.import_status = 'Importing' THEN 1 ELSE 0 END) AS importing
-            FROM recurs
-            INNER JOIN {imports_table} AS imports 
-            WHERE imports.source_id = recurs.id
-        )
-        SELECT root_id, SUM(imported), SUM(pending),
-                        SUM(failed), SUM(importing), MAX(status_updated)
-        FROM importers
-        GROUP BY root_id
-        '''.format(
-                    sources_table=AdminSource._meta.db_table,
-                    imports_table=DatasetImporter._meta.db_table,
-                    src_id=self.pk,
-                    )
-        print(sql)
-        curs.execute(sql)
-
-        # create id stats lookup
-        print('calc stats')
-        stats_lookup = {}
-        for row in curs:
-            child_id,imported,pending,failed,importing,updated = row
-            row_stats = {'status_counts': {'Imported':imported, 'Pending':pending, 
-                                           'Failed':failed, 'Importing':importing},
-                        'status_latest':updated}
-            stats_lookup[child_id] = row_stats
-            
-        # create child,stats list
-        print('getting children')
-        child_ids = list(stats_lookup.keys())
-        children = AdminSource.objects.filter(id__in=child_ids)
-        child_stats = [(ch,stats_lookup.get(ch.pk, {})) for ch in children]
-        return child_stats
+        from .utils import sources_with_stats
+        children = self.children.all()
+        children = sources_with_stats([c.pk for c in children])
+        return children
 
     def all_children(self):
         sources = AdminSource.objects.raw('''
