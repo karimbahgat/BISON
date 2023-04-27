@@ -129,43 +129,53 @@ def datasource_clear(request, pk):
     return redirect('dataset', source.pk)
 
 def datasource_import(request, pk):
-    '''Import all DatasetImporters defined for a source'''
-    #thread = threading.Thread(target=_datasource_import, args=(pk,))
-    #thread.start()
-    background_datasource_import(pk) #scheduled to run in background
-    return redirect('dataset', pk)
-
-@background(schedule=0) # add to queue to run now
-def background_datasource_import(pk):
+    '''For a given source, add all pending DatasetImporters to work queue.'''
     source = models.AdminSource(pk=pk)
 
-    # loop all pending importers
+    # get all pending importers
     importers = source.all_imports().filter(import_status='Pending')
+
+    # add importers to work queue
     for importer in importers:
-        # update status
-        importer.import_status = 'Importing'
+        run_importer(importer.pk)
+
+    # return immediately
+    return redirect('dataset', pk)
+
+@background(schedule=0) # adds this function to a work queue rather than run it
+def run_importer(pk):
+    '''Runs a specified importer, updating import status accordingly.
+    The function is not run immediately, but rather added to a work queue.
+    The function gets run later by an available worker operating in the background.'''
+    # exit early if importer is not pending for some reason
+    # (eg another worker got to it first)
+    importer = DatasetImporter.objects.get(pk=pk)
+    if importer.import_status != 'Pending':
+        return
+
+    # update status
+    importer.import_status = 'Importing'
+    importer.import_details = ''
+    importer.status_updated = timezone.now()
+    importer.save()
+
+    # run the import
+    try:
+        _run_importer(importer)
+        importer.import_status = 'Imported'
         importer.import_details = ''
-        importer.status_updated = timezone.now()
-        importer.save()
+    except:
+        msg = traceback.format_exc()
+        print('ERROR:', msg)
+        importer.import_status = 'Failed'
+        importer.import_details = msg
 
-        # run the import
-        try:
-            run_importer(importer)
-            importer.import_status = 'Imported'
-            importer.import_details = ''
-        except:
-            msg = traceback.format_exc()
-            print('ERROR:', msg)
-            importer.import_status = 'Failed'
-            importer.import_details = msg
+    # update status
+    importer.status_updated = timezone.now()
+    importer.save()
 
-        # update status
-        importer.status_updated = timezone.now()
-        importer.save()
-
-@csrf_exempt
-def run_importer(importer):
-    '''Runs a specific Importer, this is done by a backend, not a user'''
+def _run_importer(importer):
+    '''Performs the actual work of importing data based on information from importer.'''
     source = importer.source
     print('')
     print('-'*30)

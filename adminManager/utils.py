@@ -2,6 +2,8 @@
 from .models import Admin, AdminSource
 from adminImporter.models import DatasetImporter
 
+from django.utils import timezone
+
 def sources_with_stats(source_ids):
     # NOTE: this is very messy and maybe not the best approach
     from django.db import connection
@@ -53,9 +55,14 @@ def sources_with_stats(source_ids):
     stats_lookup = {}
     for row in curs:
         child_id,imported,pending,failed,importing,updated = row
+        # datetime from db might not be timezone aware
+        if not timezone.is_aware(updated):
+            updated = timezone.make_aware(updated)
+        # create stats dict
         row_stats = {'status_counts': {'Imported':imported, 'Pending':pending, 
                                         'Failed':failed, 'Importing':importing},
                     'status_latest':updated}
+        # add to lookup
         stats_lookup[child_id] = row_stats
         
     # create child,stats list

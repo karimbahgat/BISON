@@ -143,7 +143,9 @@
                                                 {% endwith %}
                                                 </div>
                                             </td>
-                                            <td>{{ child_stats.status_latest|timesince }}</td>
+                                            <td title="{{ child_stats.status_latest }}">
+                                                {{ child_stats.status_latest|timesince }}
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
