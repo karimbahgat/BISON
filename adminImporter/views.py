@@ -163,13 +163,13 @@ def background_datasource_import(pk):
         importer.status_updated = timezone.now()
         importer.save()
 
-    # cleanup downloads
-    cleanup_downloads()
-
 @csrf_exempt
 def run_importer(importer):
     '''Runs a specific Importer, this is done by a backend, not a user'''
     source = importer.source
+    print('')
+    print('-'*30)
+    print(f'started {importer}')
 
     #if request.method == 'GET':
     #    dfafds #return render(request, 'source_import.html')
@@ -292,8 +292,6 @@ def run_importer(importer):
 
     # run import
     _params = params
-    print('')
-    print('-'*30)
     print('import args', _params)
 
     # open and parse data
@@ -321,54 +319,93 @@ def run_importer(importer):
     # redirect
     #return redirect('source', source.pk)
 
-DOWNLOAD_CACHE = OrderedDict()
+DL_CACHE_PREFIX = 'boundary_cache_'
+DL_CACHE_MAX_FILES = 20
+DL_TIMEOUT = 10  # in minutes
+
+def get_dl_cache():
+    '''Search tempdir for all files starting with DL_CACHE_PREFIX.
+    Return a cache lookup with filename, and full file path.
+    '''
+    import tempfile
+    tempdir = tempfile.gettempdir()
+    files = [fil for fil in os.listdir(tempdir)
+             if fil.startswith(DL_CACHE_PREFIX)]
+    cache = {fil: os.path.join(tempdir, fil)
+             for fil in files}
+    return cache
+
+# def calc_cache_size(cache):
+#     size = 0
+#     for path in cache.values():
+#         size += os.path.getsize(path)
+#     return size
+    
+def oldest_to_newest_file_paths(paths):
+    key = lambda p: os.path.getmtime(p) # last modified timestamp
+    paths = sorted(paths, key=key)
+    return paths
+
+def generate_url_hash(urlpath):
+    '''Generate a unique hash for a given url.
+    Ignores extension so that files with different extensions get same hashname.
+    Returns urlhash,extension
+    '''
+    import hashlib
+    urlpath_base,ext = os.path.splitext(urlpath)
+    urlhash = hashlib.md5(urlpath_base.encode('utf8')).hexdigest()
+    return urlhash,ext
 
 def download_file(urlpath, file_ext=None):
-    if urlpath in DOWNLOAD_CACHE:
+    # determine url hash to use for cache lookup
+    urlhash,ext = generate_url_hash(urlpath)
+    if file_ext:
+        ext = file_ext # override file ext if provided
+    temp_filename = DL_CACHE_PREFIX + urlhash + ext
+    
+    # lookup urlpath among cached downloads
+    cache = get_dl_cache()
+    if temp_filename in cache:
         # return temp file from cache
         print(f'getting {urlpath} from cache')
-        print(f'(cache size {len(DOWNLOAD_CACHE)})')
-        temp_path = DOWNLOAD_CACHE[urlpath]
-        return temp_path
+        print(f'(cache size {len(cache)})')
+        temp_path = cache[temp_filename]
     else:
         # doesnt exists in cache, download url
-        print('downloading', urlpath)
+        print('downloading to cache', urlpath)
+        print(f'(cache size {len(cache)})')
         from urllib.request import Request, urlopen
         import tempfile
         import shutil
         import hashlib
         # open url as fobj
-        timeout = 60 * 10 # 10 mins
+        timeout = 60 * DL_TIMEOUT # mins to secs
         headers = {
             'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36',
             'Connection': 'keep-alive',
         }
         req = Request(urlpath, headers=headers)
         fobj = urlopen(req, timeout=timeout)
-        # create temp file based on a hash of url base name
-        # (so that files with different extensions get same hashname)
-        urlpath_base,ext = os.path.splitext(urlpath)
-        if file_ext:
-            ext = file_ext # override file ext if provided
-        urlhash = hashlib.md5(urlpath_base.encode('utf8')).hexdigest()
-        temp_path = os.path.join(tempfile.gettempdir(), urlhash + ext)
+        # determine temp file path
+        temp_path = os.path.join(tempfile.gettempdir(), temp_filename)
         # stream url fobj to temp file
         with open(temp_path, mode='w+b') as temp:
             shutil.copyfileobj(fobj, temp)
-        # store tempfile in cache
-        DOWNLOAD_CACHE[urlpath] = temp_path
         # make sure cache doesn't get too big
-        if len(DOWNLOAD_CACHE) > 10:
-            oldest_urlhash,oldest_temp_path = DOWNLOAD_CACHE.popitem(last=False)
-            os.remove(oldest_temp_path)
-        return temp_path
+        cache_files = list(cache.values()) + [temp_path]
+        try:
+            cache_files = oldest_to_newest_file_paths(cache_files)
+            while len(cache_files) > DL_CACHE_MAX_FILES:
+                fil = cache_files.pop(0)
+                print('clearing oldest cache file', fil)
+                try: os.remove(fil)
+                except: pass
+        except Exception as err:
+            print('WARNING: unable to clear cache:', err)
 
-def cleanup_downloads():
-    print('cleanup')
-    while len(DOWNLOAD_CACHE):
-        oldest_urlhash,oldest_temp_path = DOWNLOAD_CACHE.popitem(last=False)
-        os.remove(oldest_temp_path)
-    print('done')
+    # return file path
+    print('local file path', temp_path)
+    return temp_path
 
 def detect_shapefile_encoding(path):
     print('detecting encoding')
