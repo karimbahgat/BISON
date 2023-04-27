@@ -60,7 +60,6 @@ def sources_with_stats(source_ids):
         
     # create child,stats list
     print('getting children')
-    child_ids = list(stats_lookup.keys())
-    children = AdminSource.objects.filter(id__in=child_ids)
-    child_stats = [(ch,stats_lookup.get(ch.pk, {})) for ch in children]
-    return child_stats
+    sources = AdminSource.objects.filter(id__in=source_ids)
+    source_stats = [(s,stats_lookup.get(s.pk, {})) for s in sources]
+    return source_stats
