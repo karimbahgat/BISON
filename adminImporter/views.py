@@ -48,8 +48,15 @@ from adminManager import models
 #         except Exception as err:
 #             print('error importing source:', err)
 
-def process_tasks(request):
+def tasks_process(request):
     os.system("python manage.py process_tasks")
+
+def tasks_clear(request):
+    from background_task.models import Task
+    tasks = Task.objects.all()
+    # TODO: maybe don't delete if the pid indicated in .locked_by is still running
+    print(f'deleting all {tasks.count()} tasks')
+    tasks.delete()
 
 def datasource_importers_edit(request, pk):
     '''Edit the importers of a data source'''
@@ -135,18 +142,57 @@ def datasource_import(request, pk):
     # get all pending importers
     importers = source.all_imports().filter(import_status='Pending')
 
-    # add importers to work queue
-    for importer in importers:
-        run_importer(importer.pk)
+    # add importers to work queue (although can be slow when running many tasks)
+    with transaction.atomic():
+        for importer in importers:
+            run_importer(importer.pk)
+
+    # manually create each Task and bulk add
+    # from background_task.models import Task
+    # task_objs = [create_import_task(importer) for importer in importers]
+    # Task.objects.bulk_create(task_objs)
 
     # return immediately
     return redirect('dataset', pk)
 
+# def create_import_task(importer):
+#     '''Creates an import background task, but doesn't save it.'''
+#     # WARNING: apparently there's more to it than saving task to db
+#     # reverse engineered from source code, not sure that it works
+
+#     # create task without saving
+#     from background_task.models import TaskManager
+#     func = run_importer
+#     name = '%s.%s' % (func.__module__, func.__name__)
+#     args = (importer.pk,)
+#     kwargs = {}
+#     priority = 0
+#     queue = None
+#     creator = None
+#     task = TaskManager().new_task(
+#         task_name=name,
+#         args=args,
+#         kwargs=kwargs,
+#         priority=priority,
+#         queue=queue,
+#         creator=creator,
+#     )
+#     task.locked_by = '' # this is done in Task.save
+
+#     # add task proxy to the background_task task list
+#     from background_task.tasks import tasks
+#     from background_task import signals
+#     schedule = 0
+#     proxy = tasks._task_proxy_class(name, func, schedule, queue,
+#                                     remove_existing_tasks=False, runner=tasks._runner)
+#     tasks._tasks[name] = proxy
+#     signals.task_created.send(sender='create_import_task', task=task)
+
+#     return task
+
 @background(schedule=0) # adds this function to a work queue rather than run it
 def run_importer(pk):
-    '''Runs a specified importer, updating import status accordingly.
-    The function is not run immediately, but rather added to a work queue.
-    The function gets run later by an available worker operating in the background.'''
+    '''Runs a specified importer, updating import status accordingly.'''
     # exit early if importer is not pending for some reason
     # (eg another worker got to it first)
     importer = DatasetImporter.objects.get(pk=pk)

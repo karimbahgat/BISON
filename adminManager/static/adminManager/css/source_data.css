@@ -62,14 +62,14 @@
 #dataset-importers-table {
     margin-top: 20px;
     margin-left: 20px;
-    max-height: 330px;
+    max-height: 300px;
     overflow: auto;
 }
 
 #dataset-sources-table {
     margin-top: 20px;
     margin-left: 20px;
-    max-height: 330px;
+    max-height: 300px;
     overflow: auto;
 }
 
