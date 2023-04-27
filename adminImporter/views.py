@@ -123,7 +123,16 @@ def datasource_clear(request, pk):
     # start db transaction
     with transaction.atomic():
         # drop all existing source data
-        source.admins.all().delete()
+        # TODO: this is slow, esp for large datasets
+        # consider implementing in raw sql? 
+        #source.all_admins().delete() # cant do delete after .values()
+        from adminManager.models import Admin
+        sources = source.all_children()
+        source_ids = [s.id for s in sources]
+        admins = Admin.objects.filter(
+            source__in=source_ids,
+        )
+        admins.delete()
 
         # reset all importers
         importers = list(source.all_imports().exclude(import_status='Pending'))
@@ -576,7 +585,7 @@ def parse_data(**params):
         level_def = level_defs[level]
         group_field = level_def['id_field'] if int(level_def['level']) > 0 else level_def.get('id_field', None) # id not required for adm0
         group_delim = level_def.get('id_delimiter', None)
-        group_index = int(level_def['id_index']) if level_def.get('id_index',None) != None else None
+        group_index = int(level_def['id_index']) if group_delim else None
         fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, group_delim, group_index, subset):
             # get hardcoded group val if group_field not set
