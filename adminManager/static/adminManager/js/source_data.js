@@ -15,22 +15,22 @@ var lineStrokes = [
     new ol.style.Stroke({
         color: lineColor,
         width: 2,
-        lineDash: [3,9]
+        lineDash: [5,5]
     }),
     new ol.style.Stroke({
         color: lineColor,
         width: 1.5,
-        lineDash: [5,5]
+        lineDash: [3,9]
     }),
     new ol.style.Stroke({
         color: lineColor,
         width: 1,
-        lineDash: [5,5]
+        lineDash: [3,9]
     }),
     new ol.style.Stroke({
         color: lineColor,
         width: 0.5,
-        lineDash: [5,5]
+        lineDash: [3,9]
     }),
 ];
 

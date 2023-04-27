@@ -211,6 +211,15 @@ def api_admin_data(request):
             )
         '''
 
+        # create bbox geom if given
+        xmin,ymin,xmax,ymax = params.get('xmin'),params.get('ymin'),params.get('xmax'),params.get('ymax')
+        if xmin != None:
+            sql += f'''
+            ,
+            bbox AS
+                (SELECT ST_ENVELOPE(MULTIPOINT(POINT({xmin},{ymin}), POINT({xmax},{ymax}))) AS geom)
+            '''
+
         # sql to get admins belonging to sources
         #admins = models.Admin.objects.filter(source__in=source_ids)
         #exclude = params.get('exclude', None)
@@ -226,7 +235,14 @@ def api_admin_data(request):
         admin_table = models.Admin._meta.db_table
         sql += f'''
         select a.id, minx, miny, maxx, maxy
-        from {admin_table} as a, recurs as r
+        from {admin_table} as a, recurs as r'''
+
+        # include bbox table if given
+        if xmin != None:
+            sql += ', bbox as b'
+
+        # where ids match and has geom
+        sql += '''
         where a.source_id = r.id
         and minx is not null
         '''
@@ -259,7 +275,6 @@ def api_admin_data(request):
         #'''
         
         # limit to bbox if given
-        xmin,ymin,xmax,ymax = params.get('xmin'),params.get('ymin'),params.get('xmax'),params.get('ymax')
         if xmin != None:
             # limit to bbox
             sql += f'''
@@ -283,6 +298,19 @@ def api_admin_data(request):
                 and (maxx-minx) > {dx} and (maxy-miny) > {dy}
                 '''
         
+            # exclude geoms completely containing the bbox
+            # TODO: the bbox contains is fine,
+            # but the st_within or st_contains is very slow... 
+            #and not mbrcontains(a.geom, b.geom)
+            #and not st_contains(a.geom, b.geom)
+            # sql += f'''
+            # and not (
+            #     {xmin} >= minx and {xmax} <= maxx
+            #     and {ymin} >= miny and {ymax} <= maxy
+            # )
+            # and not st_within(b.geom, a.geom)
+            # '''
+
         # debug
         #print(sql)
         #cur.execute(f'explain {sql}')
