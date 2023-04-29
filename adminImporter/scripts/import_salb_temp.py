@@ -149,9 +149,11 @@ def main(host, root_source):
 if __name__ == '__main__':
 
     # set which site host and top source to import into
-    # http://localhost:8000 or http://boundarylookup.wm.edu
-    host = 'http://localhost:8000'
-    root_source = 5575
+    # http://localhost:8000 or https://boundarylookup.wm.edu
+    #host = 'http://localhost:8000'
+    #root_source = 5575
+    host = 'https://boundarylookup.wm.edu'
+    root_source = 5402
     
     # run
     main(host, root_source)

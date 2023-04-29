@@ -26,184 +26,249 @@ import warnings
 import datetime
 import csv
 import re
-from openpyxl import load_workbook
 
-def main():
-    from adminManager import models
-    from adminImporter.models import DatasetImporter
+def iter_countries():
+    path = os.path.join(os.path.dirname(__file__), 'countries_codes_and_coordinates.csv')
+    with open(path) as fobj:
+        reader = csv.DictReader(fobj)
+        for row in reader:
+            iso = row['Alpha-3 code'].replace('"','').replace("'",'').strip()
+            yield iso
 
-    from django.db import transaction
-    from django.utils import timezone
+def parse_country(iso):
+    '''Determine metadaata from country page
+    also define import params by parsing the available country download links.
+    '''
+    source_url = f'https://data.humdata.org/dataset/cod-ab-{iso.lower()}'
+    print('parsing',source_url)
+    try:
+        resp = urllib.request.urlopen(source_url)
+    except urllib.error.HTTPError:
+        warnings.warn('Bad source url')
+        return
+    raw = resp.read().decode('utf8')
 
-    from . import utils
+    # hacky parse the html into elements
+    elems = raw.replace('>','<').split('<')
+    elems = (elem for elem in elems)
+    
+    parsed = {'download_links':[], 'url':source_url, 'iso':iso}
+    label = value = None
+    root = 'https://data.humdata.org'
+    for elem in elems:
+        # get metadata label
+        if elem.startswith('th') and 'dataset-label' in elem:
+            label = next(elems)
+            print('label:',repr(label))
+        
+        # get metadata value
+        if elem.startswith('td') and 'dataset-details' in elem:
+            text_vals = []
+            while not elem.startswith('/td'):
+                elem = next(elems).replace('\n','').replace('\t','').strip()
+                if elem != '' and not elem in ('p','br','br/') and not elem.startswith(('span','div','a ','/')):
+                    text_vals.append(elem)
+            value = ' '.join(text_vals)
+            print('value:',repr(value))
 
-    # read csv
-    csv_path = os.path.join(os.path.dirname(__file__), 'ocha-meta.xlsx')
-    print(csv_path)
-    wb = load_workbook(filename=csv_path)
-    table = wb.worksheets[0]
-    exceldata = list(table.values)
-    fields = list(exceldata[0])
-    rows = []
-    for _row in exceldata[1:]:
-        row = dict(zip(fields, _row))
-        rows.append(row)
+        # add key-value pair to parsed results
+        if label != None and value != None:
+            parsed[label] = value
+            label = value = None # reset
 
-    with transaction.atomic():
-
-        # get top source
-        root_source = models.AdminSource.objects.get(name='UN OCHA')
-
-        # loop rows of csv
-        for row in rows:
-            # skip if the iso folder already exists
-            iso = row['iso3']
-            print('')
-            print(iso)
-
-            # those without org/src seem to be based on thirdparty data
-            #if not row['src_org']:
-            #    continue
-
-            # get sources
-            source_url = row['src_url']
-            if not source_url:
-                warnings.warn('iso {} has no source_url, skipping'.format(iso))
+        # look for zipfile/shapefile links
+        if elem.startswith('a href') and '.zip' in elem:
+            start = elem.find('"') + 1
+            end = elem.find('"', start)
+            link = root + elem[start:end]
+            if '_admall_' in link.lower():
                 continue
-            sources = []
-            if row['src_org']:
-                sources.append(row['src_org'])
-            if row['src_name']:
-                sources.append(row['src_name'])
+            if 'server' in link.lower():
+                continue
+            if '_emf.' in link.lower():
+                continue
+            if '.gdb' in link.lower() or '_gdb' in link.lower():
+                continue
 
-            # dates
-            year = row['src_date'].year if row['src_date'] else None
-            updated = row['src_update'].strftime('%Y-%m-%d') if row['src_update'] else None
-            if not updated:
-                warnings.warn('Missing update date for {}'.format(iso))
-            if not year:
-                warnings.warn('Missing year for {}'.format(iso))
+            parsed['download_links'].append(link)
 
-            # license
-            # license = 'Creative Commons Attribution for Intergovernmental Organisations'
-            # license_url = source_url
+    return parsed
 
-            # create country source
-            meta = {
-                'parent': root_source,
-                'name': row['name'],
-                'url': source_url,
-                'valid_from': f'{year}-01-01' if year else None,
-                'valid_to': f'{year}-12-31' if year else None,
-                #'sources': sources,
-                #'updated': updated,
-                'type': 'DataSource',
-            }
-            src = models.AdminSource(**meta)
-            src.save()
+def main(host, root_source):
+    #from adminManager import models
+    #from adminImporter.models import DatasetImporter
 
-            # TODO: add source lineage
-            # ... 
+    #from django.db import transaction
+    #from django.utils import timezone
+    from dateutil.parser import parse as parse_date
 
-            # determine import params by parsing the country download links
+    import utils
+
+    # loop countries
+    for iso in iter_countries():
+        print('')
+        print(iso)
+
+        # parse metadata++ from country page
+        parsed = parse_country(iso)
+        print(parsed)
+        if not parsed:
+            print('unable to open url, skipping')
+            continue
+
+        # check if has downloadable shapefiles and generate import params
+        import_params_list = []
+        for link in parsed['download_links']:
+            # look for shapefiles in zipfiles
+            print('fetching:', link)
             try:
-                resp = urllib.request.urlopen(source_url)
-            except urllib.error.HTTPError:
-                warnings.warn('Bad source url for {}: {}'.format(iso, source_url))
+                filenames = list(utils.inspect_zipfile_contents(link))
+            except Exception as err: # urllib.error.HTTPError:
+                warnings.warn('Error fetching: {} - {}'.format(link, err))
                 continue
-            raw = resp.read().decode('utf8')
 
-            # hacky parse the html into elements
-            elems = raw.replace('>','<').split('<')
-            elems = (elem for elem in elems)
-            
-            # look for zipfile/shapefile links
-            import_params_list = []
-            root = 'https://data.humdata.org'
-            for elem in elems:
-                if elem.startswith('a href') and '.zip' in elem:
-                    start = elem.find('"') + 1
-                    end = elem.find('"', start)
-                    link = root + elem[start:end]
-                    zipname = link.split('/')[-1]
-                    if '_admall_' in zipname.lower():
-                        continue
-                    if 'server' in zipname.lower():
-                        continue
-                    if '_emf.' in zipname.lower():
-                        continue
-                    if '.gdb' in zipname.lower() or '_gdb' in zipname.lower():
+            # loop shapefiles
+            shapefiles = [fil for fil in filenames if fil.endswith('.shp')]
+            if shapefiles:
+                zipname = link.split('/')[-1]
+                print('found zipfile with shapefiles', zipname, shapefiles)
+
+                # add to input
+                for subfile in shapefiles:
+                    print('file', subfile)
+                    if '_admall_' in subfile.lower():
                         continue
 
-                    # look for shapefiles in zipfile
-                    print('fetching:', link)
-                    try:
-                        filenames = list(utils.inspect_zipfile_contents(link))
-                    except Exception as err: # urllib.error.HTTPError:
-                        warnings.warn('Error fetching: {} - {}'.format(link, err))
+                    # levels
+                    subfile_file = subfile.split('/')[-1]
+                    matches = re.findall('_adm(\d)', subfile_file)
+                    if not matches:
+                        matches = re.findall('_admin(\d)', subfile_file)
+                    if not matches:
+                        matches = re.findall('_(\d)[_.]', subfile_file)
+                    if not matches:
+                        warnings.warn(f'Unable to determine adm level from filename: {subfile}')
                         continue
-                    shapefiles = [fil for fil in filenames if fil.endswith('.shp')]
-                    if shapefiles:
-                        print('found zipfile with shapefiles', zipname, shapefiles)
+                    level = matches[0]
+                    print(f'ADM{level}')
+                    level = int(level)
+                    levels = [
+                        {
+                            'level': 0,
+                            'id': iso,
+                            'name_field': None,
+                        }
+                    ]
+                    for lvl in range(1, level+1):
+                        levels.append({
+                            'level': lvl,
+                            'id_field': f'ADM{lvl}_PCODE',
+                            'name_field': f'ADM{lvl}_EN',
+                        })
+                    
+                    # import params
+                    entry = {
+                        'path':link,
+                        'path_zipped_file':subfile,
+                        'levels':levels
+                    }
+                    print(entry)
+                    import_params_list.append(entry)
 
-                        # add to input
-                        for subfile in shapefiles:
-                            print('file', subfile)
-                            if '_admall_' in subfile.lower():
-                                continue
+                    # inspect fields
+                    # import shapefile
+                    # path = '{}/{}'.format(link, subfile)
+                    # reader = shapefile.Reader(path)
+                    # print('fields:',reader.fields)
 
-                            # levels
-                            subfile_file = subfile.split('/')[-1]
-                            matches = re.findall('_adm(\d)', subfile_file)
-                            if not matches:
-                                matches = re.findall('_admin(\d)', subfile_file)
-                            if not matches:
-                                matches = re.findall('_(\d)[_.]', subfile_file)
-                            if not matches:
-                                warnings.warn(f'Unable to determine adm level from filename: {subfile}')
-                                continue
-                            level = matches[0]
-                            print(f'ADM{level}')
-                            level = int(level)
-                            levels = [
-                                {
-                                    'level': 0,
-                                    'id': iso,
-                                    'name_field': None,
-                                }
-                            ]
-                            for lvl in range(1, level+1):
-                                levels.append({
-                                    'level': lvl,
-                                    'id_field': f'ADM{lvl}_PCODE',
-                                    'name_field': f'ADM{lvl}_EN',
-                                })
-                            
-                            # import params
-                            entry = {
-                                'path':link,
-                                'path_zipped_file':subfile,
-                                'levels':levels
-                            }
-                            print(entry)
-                            import_params_list.append(entry)
+        if not import_params_list:
+            warnings.warn("Couldn't find any zipfiles with shapefiles for {}".format(iso))
 
-                            # inspect fields
-                            # import shapefile
-                            # path = '{}/{}'.format(link, subfile)
-                            # reader = shapefile.Reader(path)
-                            # print('fields:',reader.fields)
+        # get from/to validity
+        validity = parsed['Reference Period']
+        if '-' in validity:
+            valid_from,valid_to = validity.split('-')
+        else:
+            valid_from = valid_to = validity
+        # convert to datetime
+        try: 
+            valid_from = parse_date(valid_from.strip()).date()
+        except: 
+            valid_from = None
+        try: 
+            valid_to = parse_date(valid_to.strip()).date()
+        except: 
+            valid_to = None
+        if not valid_from or not valid_to:
+            warnings.warn('Missing date validity for {}'.format(iso))
 
-            if not import_params_list:
-                warnings.warn("Couldn't find any zipfiles with shapefiles for {}".format(iso))
-            
-            # create importers
-            for import_params in import_params_list:
-                importer = DatasetImporter(
-                    source=src,
-                    import_params=import_params,
-                    import_status='Pending',
-                    status_updated=timezone.now(),
-                )
-                importer.save()
-                
+        # update
+        updated = parsed['Updated']
+        updated = parse_date(updated.strip())
+        if not updated:
+            warnings.warn('Missing update date for {}'.format(iso))
+
+        # license
+        # license = 'Creative Commons Attribution for Intergovernmental Organisations'
+        # license_url = source_url
+
+        # create country source
+        name = parsed['Location']
+        note = f'''Provider: {parsed["Contributor"]}
+Source: {parsed["Source"]}
+
+Methodology: 
+{parsed["Methodology"]}
+
+Comments: 
+{parsed["Caveats / Comments"]}
+'''
+        meta = {
+            'parent': root_source,
+            'name': name,
+            'url': parsed['url'],
+            'valid_from': valid_from.isoformat(),
+            'valid_to': valid_to.isoformat(),
+            'note': note,
+            #'sources': sources,
+            #'updated': updated,
+            'type': 'DataSource',
+        }
+        #src = models.AdminSource(**meta)
+        #src.save()
+        print('sending',meta)
+        src = utils.post_datasource(host, meta)
+        print('received',src)
+
+        # TODO: add source lineage
+        # sources = []
+        # if parsed['provider']:
+        #     sources.append(parsed['provider'])
+        # if parsed['source']:
+        #     sources.append(parsed['source'])
+        
+        # create importers
+        # for import_params in import_params_list:
+        #     importer = DatasetImporter(
+        #         source=src,
+        #         import_params=import_params,
+        #         import_status='Pending',
+        #         status_updated=timezone.now(),
+        #     )
+        #     importer.save()
+        if import_params_list:
+            importers = [{'source':src, 'import_params':import_params}
+                        for import_params in import_params_list]
+            utils.post_datasource_importers(host, importers)
+
+if __name__ == '__main__':
+    
+    # set which site host and top source to import into
+    # http://localhost:8000 or https://boundarylookup.wm.edu
+    host = 'http://localhost:8000'
+    root_source = 5603
+    #host = 'https://boundarylookup.wm.edu'
+    #root_source = fdssfs
+    
+    # run
+    main(host, root_source)
