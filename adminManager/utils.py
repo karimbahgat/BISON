@@ -56,7 +56,7 @@ def sources_with_stats(source_ids):
     for row in curs:
         child_id,imported,pending,failed,importing,updated = row
         # datetime from db might not be timezone aware
-        if not timezone.is_aware(updated):
+        if updated and not timezone.is_aware(updated):
             updated = timezone.make_aware(updated)
         # create stats dict
         row_stats = {'status_counts': {'Imported':imported, 'Pending':pending, 

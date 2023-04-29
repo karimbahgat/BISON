@@ -24,5 +24,6 @@ urlpatterns = [
     path('datasource/clear/<int:pk>/', views.datasource_clear, name='datasource_clear'),
     path('datasource/import/<int:pk>/', views.datasource_import, name='datasource_import'),
     path('datasource/importers/edit/<int:pk>/', views.datasource_importers_edit, name='datasource_importers_edit'),
+    path('api/datasource/importers/add/<int:pk>/', views.api_datasource_importers_add, name='api_datasource_importers_add'),
     #path('datasource/import_all/', views.datasource_import_all, name='datasource_import_all'),
 ]

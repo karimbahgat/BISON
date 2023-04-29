@@ -36,6 +36,32 @@ def get_source_params_from_meta(meta):
     }
     return source_params
 
+def post_datasource(host, meta):
+    '''Creates a data source by sending a post request via the add datasource api.
+    Takes a dict of kwargs needed to create a source, converts this to form data,
+    submits, and returns the created source id as returned by the site.
+    '''
+    # post data params is about the same as the model kwargs
+    post = meta
+    url = f'{host}/api/datasets/add/'
+    resp = requests.post(url, json=post)
+    if not resp.ok:
+        raise Exception(resp.reason)
+    src_id = resp.json()['pk']
+    src_id = int(src_id)
+    return src_id
+
+def post_datasource_importers(host, importers):
+    '''Creates data importers by sending a post request via api endpoint.
+    Takes a list of kwargs needed to create one or more importers, converts this to json data,
+    and submits.
+    '''
+    src = importers[0]['source'] # all should have save source
+    url = f'{host}/api/datasource/importers/add/{src}/'
+    resp = requests.post(url, json=importers)
+    if not resp.ok:
+        raise Exception(resp.reason)
+
 def inspect_zipfile_contents(url):
     # adapted from https://betterprogramming.pub/how-to-know-zip-content-without-downloading-it-87a5b30be20a
     import io

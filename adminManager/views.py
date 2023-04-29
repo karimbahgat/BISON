@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.db import transaction
 from django.forms import modelformset_factory
+from django.views.decorators.csrf import csrf_exempt
+from django.http.response import HttpResponse, JsonResponse
 
 from . import models
 from . import forms
@@ -32,10 +34,10 @@ def datasource(request, pk):
     children = src.children_with_stats()
     if children:
         # total status counts for immediate children
-        imported = sum(stats['status_counts']['Imported'] for c,stats in children)
-        importing = sum(stats['status_counts']['Importing'] for c,stats in children)
-        failed = sum(stats['status_counts']['Failed'] for c,stats in children)
-        pending = sum(stats['status_counts']['Pending'] for c,stats in children)
+        imported = sum(stats.get('status_counts',{}).get('Imported',0) for c,stats in children)
+        importing = sum(stats.get('status_counts',{}).get('Importing',0) for c,stats in children)
+        failed = sum(stats.get('status_counts',{}).get('Failed',0) for c,stats in children)
+        pending = sum(stats.get('status_counts',{}).get('Pending',0) for c,stats in children)
     else:
         # no children, total status counts for self
         imports = list(src.importers.all())
@@ -71,6 +73,27 @@ def datasource_delete(request, pk):
     src.delete()
     return redirect('datasets')
 
+@csrf_exempt
+def api_datasource_add(request):
+    '''API endpoint to add a data source via json data'''
+
+    if request.method == 'POST':
+        # load json
+        import json
+        data = json.loads(request.body.decode("utf-8"))
+        print('received',data)
+
+        # load parent if provided
+        if data.get('parent', None):
+            data['parent'] = models.AdminSource.objects.get(pk=data['parent'])
+
+        # create source
+        src = models.AdminSource.objects.create(**data)
+        src.save()
+
+        results = {'pk': src.pk}
+        return JsonResponse(results)
+
 def datasource_add(request):
     if request.method == 'GET':
         # TODO: shouldnt happen, since dataset add is a popup, not a page
@@ -82,48 +105,47 @@ def datasource_add(request):
         #return render(request, 'adminManager/source_data_add.html', context)
 
     elif request.method == 'POST':
-        with transaction.atomic():
-            # save form data
-            data = request.POST
-            print(data)
+        # save form data
+        data = request.POST
+        print(data)
 
-            form = forms.AdminSourceForm(data)
-            if form.is_valid():
-                form.save()
-                source = form.instance
-                # add saved source to importer forms data
-                # formsetdata = {k:v for k,v in data.items() if k.startswith('form-')}
-                # for i in range(int(formsetdata['form-TOTAL_FORMS'])):
-                #     formsetdata[f'form-{i}-source'] = source.id
-                # save importers
-                # DatasetImporterFormset = modelformset_factory(DatasetImporter, 
-                #                                             form=DatasetImporterForm,
-                #                                             extra=0)
-                # importer_forms = DatasetImporterFormset(formsetdata)
+        form = forms.AdminSourceForm(data)
+        if form.is_valid():
+            form.save()
+            source = form.instance
+            # add saved source to importer forms data
+            # formsetdata = {k:v for k,v in data.items() if k.startswith('form-')}
+            # for i in range(int(formsetdata['form-TOTAL_FORMS'])):
+            #     formsetdata[f'form-{i}-source'] = source.id
+            # save importers
+            # DatasetImporterFormset = modelformset_factory(DatasetImporter, 
+            #                                             form=DatasetImporterForm,
+            #                                             extra=0)
+            # importer_forms = DatasetImporterFormset(formsetdata)
 
-                # for import_form in importer_forms:
-                #     if import_form.is_valid():
-                #         #print(import_form.cleaned_data)
-                #         # validate import params
-                #         import_params = import_form.cleaned_data['import_params']
-                #         if import_params['path']:
-                #             # probably should validate some more... 
-                #             import_form.save()
-                #     else:
-                #         # not sure how to deal with invalid forms yet....
-                #         raise Exception(f'invalid form: {import_form.errors}')
+            # for import_form in importer_forms:
+            #     if import_form.is_valid():
+            #         #print(import_form.cleaned_data)
+            #         # validate import params
+            #         import_params = import_form.cleaned_data['import_params']
+            #         if import_params['path']:
+            #             # probably should validate some more... 
+            #             import_form.save()
+            #     else:
+            #         # not sure how to deal with invalid forms yet....
+            #         raise Exception(f'invalid form: {import_form.errors}')
 
-                #if importer_forms.is_valid():
-                #    importer_forms.save()
-                #else:
-                #    print(importer_forms.errors)
-                #    raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
+            #if importer_forms.is_valid():
+            #    importer_forms.save()
+            #else:
+            #    print(importer_forms.errors)
+            #    raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
 
-                return redirect('dataset', source.pk)
+            return redirect('dataset', source.pk)
 
-            else:
-                raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
-                return render(request, 'adminManager/source_data_add.html', {'form':form})
+        else:
+            raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
+            return render(request, 'adminManager/source_data_add.html', {'form':form})
 
 def datasource_edit(request, pk):
     '''Edit of a data source'''
@@ -372,6 +394,25 @@ def api_admin_data(request):
                     case when length(geom) < {geom_size_limit} then st_aswkt(geom)
                     else st_aswkt(st_envelope(multipoint(point(minx,miny), point(maxx,maxy)))) end
                 '''
+                # experiment bbox for each poly part
+                # '''
+                # with firstgeom as (
+                #     select id, 1 as num, st_geometryn(geom, 1) as subgeom
+                #     from adminManager_admin
+                #     where st_geometrytype(geom) = 'MultiGeometry'
+                #     limit 1
+                # ),
+                # recursive polyparts as (
+                #     select * from firstgeom
+                #     union all
+                #     select a.id, num+1, st_geometryn(a.geom, num+1) as subgeom
+                #     from polyparts as p, adminManager_admin as a
+                #     where a.id = p.id
+                #     and (num+1) <= st_numgeometries(a.geom)
+                # )
+                # select * from polyparts
+                # limit 10
+                # '''
             else:
                 wkt_expr = 'null'
 

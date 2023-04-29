@@ -62,8 +62,8 @@ def main():
             print(iso)
 
             # those without org/src seem to be based on thirdparty data
-            if not row['src_org']:
-                continue
+            #if not row['src_org']:
+            #    continue
 
             # get sources
             source_url = row['src_url']

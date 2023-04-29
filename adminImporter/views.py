@@ -7,6 +7,7 @@ from django.db.models.functions import Upper
 from django.db.models import Max
 from django.core.exceptions import ObjectDoesNotExist
 from django.forms import modelformset_factory
+from django.http.response import HttpResponse
 
 from background_task import background
 
@@ -115,6 +116,29 @@ def datasource_importers_edit(request, pk):
             else:
                 context = {'src':src, 'importer_forms':importer_forms}
                 return render(request, 'adminManager/source_importers_edit.html', context)
+
+@csrf_exempt
+def api_datasource_importers_add(request, pk):
+    '''API endpoint to add importers to a data source via json data'''
+    src = models.AdminSource.objects.get(pk=pk)
+
+    if request.method == 'POST':
+        with transaction.atomic():
+            # load json data
+            import json
+            data = json.loads(request.body.decode("utf-8"))
+            print('received',data)
+
+            # create dataset importers
+            for import_meta in data:
+                importer = DatasetImporter.objects.create(
+                    source=src, # use the url's source id, ignore the importer's "source" entry
+                    import_params=import_meta['import_params'],
+                    import_status='Pending',
+                    status_updated=timezone.now(),
+                )
+            
+            return HttpResponse()
 
 def datasource_clear(request, pk):
     '''Delete all boundaries from a source'''
@@ -586,7 +610,7 @@ def parse_data(**params):
         group_field = level_def['id_field'] if int(level_def['level']) > 0 else level_def.get('id_field', None) # id not required for adm0
         group_delim = level_def.get('id_delimiter', None)
         group_index = int(level_def['id_index']) if group_delim else None
-        fields = [v for k,v in level_def.items() if k.endswith('_field') and v != None]
+        fields = [v for k,v in level_def.items() if k.endswith('_field') and v]
         for groupval,_subset in iter_shapefile_groups(reader, group_field, group_delim, group_index, subset):
             # get hardcoded group val if group_field not set
             if not group_field and 'id' in level_def:
