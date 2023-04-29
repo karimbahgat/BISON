@@ -72,12 +72,6 @@
                         </span>
 
                         <br>
-                    
-                        <span style="vertical-align:top">Notes: 
-                        {% if source.note %}{{ source.note }}{% endif %}
-                        </span>
-
-                        <br>
 
                         <span style="vertical-align:top">
                             {{ boundary_count|floatformat:"g" }} boundaries
@@ -182,6 +176,15 @@
                     </div>
                 </div>
             </div>
+
+            {% if source.note %}
+            <div class="box">
+                <div id="source-note">
+                    <h3>Source notes</h3>
+                    {{ source.note|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
 
     </div>
 </section>

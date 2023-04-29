@@ -62,14 +62,14 @@
 #dataset-importers-table {
     margin-top: 20px;
     margin-left: 20px;
-    max-height: 300px;
+    max-height: 325px;
     overflow: auto;
 }
 
 #dataset-sources-table {
     margin-top: 20px;
     margin-left: 20px;
-    max-height: 300px;
+    max-height: 325px;
     overflow: auto;
 }
 
@@ -113,5 +113,12 @@
     color: white;
 }
 
+#source-note {
+    max-height: 200px;
+    overflow: auto;
+}
 
+#source-note p {
+    padding-left: 0.6% !important;
+}
 
