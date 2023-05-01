@@ -101,7 +101,13 @@
                                 {% endif %}
                             </div>
                             <div id="import-buttons">
-                                <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries imported from this source.')" title="Clear all imported data">&#8634; Reset</a>
+                                <div class="dropdown">
+                                    <a class="button small dropbtn">&#8634; Reset</a>
+                                    <div class="dropdown-content">
+                                        <a class="button small" href="{% url 'datasource_clear' source.pk %}"  onclick="return confirm('This will delete all boundaries and reset all importers from this source.')" title="Reset and clear all data importers">All imports</a>
+                                        <a class="button small" href="{% url 'datasource_reset_failed' source.pk %}"  onclick="return confirm('This will reset the status of all Failed imports to Pending.')" title="Reset and clear failed data importers">Failed imports</a>
+                                    </div>
+                                </div>
                                 {% if not children %}
                                 <a class="button small" href="{% url 'datasource_importers_edit' source.pk %}" title="Edit source importers">Edit</a>
                                 {% endif %}

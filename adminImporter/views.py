@@ -141,7 +141,7 @@ def api_datasource_importers_add(request, pk):
             return HttpResponse()
 
 def datasource_clear(request, pk):
-    '''Delete all boundaries from a source'''
+    '''Reset importers of a given source and delete any associated boundaries.'''
     source = models.AdminSource(pk=pk)
 
     # start db transaction
@@ -160,6 +160,23 @@ def datasource_clear(request, pk):
 
         # reset all importers
         importers = list(source.all_imports().exclude(import_status='Pending'))
+        for importer in importers:
+            importer.import_status = 'Pending'
+            importer.import_details = ''
+            importer.status_updated = timezone.now()
+        DatasetImporter.objects.bulk_update(importers, ['import_status','import_details','status_updated'])
+
+    return redirect('dataset', source.pk)
+
+def datasource_reset_failed(request, pk):
+    '''Reset any failed importers of a given source.'''
+    source = models.AdminSource(pk=pk)
+
+    # start db transaction
+    with transaction.atomic():
+        
+        # reset failed importers
+        importers = list(source.all_imports().filter(import_status='Failed'))
         for importer in importers:
             importer.import_status = 'Pending'
             importer.import_details = ''
