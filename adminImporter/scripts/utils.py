@@ -1,6 +1,6 @@
 
 import requests
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 import json
 
 token = ''
@@ -96,7 +96,8 @@ def inspect_zipfile_contents(url):
             return zipfile.ZipFile(io.BytesIO(central_directory + zip64_eocd_record + zip64_eocd_locator + eocd_record))
 
     def get_file_size(url):
-        resp = requests.head(url, headers=headers)
+        req = Request(url, headers=headers)
+        resp = urlopen(req)
         return int(resp.headers['Content-Length'])
 
     def fetch(url, start, length):
@@ -104,9 +105,10 @@ def inspect_zipfile_contents(url):
         _headers = headers.copy()
         _headers['range'] = "bytes=%d-%d" % (start, end)
         #print('requesting', _headers)
-        response = requests.get(url, headers=_headers)
+        req = Request(url, headers=_headers)
+        response = urlopen(req)
         #print('receiving', response.headers)
-        return response.content
+        return response.read()
 
     def get_central_directory_metadata_from_eocd(eocd):
         cd_size = parse_little_endian_to_int(eocd[12:16])

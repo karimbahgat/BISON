@@ -59,7 +59,7 @@ def parse_country(iso):
         # get metadata label
         if elem.startswith('th') and 'dataset-label' in elem:
             label = next(elems)
-            print('label:',repr(label))
+            #print('label:',repr(label))
         
         # get metadata value
         if elem.startswith('td') and 'dataset-details' in elem:
@@ -69,7 +69,7 @@ def parse_country(iso):
                 if elem != '' and not elem in ('p','br','br/') and not elem.startswith(('span','div','a ','/')):
                     text_vals.append(elem)
             value = ' '.join(text_vals)
-            print('value:',repr(value))
+            #print('value:',repr(value))
 
         # add key-value pair to parsed results
         if label != None and value != None:
@@ -265,10 +265,10 @@ if __name__ == '__main__':
     
     # set which site host and top source to import into
     # http://localhost:8000 or https://boundarylookup.wm.edu
-    host = 'http://localhost:8000'
-    root_source = 5603
-    #host = 'https://boundarylookup.wm.edu'
-    #root_source = fdssfs
-    
+    #host = 'http://localhost:8000'
+    #root_source = 5603
+    host = 'https://boundarylookup.wm.edu'
+    root_source = 5656
+
     # run
     main(host, root_source)
