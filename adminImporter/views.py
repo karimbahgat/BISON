@@ -748,10 +748,11 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
 
         # or see if name exists in db
         if name_obj is None:
-            try:
-                name_obj = models.AdminName.objects.get(name__iexact=name)
+            name_obj = models.AdminName.objects.filter(name__iexact=name).first()
+            if name_obj:
+                pass
                 #print('name found', name_obj.name, name_obj.pk)
-            except ObjectDoesNotExist:
+            else:
                 name_obj = models.AdminName(name=name)
                 names.append(name_obj) #name_obj.save()
                 #print('name to be created', name_obj.name, name_obj.pk, names)
