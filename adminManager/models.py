@@ -104,12 +104,11 @@ class Admin(models.Model):
         return dct
 
 class AdminName(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=400)
 
-    # for now just manually add index w collate nocase
     class Meta:
         indexes = [
-            models.Index(Upper('name'),
+            models.Index(Upper('name'), # upper case index needed for django case insensitive search
                         name='admin_name_upper_idx'), 
         ]
 
