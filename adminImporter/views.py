@@ -526,13 +526,24 @@ def detect_shapefile_encoding(path):
         with ZipFile(zippath) as archive:
             relpath = os.path.splitext(relpath)[0]
             relpath = relpath.lstrip('/\\')
-            for ext in ['.cpg','.CPG']:
-                try: 
-                    with archive.open(relpath+ext) as cpg:
-                        encoding = cpg.read().decode('utf8')
-                    break
-                except:
-                    pass
+            if relpath:
+                # we know the relative path, so just try to open the cpg extension
+                for ext in ['.cpg','.CPG']:
+                    try: 
+                        with archive.open(relpath+ext) as cpg:
+                            encoding = cpg.read().decode('utf8')
+                        break
+                    except:
+                        pass
+            else:
+                # only zippath is given, so there should only be one shapefile
+                # loop zip contents til we find one that ends in .cpg
+                for relpath in archive.namelist():
+                    if relpath.lower().endswith('.cpg'):
+                        with archive.open(relpath) as cpg:
+                            encoding = cpg.read().decode('utf8')
+                        break
+
     else:
         # normal path
         basepath = os.path.splitext(path)[0]
