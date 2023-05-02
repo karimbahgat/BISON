@@ -811,6 +811,11 @@ def add_to_db(reader, common, entries, parent=None, depth=0, admins=None, names=
                         for i in subset]
                 geom = dissolve(geoms) #, dissolve_buffer)
 
+            # ignore if no geom
+            if not geom or 'Polygon' not in geom['type'] or len(geom['coordinates']) == 0:
+                print('geometry is missing or empty, skipping')
+                continue
+
             # create admin
             #print('saving')
             geom = WKBGeometry(geom)
