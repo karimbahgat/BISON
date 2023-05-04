@@ -8,6 +8,7 @@ from django.db.models import Max
 from django.core.exceptions import ObjectDoesNotExist
 from django.forms import modelformset_factory
 from django.http.response import HttpResponse
+from django.contrib.auth.decorators import login_required, permission_required
 
 from background_task import background
 
@@ -49,9 +50,13 @@ from adminManager import models
 #         except Exception as err:
 #             print('error importing source:', err)
 
+@login_required
+@permission_required('adminImporter.change_datasetimporter', raise_exception=True)
 def tasks_process(request):
     os.system("python manage.py process_tasks")
 
+@login_required
+@permission_required('adminImporter.delete_datasetimporter', raise_exception=True)
 def tasks_clear(request):
     from background_task.models import Task
     tasks = Task.objects.all()
@@ -59,6 +64,8 @@ def tasks_clear(request):
     print(f'deleting all {tasks.count()} tasks')
     tasks.delete()
 
+@login_required
+@permission_required('adminImporter.change_datasetimporter', raise_exception=True)
 def datasource_importers_edit(request, pk):
     '''Edit the importers of a data source'''
     src = models.AdminSource.objects.get(pk=pk)
@@ -117,6 +124,8 @@ def datasource_importers_edit(request, pk):
                 context = {'src':src, 'importer_forms':importer_forms}
                 return render(request, 'adminManager/source_importers_edit.html', context)
 
+#@login_required
+#@permission_required('adminimporter.add_datasetimporter') # requires authentication when using api
 @csrf_exempt
 def api_datasource_importers_add(request, pk):
     '''API endpoint to add importers to a data source via json data'''
@@ -140,6 +149,9 @@ def api_datasource_importers_add(request, pk):
             
             return HttpResponse()
 
+@login_required
+@permission_required('adminImporter.change_datasetimporter', raise_exception=True)
+@permission_required('adminManager.delete_admin', raise_exception=True)
 def datasource_clear(request, pk):
     '''Reset importers of a given source and delete any associated boundaries.'''
     source = models.AdminSource(pk=pk)
@@ -168,6 +180,8 @@ def datasource_clear(request, pk):
 
     return redirect('dataset', source.pk)
 
+@login_required
+@permission_required('adminImporter.change_datasetimporter', raise_exception=True)
 def datasource_reset_failed(request, pk):
     '''Reset any failed importers of a given source.'''
     source = models.AdminSource(pk=pk)
@@ -185,6 +199,9 @@ def datasource_reset_failed(request, pk):
 
     return redirect('dataset', source.pk)
 
+@login_required
+@permission_required('adminImporter.change_datasetimporter', raise_exception=True)
+@permission_required('adminManager.add_admin', raise_exception=True)
 def datasource_import(request, pk):
     '''For a given source, add all pending DatasetImporters to work queue.'''
     source = models.AdminSource(pk=pk)
@@ -239,6 +256,14 @@ def datasource_import(request, pk):
 #     signals.task_created.send(sender='create_import_task', task=task)
 
 #     return task
+
+
+
+
+# End of views
+
+
+
 
 @background(schedule=0) # adds this function to a work queue rather than run it
 def run_importer(pk):
@@ -424,6 +449,10 @@ def _run_importer(importer):
 
     # redirect
     #return redirect('source', source.pk)
+
+
+####################################
+# BELOW IS ALL BACKEND IMPORT LOGIC
 
 DL_CACHE_PREFIX = 'boundary_cache_'
 DL_CACHE_MAX_FILES = 20

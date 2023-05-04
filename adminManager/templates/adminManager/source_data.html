@@ -21,9 +21,15 @@
                     </h2>
                 </div>
                 <div>
+                    {% if perms.adminManager.delete_adminsource %}
                     <a class="button" href="{% url 'dataset_delete' source.pk %}" onclick="return confirm('This will delete the source and all of its data.')">Delete</a>
+                    {% endif %}
+                    {% if perms.adminManager.change_adminsource %}
                     <a class="button" href="{% url 'dataset_edit' source.pk %}">Edit</a>
+                    {% endif %}
+                    {% if perms.adminManager.add_adminsource %}
                     <a class="button" onclick="openAddDatasetPopup()">Add</a>
+                    {% endif %}
                 </div>
             </div>
 
@@ -101,6 +107,7 @@
                                 {% endif %}
                             </div>
                             <div id="import-buttons">
+                                {% if perms.adminImporter.change_datasetimporter %}
                                 <div class="dropdown">
                                     <a class="button small dropbtn">&#8634; Reset</a>
                                     <div class="dropdown-content">
@@ -108,10 +115,15 @@
                                         <a class="button small" href="{% url 'datasource_reset_failed' source.pk %}"  onclick="return confirm('This will reset the status of all Failed imports to Pending.')" title="Reset and clear failed data importers">Failed imports</a>
                                     </div>
                                 </div>
+                                {% endif %}
+                                {% if perms.adminImporter.change_datasetimporter %}
                                 {% if not children %}
                                 <a class="button small" href="{% url 'datasource_importers_edit' source.pk %}" title="Edit source importers">Edit</a>
                                 {% endif %}
+                                {% endif %}
+                                {% if perms.adminImporter.change_datasetimporter %}
                                 <a class="button small" href="{% url 'datasource_import' source.pk %}" title="Run all pending imports">&#9658; Run</a>
+                                {% endif %}
                             </div>
                         </div>
 

@@ -69,17 +69,25 @@
 				<header id="header">
 					<span class="logo"><a href="{% url 'home' %}"><strong>Admin System</strong></a> built by the <a href="https://github.com/wmgeolab/geoBoundaries">community</a> and <a
 							href="http://geolab.wm.edu">W&M geoLab</a></span>
-					<ul class="icons">
-						<li><a href="https://twitter.com/wmgeolab?lang=en" class="icon brands fa-twitter"><span
-									class="label">Twitter</span></a></li>
-						<li><a href="https://www.linkedin.com/company/51598643/"
-								class="icon brands fa-linkedin-in"><span class="label">LinkedIn</span></a></li>
-						<li>
-							<a class="github-button" href="https://github.com/wmgeolab/geoBoundaries"
-								data-icon="octicon-star" data-size="large" data-show-count="true"
-								aria-label="Star wmgeolab/geoBoundaries on GitHub"><span class="label">Star</span></a>
-						</li>
-					</ul>
+					<div class="icons">
+						{% if request.user.is_authenticated %}
+							<span>Logged in as </span>
+							<div class="dropdown">
+                                <div class="dropbtn" style="vertical-align:middle">
+									<span class="button small">
+										<span>
+										{{ request.user.username }}
+										</span>
+									</span>
+								</div>
+                                <div class="dropdown-content">
+									<a href="{% url 'logout' %}">
+										<span class="btn" style="margin: 30px">Logout</span>
+									</a>
+								</div>
+							</div>
+						{% endif %}
+					</div>
 				</header>
 
                 <!-- Page Contents -->

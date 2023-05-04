@@ -3,6 +3,8 @@ from django.db import transaction
 from django.forms import modelformset_factory
 from django.views.decorators.csrf import csrf_exempt
 from django.http.response import HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import permission_required
 
 from . import models
 from . import forms
@@ -14,6 +16,8 @@ import json
 
 # Create your views here.
 
+@login_required
+@permission_required('adminManager.view_adminsource', raise_exception=True)
 def datasources(request):
     top_datasets = models.AdminSource.objects.filter(type='DataSource', parent=None)
 
@@ -25,6 +29,8 @@ def datasources(request):
                 }
     return render(request, 'adminManager/sources_data.html', context=context)
 
+@login_required
+@permission_required('adminManager.view_adminsource', raise_exception=True)
 def datasource(request, pk):
     '''View of a source'''
     src = models.AdminSource.objects.get(pk=pk)
@@ -67,12 +73,16 @@ def datasource(request, pk):
     
     return render(request, 'adminManager/source_data.html', context)
 
+@login_required
+@permission_required('adminManager.delete_adminsource', raise_exception=True)
 def datasource_delete(request, pk):
     '''Delete a source'''
     src = models.AdminSource.objects.get(pk=pk)
     src.delete()
     return redirect('datasets')
 
+#@login_required
+#@permission_required('adminmanager.add_adminsource') # requires authentication when using api
 @csrf_exempt
 def api_datasource_add(request):
     '''API endpoint to add a data source via json data'''
@@ -94,6 +104,8 @@ def api_datasource_add(request):
         results = {'pk': src.pk}
         return JsonResponse(results)
 
+@login_required
+@permission_required('adminManager.add_adminsource', raise_exception=True)
 def datasource_add(request):
     if request.method == 'GET':
         # TODO: shouldnt happen, since dataset add is a popup, not a page
@@ -147,6 +159,8 @@ def datasource_add(request):
             raise NotImplementedError('Invalid form handling needs to be added by redirecting to sources.html with popup')
             return render(request, 'adminManager/source_data_add.html', {'form':form})
 
+@login_required
+@permission_required('adminManager.change_adminsource', raise_exception=True)
 def datasource_edit(request, pk):
     '''Edit of a data source'''
     src = models.AdminSource.objects.get(pk=pk)
@@ -207,6 +221,7 @@ def datasource_edit(request, pk):
             else:
                 return render(request, 'adminManager/source_data_edit.html', {'form':form, 'importer_forms':importer_forms})
 
+# not sure if should require permissions or not... 
 def api_admin_data(request):
     from django.db import connection
     from django.http import JsonResponse

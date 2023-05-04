@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<section>
+    <div class="content">
+        <header>
+            <div class="row">
+                <img height="30px" src="{% static 'images/user.png' %}">
+                <h2 style="text-align:left">
+                    Logged out!
+                </h2>
+            </div>
+        </header>
+        
+        <div>
+            <a href="{% url 'login'%}">Click here to login again.</a>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

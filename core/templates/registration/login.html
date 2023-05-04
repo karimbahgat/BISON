@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_content %}
+
+<section>
+    <div class="content">
+        <header>
+            <div class="row">
+                <img height="30px" src="{% static 'images/user.png' %}">
+                <h2 style="text-align:left">
+                    User login: 
+                </h2>
+            </div>
+        </header>
+        
+        <div>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Log In</button>
+              </form>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

@@ -181,3 +181,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Background task options
 MAX_RUN_TIME = 60 * 60 * 24  # 1 day = 60 seconds per minute * mins per hour * hours per day
+
+# Authentication
+LOGIN_REDIRECT_URL = '/'

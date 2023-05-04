@@ -4,7 +4,9 @@
 <link rel="stylesheet" href="{% static 'adminManager/css/source_data.css' %}" type="text/css">
 
 <div class="button-bar">
+    {% if perms.adminManager.add_adminsource %}
     <a class="button small" onclick="openAddDatasetPopup()">+ Add New Dataset</a>
+    {% endif %}
 </div>
 
 <div class="datasets-container">
