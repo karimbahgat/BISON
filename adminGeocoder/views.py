@@ -204,9 +204,9 @@ def api_get_similar_admins(request, id):
     #print(xmin,ymin,xmax,ymax)
 
     # find all other admins whose bbox overlap
-    matches = models.Admin.objects.exclude(source=admin.source)
-    matches = matches.filter(maxx__gte=xmin, minx__lte=xmax,
-                             maxy__gte=ymin, miny__lte=ymax)
+    matches = models.Admin.objects.filter(minx__lte=xmax, maxx__gte=xmin,
+                                          miny__lte=ymax, maxy__gte=ymin)
+    matches = matches.exclude(source=admin.source)
     print(matches.count(), 'bbox overlaps')
 
     # calculate geom overlap/similarity
@@ -264,9 +264,9 @@ def api_get_best_source_matches(request, id):
     # find all other admins whose bbox overlap
     from time import time
     t = time()
-    matches = models.Admin.objects.exclude(source=admin.source)
-    matches = matches.filter(maxx__gte=xmin, minx__lte=xmax,
-                             maxy__gte=ymin, miny__lte=ymax)
+    matches = models.Admin.objects.filter(minx__lte=xmax, maxx__gte=xmin,
+                                          miny__lte=ymax, maxy__gte=ymin)
+    matches = matches.exclude(source=admin.source)
     print(matches.count(), 'bbox overlaps')
 
     # calc bbox simil
