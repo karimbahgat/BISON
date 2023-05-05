@@ -7,44 +7,7 @@
 <script src="{% static 'js/ol.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/ol.css' %}" type="text/css">
 
-
 <!-- Geocoder -->
-<section id="banner">
-    <div class="content">
-        <!--
-        <header>
-            <h2>Administrative Boundary Lookup</h2>
-            <p>A tool for looking up and downloading political administrative boundaries.</p>
-        </header>
-        -->
-
-        {% include 'adminGeocoder/disambiguator.html' %}
-
-        <p>Built by the <a href="https://geolab.wm.edu">William & Mary geoLab</a>, the Boundary Lookup
-            is an online tool and database for geocoding textual name references to administrative boundaries (i.e., state, county)
-            to their spatial representation in any country in the world. We currently search administrative unit names against a database of 
-            approximately 1.3 million boundaries from all areas of the world. 
-        </p>
-
-    </div>
-</section>
-
-
-
-<!-- Sponsors -->
-<section id="banner">
-    <div class="content" id="sponsors">
-        <header>
-            <h1>Partners, Sponsors & Contributors</h1>
-            <p>Thanks to our partners, sponsors, and <a
-                    href="https://github.com/wmgeolab/geoBoundaries/graphs/contributors">community of
-                    contributors</a> for making geoBoundaries possible. </p>
-        </header>
-
-            <span style="width:300px !important; float:left; text-align:center;"><img style="max-height:80px;max-width:300px;height:auto;width:auto;vertical-align:middle;margin:10px 10px 10px 10px;"
-                        src="{% static 'images/wm.png' %}" alt=""></span>
-
-    </div>
-</section>
+{% include 'adminGeocoder/disambiguator.html' %}
 
 {% endblock %}

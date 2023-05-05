@@ -13,10 +13,17 @@
         </div>
 
         <div id="disambiguation-pane">
+
+            <header id="header">
+                <span class="logo"><a href="{% url 'home' %}">
+                    <strong>Boundary Finder</strong></a> built by 
+                    <a href="http://geolab.wm.edu">W&M geoLab</a>
+                </span>
+            </header>
         
             <form onsubmit="return requestUpdateDisambiguationPopup()">
                 <div id="disambiguation-search-bar">
-                    <input id="disambiguation-search-input" type="text">
+                    <input id="disambiguation-search-input" type="text" placeholder='Search a boundary name, e.g. "Virginia, USA"'>
                     <button type="submit">
                         <span>Search</span>
                         <img style="visibility:hidden" src="{% static 'images/Spinner-1s-200px.gif' %}">
@@ -26,7 +33,7 @@
             </form>
 
             <div id="disambiguation-geoms">
-                <table id="disambiguation-geom-table">
+                <table id="disambiguation-geom-table" style="display:none">
                     <thead>
                         <tr>
                             <th>Boundary</th>
@@ -46,10 +53,28 @@
 
     </div>
 
-    <div class="popup-buttons">
-        <button type="button" onclick="saveDisambiguator()">Save</button>
-        <button type="button" onclick="cancelDisambiguator()">Close</button>
-    </div>
+    {% comment %}
+    {% if request.user.is_authenticated %}
+        <span>Logged in as </span>
+        <div class="dropdown">
+            <div class="dropbtn" style="vertical-align:middle">
+                <a>
+                    <span>
+                    {{ request.user.username }}
+                    </span>
+                </a>
+            </div>
+            <div class="dropdown-content">
+                <a href="{% url 'logout' %}">
+                    <span class="btn" style="margin: 30px">Logout</span>
+                </a>
+            </div>
+        </div>
+        <span>
+            <a class="button small" style="margin-left:10px" href="{% url 'datasets' %}">Source Manager</a>
+        </span>
+    {% endif %}
+    {% endcomment %}
 
 </div>
 

@@ -58,10 +58,12 @@ function resetDisambiguator() {
     // need to set searchid? 
     //disambiguationSearchId = searchId2;
     // clear map
+    selectedLayer.getSource().clear();
     disambiguationLayer.getSource().clear();
     // fix bug where map that's initially hidden won't show
     disambiguationMap.updateSize(); // otherwise will remain hidden until window resize
-    // clear geoms table
+    // clear and hide geoms table
+    document.querySelector('#disambiguation-geom-table').style.display = 'none';
     document.querySelector('#disambiguation-geom-table tbody').innerHTML = '';
     // init status
     disambiguatorCandidatesLoaded = null;
@@ -75,6 +77,7 @@ function initDisambiguator(searchId2, data=null) {
     // otherwise read from the stored data in searchid
     disambiguationSearchId = searchId2;
     // clear map
+    selectedLayer.getSource().clear();
     disambiguationLayer.getSource().clear();
     // fix bug where map that's initially hidden won't show
     disambiguationMap.updateSize(); // otherwise will remain hidden until window resize
@@ -93,6 +96,8 @@ function initDisambiguator(searchId2, data=null) {
     currentSelectedGeomData = data.chosen_geom_data;
     // show currently selected geom on map
     requestGeomForMap(currentSelectedGeomId);
+    // show table
+    document.querySelector('#disambiguation-geom-table').style.display = '';
     // add all possible geom candidates to table
     for (result of data.results) {
         disambiguatorCandidatesLoaded += 1;

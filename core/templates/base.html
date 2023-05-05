@@ -63,42 +63,10 @@
 
 		<!-- Main -->
 		<div id="main">
-			<div class="inner">
 
-				<!-- Header -->
-				<header id="header">
-					<span class="logo"><a href="{% url 'home' %}">
-						<strong>Boundary Finder</strong></a> built by 
-						<a href="http://geolab.wm.edu">W&M geoLab</a>
-					</span>
-					<div class="icons">
-						{% if request.user.is_authenticated %}
-							<span>Logged in as </span>
-							<div class="dropdown">
-                                <div class="dropbtn" style="vertical-align:middle">
-									<a>
-										<span>
-										{{ request.user.username }}
-										</span>
-									</a>
-								</div>
-                                <div class="dropdown-content">
-									<a href="{% url 'logout' %}">
-										<span class="btn" style="margin: 30px">Logout</span>
-									</a>
-								</div>
-							</div>
-							<span>
-								<a class="button small" style="margin-left:10px" href="{% url 'datasets' %}">Source Manager</a>
-							</span>
-						{% endif %}
-					</div>
-				</header>
-
-                <!-- Page Contents -->
-                {% block page_content %}{% endblock %}
-
-			</div>
+			<!-- Page Contents -->
+			{% block page_content %}{% endblock %}
+		
 		</div>
 
 	</div>
