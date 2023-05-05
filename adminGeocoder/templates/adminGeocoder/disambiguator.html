@@ -1,36 +1,47 @@
+
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'adminGeocoder/css/map.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'adminGeocoder/css/geocoder.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'adminGeocoder/css/disambiguator.css' %}" type="text/css">
+
 <div id="disambiguation-content">
-
-    <form onsubmit="return requestUpdateDisambiguationPopup()">
-        <div id="disambiguation-search-bar">
-            <input id="disambiguation-search-input" type="text">
-            <button type="submit">Update Search</button>
-        </div>
-    </form>
-
-    <div>
-        <div id="disambiguation-status">Initiating...</div>
-    </div>
 
     <div id="disambiguation-main">
 
         <div id="disambiguation-map">
         </div>
 
-        <div id="disambiguation-geoms">
-            <table id="disambiguation-geom-table">
-                <thead>
-                    <tr>
-                        <th>Boundary</th>
-                        <th>Level</th>
-                        <th>Year(s)</th>
-                        <th>Match</th>
-                        <th>Agree</th>
-                        <th>Res.</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+        <div id="disambiguation-pane">
+        
+            <form onsubmit="return requestUpdateDisambiguationPopup()">
+                <div id="disambiguation-search-bar">
+                    <input id="disambiguation-search-input" type="text">
+                    <button type="submit">
+                        <span>Search</span>
+                        <img style="visibility:hidden" src="{% static 'images/Spinner-1s-200px.gif' %}">
+                    </button>
+                </div>
+                <div id="disambiguation-status"></div>
+            </form>
+
+            <div id="disambiguation-geoms">
+                <table id="disambiguation-geom-table">
+                    <thead>
+                        <tr>
+                            <th>Boundary</th>
+                            <th>Level</th>
+                            <th>Year(s)</th>
+                            <th>Match</th>
+                            <th>Agree</th>
+                            <th>Res.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
         </div>
 
     </div>
@@ -41,3 +52,7 @@
     </div>
 
 </div>
+
+<script src="{% static 'adminGeocoder/js/disambiguation-map.js' %}"></script>
+<script src="{% static 'adminGeocoder/js/disambiguator.js' %}"></script>
+<script src="{% static 'adminGeocoder/js/geocoder.js' %}"></script>

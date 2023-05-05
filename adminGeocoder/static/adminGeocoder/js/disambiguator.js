@@ -16,6 +16,15 @@ function requestUpdateDisambiguationPopup() {
     search = input.value;
     console.log(search);
 
+    // reset disambiguator
+    resetDisambiguator();
+
+    // disable search button and indicate loading
+    but = document.querySelector('#disambiguation-search-bar > button');
+    but.disabled = true;
+    but.querySelector('span').style.visibility = 'hidden';
+    but.querySelector('img').style.visibility = 'visible';
+
     // search for name
     apiSearchUrl = 'api/search/name_hierarchy?search='+search;
     fetch(apiSearchUrl).then(result=>result.json()).then(data=>updateDisambiguationPopup(data))
@@ -23,9 +32,42 @@ function requestUpdateDisambiguationPopup() {
 }
 
 function updateDisambiguationPopup(data) {
+    // reenable search button and stop loading icon
+    but = document.querySelector('#disambiguation-search-bar > button');
+    but.disabled = false;
+    but.querySelector('span').style.visibility = 'visible';
+    but.querySelector('img').style.visibility = 'hidden';
+
+    // handle no results
+    if (data.count == 0) {
+        // init status
+        disambiguatorCandidatesLoaded = 0;
+        disambiguatorTotalCandidates = 0;
+        // update load status
+        updateLoadStatus();
+        return;
+    };
+
+    // process results
     disambiguationSearchData = data;
     autoSelectMatch(disambiguationSearchId, data);
     initDisambiguator(disambiguationSearchId, data);
+}
+
+function resetDisambiguator() {
+    // need to set searchid? 
+    //disambiguationSearchId = searchId2;
+    // clear map
+    disambiguationLayer.getSource().clear();
+    // fix bug where map that's initially hidden won't show
+    disambiguationMap.updateSize(); // otherwise will remain hidden until window resize
+    // clear geoms table
+    document.querySelector('#disambiguation-geom-table tbody').innerHTML = '';
+    // init status
+    disambiguatorCandidatesLoaded = null;
+    disambiguatorTotalCandidates = null;
+    // update load status
+    updateLoadStatus();
 }
 
 function initDisambiguator(searchId2, data=null) {
@@ -53,6 +95,7 @@ function initDisambiguator(searchId2, data=null) {
     requestGeomForMap(currentSelectedGeomId);
     // add all possible geom candidates to table
     for (result of data.results) {
+        disambiguatorCandidatesLoaded += 1;
         addGeomToDisambiguationTable(result.id, result);
         updateLoadStatus();
     };
@@ -138,8 +181,9 @@ function updateDisambiguationTableEntry(geomData) {
 */
 
 function updateLoadStatus() {
-    disambiguatorCandidatesLoaded += 1;
-    if (disambiguatorCandidatesLoaded == disambiguatorTotalCandidates) {
+    if (disambiguatorTotalCandidates == null) {
+        loadStatus = 'Searching...';
+    } else if (disambiguatorCandidatesLoaded == disambiguatorTotalCandidates) {
         loadStatus = `Found ${disambiguatorCandidatesLoaded} matches`;
     } else {
         loadStatus = `Loading: ${disambiguatorCandidatesLoaded} of ${disambiguatorTotalCandidates} matches loaded`
