@@ -158,8 +158,17 @@ function selectMapGeom(adminId) {
     feat = new ol.Feature(props);
     feat.setGeometry(fromFeat.getGeometry());
     selectedLayer.getSource().addFeature(feat);
-    // zoom
-    disambiguationMap.getView().fit(feat.getGeometry().getExtent());
-    disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
+    // geom extent
+    extent = feat.getGeometry().getExtent();
+    // pad around extent
+    extentWidth = extent[2] - extent[0];
+    pad = extentWidth * 0.1;
+    extent = ol.extent.buffer(extent, pad, extent);
+    // offset extent to the left so geom shows on the right
+    offsetFactor = 1;
+    offsetLeft = extentWidth * offsetFactor;
+    extent[0] = extent[0] - offsetLeft;
+    disambiguationMap.getView().fit(extent);
+    //disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
 }
 
