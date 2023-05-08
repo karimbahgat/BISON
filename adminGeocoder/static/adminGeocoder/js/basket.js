@@ -10,6 +10,18 @@ function toggleBasket() {
     };
 }
 
+function showBasketMessage(msg) {
+    console.log('should show msg '+msg)
+    msgElem = document.getElementById('basket-message');
+    msgElem.innerText = msg;
+    // show msg
+    msgElem.classList.remove('fadeout');
+    // then trigger fadeout (after small delay)
+    setTimeout(function(){
+        msgElem.classList.add('fadeout');
+    }, 10)
+}
+
 function addToBasket(data) {
     let basketId = Object.keys(basketData).length - 1;
     basketId += 1;
@@ -17,6 +29,7 @@ function addToBasket(data) {
     addToBasketList(basketId, data);
     updateBasketCounts();
     updateBasketButtons();
+    showBasketMessage('Added to Basket');
 }
 
 function addToBasketData(basketId, data) {
@@ -151,6 +164,7 @@ function removeFromBasket(adminId) {
             removeFromBasketData(basketId);
             updateBasketCounts();
             updateBasketButtons();
+            showBasketMessage('Removed from Basket');
         };
     };
 }
