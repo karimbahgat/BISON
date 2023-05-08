@@ -12,16 +12,19 @@
         <div id="disambiguation-map">
         </div>
 
+        <div id="basket-nav">
+            <span id="basket-toggler" onclick="toggleBasket()">
+                <img src="{% static 'images/basket.png' %}">
+                <span class="basket-count" data-count="0">0</span>
+            </span>
+        </div>
+
         <div id="disambiguation-pane">
 
             <header id="header">
                 <span class="logo"><a href="{% url 'home' %}">
                     <strong>Boundary Finder</strong></a> built by 
                     <a href="http://geolab.wm.edu">W&M geoLab</a>
-                </span>
-                <span id="basket-toggler" onclick="toggleBasket()">
-                    <img src="{% static 'images/basket.png' %}">
-                    (<span class="basket-count">0</span>)
                 </span>
             </header>
         

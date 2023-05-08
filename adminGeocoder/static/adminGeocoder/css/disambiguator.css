@@ -60,7 +60,7 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    top: 20px;
+    top: 10px;
     left: 20px;
     width: 40%;
     max-height: 90%;
@@ -91,8 +91,8 @@
     color: #7f888f !important;
 }
 
-#disambiguation-geom-table tbody tr:hover {   
-    background-color: rgba(240, 178, 35, 0.33);
+#disambiguation-geom-table tbody tr:hover {
+    background-color: rgba(233, 233, 233, 0.8);
 }
 
 .admin-candidate-row {
@@ -120,7 +120,6 @@
 
 .row-buttons button {
     color: black !important;
-    box-shadow: inset 0 0 0 2px !important;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -133,22 +132,38 @@
 
 .add-to-cart {
     display: block !important;
+    background-color: white;
+    box-shadow: none !important;
+    background-color: lightgrey;
+}
+
+.remove-from-cart:hover {
+    background-color: lightgrey;
 }
 
 #disambiguation-geom-table tr.in-basket .add-to-cart {
     display: none !important;
 }
 
+
 .remove-from-cart {
     display: none !important;
+    background-color: rgb(240, 178, 35);
+    box-shadow: none !important;
+}
+
+.remove-from-cart:hover {
+    background-color: rgb(240, 178, 35);
 }
 
 #disambiguation-geom-table tr.in-basket .remove-from-cart {
     display: block !important;
 }
 
+
 .selected-geom-row {
-    background-color: rgb(240, 178, 35) !important;
+    background-color: rgba(240, 178, 35, 0.66) !important;
+    /*border: rgb(240, 178, 35) solid 3px;*/
 }
 
 .selected-geom-row > .row-buttons {

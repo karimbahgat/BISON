@@ -29,6 +29,7 @@ function updateBasketCounts() {
     // update count elements
     for (elem of document.querySelectorAll('.basket-count')) {
         elem.innerText = count;
+        elem.dataset.count = count;
     };
 }
 
@@ -78,7 +79,7 @@ function addToBasketList(basketId, data) {
 
     infoName = document.createElement('h4');
     infoName.className = 'basket-info-name';
-    infoName.innerHTML = `#${basketId+1}: "${getDisplayName(data)}"`;
+    infoName.innerHTML = `<span class="basket-item-id">${basketId+1}</span>"${getDisplayName(data)}"`;
     info.appendChild(infoName);
 
     infoSource = document.createElement('div');

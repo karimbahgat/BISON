@@ -1,4 +1,13 @@
 
+#basket-nav {
+    position: absolute;
+    top: 10px;
+    right: 4%;
+    background-color: white;
+    padding: 10px;
+    border-radius: 3px;
+}
+
 #basket-toggler {
     display: flex;
     align-items: center;
@@ -6,16 +15,30 @@
     cursor: pointer;
 }
 
+#basket-toggler .basket-count {
+    background-color: rgb(240, 178, 35);
+    font-weight: bold;
+    padding: 0px 6px;
+    border-radius: 3px;
+    color: black;
+}
+
+#basket-toggler .basket-count[data-count="0"] {
+    background-color: grey;
+    color: white;
+}
+
 #basket-toggler img {
     width: 15px;
     height: 15px;
+    margin: 5px;
 }
 
 #basket-div {
     display: none;
     position: absolute;
-    top: 20px;
-    left: 42%;
+    top: 49px;
+    right: 4%;
     background-color: white;
     padding: 20px;
     border-radius: 5px;
@@ -59,6 +82,15 @@
     background-color: inherit;
     transition: background-color 0.3s ease-in;
     position: relative;
+}
+
+.basket-item-id {
+    background-color: rgb(240, 178, 35);
+    font-weight: bold;
+    padding: 0px 6px;
+    border-radius: 3px;
+    color: black;
+    margin-right: 3px;
 }
 
 .basket-item:hover {

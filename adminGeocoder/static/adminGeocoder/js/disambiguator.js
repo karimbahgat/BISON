@@ -158,7 +158,7 @@ function addGeomToDisambiguationTable(adminId, result) {
             <span>Add</span><img src="static/images/basket.png">
         </button>
         <button type="button" class="button small remove-from-cart" onclick="event.stopPropagation(); removeFromBasket(${adminId})">
-            <span>Remove</span><img src="static/images/basket.png">
+            <span>Added</span><img src="static/images/basket.png">
         </button>
     </div>
     `;
@@ -391,7 +391,7 @@ function addSimilarGeomsToTable(entries) {
                 <span>Add</span><img src="static/images/basket.png">
             </button>
             <button type="button" class="button small remove-from-cart" onclick="event.stopPropagation(); removeFromBasket(${entry.id})">
-                <span>Remove</span><img src="static/images/basket.png">
+                <span>Added</span><img src="static/images/basket.png">
             </button>
         </div>
         `;
