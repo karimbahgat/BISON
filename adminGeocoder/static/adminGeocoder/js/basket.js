@@ -1,5 +1,5 @@
 
-basketData = {};
+basketData = [];
 
 function toggleBasket() {
     basket = document.getElementById('basket-div');
@@ -23,22 +23,20 @@ function showBasketMessage(msg) {
 }
 
 function addToBasket(data) {
-    let basketId = Object.keys(basketData).length - 1;
-    basketId += 1;
-    addToBasketData(basketId, data);
-    addToBasketList(basketId, data);
+    addToBasketData(data);
+    updateBasketList();
     updateBasketCounts();
     updateBasketButtons();
     showBasketMessage('Added to Basket');
 }
 
-function addToBasketData(basketId, data) {
-    basketData[basketId] = data;
+function addToBasketData(data) {
+    basketData.push(data);
 }
 
 function updateBasketCounts() {
     // get count
-    count = Object.keys(basketData).length;
+    count = basketData.length;
     // update count elements
     for (elem of document.querySelectorAll('.basket-count')) {
         elem.innerText = count;
@@ -50,8 +48,7 @@ function updateBasketButtons() {
     console.log('should update basket buttons')
     // collect admin ids from basket
     adminIds = [];
-    for (basketId of Object.keys(basketData)) {
-        data = basketData[basketId];
+    for (data of basketData) {
         adminIds.push(data.id.toString());
     };
     // loop all admin rows
@@ -64,6 +61,18 @@ function updateBasketButtons() {
         } else {
             tr.classList.remove('in-basket');
         };
+    };
+}
+
+function updateBasketList() {
+    // clear basket list
+    results = document.getElementById('basket-results');
+    results.innerHTML = '';
+    // rebuild basket list
+    let basketId = 0;
+    for (let data of basketData) {
+        addToBasketList(basketId, data);
+        basketId += 1;
     };
 }
 
@@ -155,26 +164,28 @@ function getAdminYears(adminData) {
 }
 
 function removeFromBasket(adminId) {
-    // remove basket items if matches adminId (should only be one)
-    for (basketId of Object.keys(basketData)) {
-        data = basketData[basketId];
-        if (data.id == adminId) {
-            removeFromBasketList(basketId);
-            //removeResultFromMap(basketId);
-            removeFromBasketData(basketId);
-            updateBasketCounts();
-            updateBasketButtons();
-            showBasketMessage('Removed from Basket');
-        };
-    };
+    // remove from data
+    removeFromBasketData(adminId);
+    // update visuals
+    updateBasketList();
+    updateBasketCounts();
+    updateBasketButtons();
+    showBasketMessage('Removed from Basket');
 }
 
+/*
 function removeFromBasketList(basketId) {
     item = document.getElementById('basket-id-' + basketId);
     item.remove();
 }
+*/
 
-function removeFromBasketData(basketId) {
-    delete basketData[basketId];
-    updateBasketCounts();
+function removeFromBasketData(adminId) {
+    // rebuild the global basketData variable
+    // by filtering out those basketData entries that match adminId (should only be one)
+    function keep(data) {
+        return data.id != adminId;
+    };
+    filtered = basketData.filter(keep); 
+    basketData = filtered;
 }
