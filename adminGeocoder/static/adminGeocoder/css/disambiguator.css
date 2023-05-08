@@ -95,8 +95,64 @@
     background-color: rgba(240, 178, 35, 0.33);
 }
 
+.admin-candidate-row {
+    position: relative;
+}
+
+.similar-geom-admin {
+    position: relative;
+}
+
+.row-buttons {
+    visibility: hidden;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+}
+
+#disambiguation-geom-table tbody tr.in-basket .row-buttons {
+    visibility: visible !important;
+}
+
+#disambiguation-geom-table tbody tr:hover .row-buttons {
+    visibility: visible;
+}
+
+.row-buttons button {
+    color: black !important;
+    box-shadow: inset 0 0 0 2px !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.row-buttons button img {
+    width: 15px;
+    height: 15px;
+}
+
+.add-to-cart {
+    display: block !important;
+}
+
+#disambiguation-geom-table tr.in-basket .add-to-cart {
+    display: none !important;
+}
+
+.remove-from-cart {
+    display: none !important;
+}
+
+#disambiguation-geom-table tr.in-basket .remove-from-cart {
+    display: block !important;
+}
+
 .selected-geom-row {
     background-color: rgb(240, 178, 35) !important;
+}
+
+.selected-geom-row > .row-buttons {
+    visibility: visible;
 }
 
 

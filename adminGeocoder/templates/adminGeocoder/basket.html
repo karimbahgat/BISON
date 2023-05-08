@@ -1,0 +1,23 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'adminGeocoder/css/basket.css' %}" type="text/css">
+
+<div id="basket-div">
+
+    <h3>Saved Boundaries</h3>
+
+    <div id="basket-top-bar">
+        <span>
+            <span class="basket-count">0</span>
+            boundaries
+        </span>
+    </div>
+    <div id="basket-results">
+    </div>
+    <div id="export-bar">
+        <a id="export-button" class="button button-primary" href="" onclick="exportResults()" download="admin-geocoder-export.geojson">Export as GeoJSON</a>
+    </div>
+
+</div>
+
+<script src="{% static 'adminGeocoder/js/basket.js' %}"></script>

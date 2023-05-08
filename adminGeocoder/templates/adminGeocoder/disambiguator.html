@@ -19,6 +19,10 @@
                     <strong>Boundary Finder</strong></a> built by 
                     <a href="http://geolab.wm.edu">W&M geoLab</a>
                 </span>
+                <span id="basket-toggler" onclick="toggleBasket()">
+                    <img src="{% static 'images/basket.png' %}">
+                    (<span class="basket-count">0</span>)
+                </span>
             </header>
         
             <form onsubmit="return requestUpdateDisambiguationPopup()">

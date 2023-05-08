@@ -1,14 +1,17 @@
 
+// TODO: probably no longer needed... 
 disambiguationSearchId = null;
 disambiguationSearchData = null;
 currentSelectedGeomId = null;
 currentSelectedGeomData = null;
 
+/*
 function openDisambiguationPopup(searchId2) {
     document.getElementById('disambiguation-popup').className = 'popup';
     disambiguationSearchData = resultsData[searchId2];
     initDisambiguator(searchId2);
 }
+*/
 
 function requestUpdateDisambiguationPopup() {
     // get search input and clear
@@ -27,11 +30,24 @@ function requestUpdateDisambiguationPopup() {
 
     // search for name
     apiSearchUrl = 'api/search/name_hierarchy?search='+search;
-    fetch(apiSearchUrl).then(result=>result.json()).then(data=>updateDisambiguationPopup(data))
+    fetch(apiSearchUrl).then(result=>result.json()).then(data=>updateDisambiguationResults(data))
     return false;
 }
 
-function updateDisambiguationPopup(data) {
+function receiveDisambiguationData(data) {
+    disambiguationSearchData = data;
+    updateDisambiguationResults(data);
+}
+
+function getAdminById(id) {
+    for (res of disambiguationSearchData.results) {
+        if (res.id == id) {
+            return res;
+        }
+    }
+}
+
+function updateDisambiguationResults(data) {
     // reenable search button and stop loading icon
     but = document.querySelector('#disambiguation-search-bar > button');
     but.disabled = false;
@@ -50,7 +66,7 @@ function updateDisambiguationPopup(data) {
 
     // process results
     disambiguationSearchData = data;
-    autoSelectMatch(disambiguationSearchId, data);
+    autoSelectMatch(disambiguationSearchId, data); // still needed? 
     initDisambiguator(disambiguationSearchId, data);
 }
 
@@ -122,8 +138,9 @@ function receiveGeomForMap(data) {
 function addGeomToDisambiguationTable(adminId, result) {
     console.log(result)
     tbody = document.querySelector('#disambiguation-geom-table tbody');
-    tr = document.createElement('tr');
+    let tr = document.createElement('tr');
     tr.id = 'admin-candidate-id-' + adminId;
+    tr.dataset.adminId = adminId;
     tr.className = 'admin-candidate-row';
     tr.onclick = function(){selectGeom(adminId)};
     tr.innerHTML = `
@@ -136,13 +153,23 @@ function addGeomToDisambiguationTable(adminId, result) {
     <td class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
     <td class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></td>
     <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${result.lineres.toFixed(1)}m</span></div></td>
+    <div class="row-buttons">
+        <button type="button" class="button small add-to-cart" onclick="event.stopPropagation(); addToBasket(getAdminById(${adminId}))">
+            <span>Add</span><img src="static/images/basket.png">
+        </button>
+        <button type="button" class="button small remove-from-cart" onclick="event.stopPropagation(); removeFromBasket(${adminId})">
+            <span>Remove</span><img src="static/images/basket.png">
+        </button>
+    </div>
     `;
     tbody.appendChild(tr);
     // mark as selected
     if (result.id == currentSelectedGeomId) {
-        tr.className = "admin-candidate-row selected-geom-row";
+        tr.classList.add("selected-geom-row");
         tr.scrollIntoView({block:'nearest', inline:'nearest'});
     };
+    // update basket buttons
+    updateBasketButtons();
 }
 
 /*
@@ -200,16 +227,16 @@ function selectGeom(adminId) {
     // unmark any selected similar geom rows
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
     for (tr of rows) {
-        tr.className = "similar-geom-admin";
+        tr.classList.remove("similar-geom-admin");
     };
     // mark the admin candidate table entry as selected
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .admin-candidate-row');
     for (tr of rows) {
         if (tr.id == `admin-candidate-id-${adminId}`) {
-            tr.className = "admin-candidate-row selected-geom-row";
+            tr.classList.add("selected-geom-row");
             tr.scrollIntoView({block:'nearest', inline:'nearest'});
         } else {
-            tr.className = "admin-candidate-row";
+            tr.classList.remove("selected-geom-row");
         };
     };
     // remember
@@ -226,16 +253,16 @@ function selectSimilarGeom(adminId) {
     // unmark any selected admin candidate
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .admin-candidate-row');
     for (tr of rows) {
-        tr.className = "admin-candidate-row";
+        tr.classList.remove("selected-geom-row");
     };
     // mark the similar geom table entry as selected
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
     for (tr of rows) {
         if (tr.id == `similar-geom-id-${adminId}`) {
-            tr.className = "similar-geom-admin selected-geom-row";
+            tr.classList.add("selected-geom-row");
             tr.scrollIntoView({block:'nearest', inline:'nearest'});
         } else {
-            tr.className = "similar-geom-admin";
+            tr.classList.remove("selected-geom-row");
         };
     };
     // remember
@@ -244,6 +271,7 @@ function selectSimilarGeom(adminId) {
     selectMapGeom(adminId);
 }
 
+/*
 function saveDisambiguator() {
     saveSearchInput();
     saveGeomSelection();
@@ -275,6 +303,7 @@ function cancelDisambiguator() {
     // close popup
     document.getElementById('disambiguation-popup').className = 'popup is-hidden';
 }
+*/
 
 
 
@@ -339,6 +368,7 @@ function addSimilarGeomsToTable(entries) {
         console.log(entry)
         tr = document.createElement('tr');
         tr.id = 'similar-geom-id-' + entry.id;
+        tr.dataset.adminId = entry.id;
         tr.className = 'similar-geom-admin';
         tr.onclick = function(){selectSimilarGeom(entry.id)};
         if (entry.valid_from === null) {
@@ -356,7 +386,17 @@ function addSimilarGeomsToTable(entries) {
         <td class="admin-name-match-percent"></td>
         <td class="similar-geom-match-percent" title="Boundary similarity"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
         <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${entry.lineres.toFixed(1)}m</span></div></td>
+        <div class="row-buttons">
+            <button type="button" class="button small add-to-cart" onclick="event.stopPropagation(); addToBasket(getAdminById(${entry.id}))">
+                <span>Add</span><img src="static/images/basket.png">
+            </button>
+            <button type="button" class="button small remove-from-cart" onclick="event.stopPropagation(); removeFromBasket(${entry.id})">
+                <span>Remove</span><img src="static/images/basket.png">
+            </button>
+        </div>
         `;
         selected_tr.parentNode.insertBefore(tr, insertBefore);
     };
+    // update basket buttons
+    updateBasketButtons();
 }
