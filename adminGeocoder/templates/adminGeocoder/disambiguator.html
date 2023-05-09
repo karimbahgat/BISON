@@ -12,6 +12,10 @@
         </div>
 
         <div id="basket-nav">
+            <button type="button" class="button small" onclick="zoomToBasketLayer()">
+                Zoom all
+                <!--<img src="{% static 'images/zoom-out.png' %}">-->
+            </button>
             <span id="basket-toggler" onclick="toggleBasket()">
                 <img src="{% static 'images/basket.png' %}">
                 <span class="basket-count" data-count="0">0</span>
@@ -27,7 +31,7 @@
                 </span>
             </header>
         
-            <form onsubmit="return requestUpdateDisambiguator()">
+            <form id="disambiguation-form" onsubmit="return requestUpdateDisambiguator()">
                 <div id="disambiguation-search-bar">
                     <input id="disambiguation-search-input" type="text" placeholder='Search a boundary name, e.g. "Virginia, USA"' autofocus>
                     <button type="submit">

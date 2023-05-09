@@ -6,6 +6,10 @@
     flex-direction: column;
 }
 
+#disambiguation-form {
+    margin-bottom: 0;
+}
+
 #disambiguation-search-bar {
     display: flex;
     flex-direction: row;

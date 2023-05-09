@@ -24,6 +24,7 @@ function showBasketMessage(msg) {
 
 function addToBasket(data) {
     addToBasketData(data);
+    addToBasketGeoms(data.id);
     updateBasketList();
     updateBasketCounts();
     updateBasketButtons();
@@ -166,6 +167,7 @@ function getAdminYears(adminData) {
 function removeFromBasket(adminId) {
     // remove from data
     removeFromBasketData(adminId);
+    removeFromBasketGeoms(adminId);
     // update visuals
     updateBasketList();
     updateBasketCounts();

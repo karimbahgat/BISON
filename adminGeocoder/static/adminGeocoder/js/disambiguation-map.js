@@ -52,6 +52,26 @@ var disambiguationPointStyle = new ol.style.Style({
     geometry: getFeatureCentroid
 });
 
+// basket style
+var basketStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+        color: 'rgba(240, 178, 35, 0.3)', 
+    }),
+    stroke: new ol.style.Stroke({
+        color: 'rgb(240, 178, 35)', 
+        width: 2.5,
+    }),
+});
+var basketPointStyle = new ol.style.Style({
+    image: new ol.style.Circle({
+        radius: 10,
+        fill: new ol.style.Fill({
+          color: 'rgb(240, 178, 35)',
+        }),
+    }),
+    geometry: getFeatureCentroid
+});
+
 // selected style
 var selectedStyle = new ol.style.Style({
     fill: new ol.style.Fill({
@@ -89,6 +109,11 @@ var similarStyle = new ol.style.Style({
 var disambiguationLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
     style: [disambiguationStyle, disambiguationPointStyle],
+});
+
+var basketLayer = new ol.layer.Vector({
+    source: new ol.source.Vector(),
+    style: [basketStyle, basketPointStyle],
 });
 
 var selectedLayer = new ol.layer.Vector({
@@ -132,6 +157,7 @@ var disambiguationMap = new ol.Map({
             crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
         })}),
         disambiguationLayer,
+        basketLayer,
         selectedLayer
     ],
     view: new ol.View({
@@ -209,6 +235,11 @@ function zoomToSelectedLayer() {
     paddedZoomToExtent(extent);
 }
 
+function zoomToBasketLayer() {
+    extent = basketLayer.getSource().getExtent();
+    paddedZoomToExtent(extent);
+}
+
 function zoomToDisambiguationId(adminId) {
     feat = disambiguationLayer.getSource().getFeatureById(adminId);
     extent = feat.getGeometry().getExtent();
@@ -268,3 +299,22 @@ function selectMapGeom(adminId) {
     paddedZoomToExtent(extent, padding=0);
 }
 
+function addToBasketGeoms(adminId) {
+    fromFeat = disambiguationLayer.getSource().getFeatureById(adminId);
+    props = fromFeat.getProperties();
+    feat = new ol.Feature(props);
+    feat.setGeometry(fromFeat.getGeometry());
+    feat.setId(fromFeat.getId())
+    basketLayer.getSource().addFeature(feat);
+    // make sure selected geom is within current extent
+    curExtent = getPaddedMapExtent();
+    geomExtent = feat.getGeometry().getExtent();
+    geomExtent = paddedExtent(geomExtent);
+    extent = ol.extent.extend(curExtent, geomExtent);
+    paddedZoomToExtent(extent, padding=0);
+}
+
+function removeFromBasketGeoms(adminId) {
+    feat = basketLayer.getSource().getFeatureById(adminId);
+    basketLayer.getSource().removeFeature(feat);
+}

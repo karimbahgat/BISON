@@ -238,7 +238,7 @@ function updateLoadStatus() {
     };
     document.getElementById('disambiguation-status').innerText = loadStatus;
     // also show/hide buttons
-    if (disambiguatorTotalCandidates == null) {
+    if (!disambiguatorTotalCandidates) {
         document.getElementById('disambiguation-buttons').style.display = 'none';
     } else {
         document.getElementById('disambiguation-buttons').style.display = 'block';
