@@ -250,6 +250,7 @@ def api_search_name_hierarchy(request):
 , final AS (
     SELECT j.leaf_id AS id, 
         a.valid_from, a.valid_to,
+        a.minx, a.miny, a.maxx, a.maxy,
         SUM(j.simil) AS simil,
         GROUP_CONCAT(j.id) AS hierarchy_ids, 
         GROUP_CONCAT(j.names) AS hierarchy_names, 
@@ -278,8 +279,9 @@ def api_search_name_hierarchy(request):
     # also 'simil' text match score
     results = []
     for row in iter_table(sql, sql_params, 'final'):
-        print(row)
-        id,valid_from,valid_to,simil,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+        id,valid_from,valid_to, \
+            xmin,ymin,xmax,ymax, \
+            simil,hierarchy_ids,hierarchy_names,hierarchy_levels = row
         hierarchy = []
         zipped = zip(hierarchy_ids.split(','), 
                     hierarchy_names.split(','),
@@ -296,8 +298,9 @@ def api_search_name_hierarchy(request):
                 'valid_to':valid_to,
                 'simil':float(simil),
                 'lineres':-99.0,
+                'bbox':[xmin,ymin,xmax,ymax],
                 }
-        print('-->',entry)
+        #print('-->',entry)
         results.append(entry)
     print('calc and serialized',len(results))
 

@@ -46,7 +46,7 @@ function updateBasketCounts() {
 }
 
 function updateBasketButtons() {
-    console.log('should update basket buttons')
+    //console.log('should update basket buttons')
     // collect admin ids from basket
     adminIds = [];
     for (data of basketData) {

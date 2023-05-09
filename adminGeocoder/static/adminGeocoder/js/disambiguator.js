@@ -98,15 +98,33 @@ function initDisambiguator(data) {
     document.querySelector('#disambiguation-geom-table').style.display = '';
     // add all possible geom candidates to table
     for (result of data.results) {
+        // add to table
         addGeomToDisambiguationTable(result.id, result);
+        // add bbox to map
+        addResultBboxToMap(result);
+        // increment load counter and status
+        disambiguatorCandidatesLoaded += 1;
         updateLoadStatus();
     };
-    // start loading result geoms in background
-    requestGeomsFromDisambiguatorData();
-    // also show all similar geoms to map
-    //requestSimilarGeomsForMap(currentSelectedGeomId);
+    // update all table row basket buttons
+    updateBasketButtons();
+    // zoom to layer
+    zoomToDisambiguationLayer();
 }
 
+function addResultBboxToMap(entry) {
+    // copy the attr data
+    entry = JSON.parse(JSON.stringify(entry));
+    // add bbox as geom attr
+    [xmin,ymin,xmax,ymax] = entry.bbox;
+    poly = [[[xmin,ymin],[xmax,ymin],[xmax,ymax],[xmin,ymax],[xmin,ymin]]];
+    geom = {'type':'Polygon', 'coordinates':poly};
+    entry['geom'] = geom;
+    // add to map
+    addGeomToDisambiguationMap(entry);
+}
+
+/*
 function requestGeomsFromDisambiguatorData() {
     // get adminId for first entry in data
     adminId = disambiguationSearchData.results[0].id;
@@ -146,9 +164,10 @@ function receiveGeomForMap(adminId, geomData) {
     // add to map
     addGeomToDisambiguationMap(data);
 }
+*/
 
 function addGeomToDisambiguationTable(adminId, result) {
-    console.log(result)
+    //console.log(result)
     tbody = document.querySelector('#disambiguation-geom-table tbody');
     let tr = document.createElement('tr');
     tr.id = 'admin-candidate-id-' + adminId;
@@ -183,8 +202,6 @@ function addGeomToDisambiguationTable(adminId, result) {
         tr.classList.add("selected-geom-row");
         tr.scrollIntoView({block:'nearest', inline:'nearest'});
     };
-    // update basket buttons
-    updateBasketButtons();
 }
 
 /*
