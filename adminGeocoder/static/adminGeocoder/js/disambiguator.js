@@ -228,6 +228,7 @@ function updateDisambiguationTableEntry(geomData) {
 */
 
 function updateLoadStatus() {
+    // update status text
     if (disambiguatorTotalCandidates == null) {
         loadStatus = 'Searching...';
     } else if (disambiguatorCandidatesLoaded == disambiguatorTotalCandidates) {
@@ -236,6 +237,12 @@ function updateLoadStatus() {
         loadStatus = `Loading: ${disambiguatorCandidatesLoaded} of ${disambiguatorTotalCandidates} matches loaded`
     };
     document.getElementById('disambiguation-status').innerText = loadStatus;
+    // also show/hide buttons
+    if (disambiguatorTotalCandidates == null) {
+        document.getElementById('disambiguation-buttons').style.display = 'none';
+    } else {
+        document.getElementById('disambiguation-buttons').style.display = 'block';
+    };
 }
 
 function selectGeom(adminId) {

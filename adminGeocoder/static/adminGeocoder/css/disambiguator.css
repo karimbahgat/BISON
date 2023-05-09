@@ -27,6 +27,24 @@
     transform: translate(-50%, -50%);
 }
 
+#disambiguation-results-bar {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 5px;
+}
+
+#disambiguation-buttons button {
+    color: black !important;
+    background-color: white;
+    box-shadow: none !important;
+    background-color: lightgrey;
+}
+
+#disambiguation-buttons img {
+    width: 20px;
+    height: 20px;
+}
+
 #disambiguation-status {
     padding: 0;
     margin: 5px;

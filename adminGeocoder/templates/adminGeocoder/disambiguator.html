@@ -35,7 +35,15 @@
                         <img style="visibility:hidden" src="{% static 'images/Spinner-1s-200px.gif' %}">
                     </button>
                 </div>
-                <div id="disambiguation-status"></div>
+                <div id="disambiguation-results-bar">
+                    <div id="disambiguation-status"></div>
+                    <div id="disambiguation-buttons" style="display:none">
+                        <button type="button" class="button small" onclick="zoomToDisambiguationLayer()">
+                            Zoom all
+                            <!--<img src="{% static 'images/zoom-out.png' %}">-->
+                        </button>
+                    </div>
+                </div>
             </form>
 
             <div id="disambiguation-geoms">
