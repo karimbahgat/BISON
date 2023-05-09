@@ -1,9 +1,79 @@
 
 /////////////
-// main country map
+// main map
+function getLargestPolyExtent(geom) {
+    if (geom.getType() == 'Polygon') {
+        // polygon
+        // get bbox of the polygon
+        var extent = geom.getExtent();
+        var newGeom = ol.geom.Polygon.fromExtent(extent);
+    } else {
+        // multi polygon
+        // get bbox of the largest polygon
+        var largestGeom = null;
+        var largestArea = null;
+        for (poly of geom.getPolygons()) {
+            var extent = poly.getExtent();
+            var extentGeom = ol.geom.Polygon.fromExtent(extent);
+            var extentArea = extentGeom.getArea();
+            if (extentArea > largestArea) {
+                largestGeom = extentGeom;
+                largestArea = extentArea;
+            };
+        };
+        var newGeom = largestGeom;
+    };
+    return newGeom;
+};
+function getFeatureCentroid(feature) {
+    geom = feature.getGeometry();
+    extent = geom.getExtent(); //getLargestPolyExtent(geom);
+    center = new ol.geom.Point(ol.extent.getCenter(extent));
+    return center;
+}
 
-// layer
+// disambiguation style
 var disambiguationStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+        color: 'rgba(220, 220, 255, 0.3)',
+    }),
+    stroke: new ol.style.Stroke({
+        color: 'rgb(29,107,191)', //'rgb(49, 127, 211)',
+        width: 2.5,
+    }),
+});
+var disambiguationPointStyle = new ol.style.Style({
+    image: new ol.style.Circle({
+        radius: 10,
+        fill: new ol.style.Fill({
+          color: 'rgb(29,107,191)',
+        }),
+    }),
+    geometry: getFeatureCentroid
+});
+
+// selected style
+var selectedStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+        color: 'rgba(255, 255, 255, 0)', // fully transparent
+    }),
+    stroke: new ol.style.Stroke({
+        color: 'rgb(0, 240, 252)', //'rgb(49, 127, 211)',
+        width: 2.5,
+    }),
+});
+var selectedPointStyle = new ol.style.Style({
+    image: new ol.style.Circle({
+        radius: 10,
+        fill: new ol.style.Fill({
+          color: 'rgb(0, 240, 252)',
+        }),
+    }),
+    geometry: getFeatureCentroid
+});
+
+// similar style
+var similarStyle = new ol.style.Style({
     fill: new ol.style.Fill({
         color: 'rgba(255, 255, 255, 0)', // fully transparent
     }),
@@ -13,53 +83,26 @@ var disambiguationStyle = new ol.style.Style({
         lineDash: [10,10]
     }),
 });
-var selectedStyle = new ol.style.Style({
-    fill: new ol.style.Fill({
-        color: 'rgba(220, 220, 255, 0.3)',
-    }),
-    stroke: new ol.style.Stroke({
-        color: 'rgb(29,107,191)', //'rgb(49, 127, 211)',
-        width: 2.5,
-    }),
-});
 
+
+// layers
 var disambiguationLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
-    style: disambiguationStyle,
+    style: [disambiguationStyle, disambiguationPointStyle],
 });
 
 var selectedLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
-    style: selectedStyle,
+    style: [selectedStyle, selectedPointStyle],
 });
 
 // labelling
+/*
 var disambiguationLabelStyle = new ol.style.Style({
     geometry: function(feature) {
         // create a geometry that defines where the label will be display
         var geom = feature.getGeometry();
-        if (geom.getType() == 'Polygon') {
-            // polygon
-            // place label at the bbox/center of the polygon
-            var extent = feature.getGeometry().getExtent();
-            var newGeom = ol.geom.Polygon.fromExtent(extent);
-        } else {
-            // multi polygon
-            // place label at the bbox/center of the largest polygon
-            var largestGeom = null;
-            var largestArea = null;
-            for (poly of geom.getPolygons()) {
-                var extent = poly.getExtent();
-                var extentGeom = ol.geom.Polygon.fromExtent(extent);
-                var extentArea = extentGeom.getArea();
-                if (extentArea > largestArea) {
-                    largestGeom = extentGeom;
-                    largestArea = extentArea;
-                };
-            };
-            var newGeom = largestGeom;
-            
-        };
+        var newGeom = getLargestPoly(geom);
         return newGeom;
     },
     text: new ol.style.Text({
@@ -71,6 +114,7 @@ var disambiguationLabelStyle = new ol.style.Style({
         overflow: true,
     }),
 });
+*/
 
 // map
 var disambiguationMap = new ol.Map({
@@ -96,6 +140,7 @@ var disambiguationMap = new ol.Map({
     })
 });
 
+/*
 disambiguationMap.on('pointermove', function(evt) {
     // get feat at pointer
     let cursorFeat = null;
@@ -120,6 +165,7 @@ disambiguationMap.on('pointermove', function(evt) {
         });
     };
 });
+*/
 
 disambiguationMap.on('click', function(evt) {
     // get feat at pointer
@@ -146,10 +192,66 @@ function addGeomToDisambiguationMap(geomData) {
     //disambiguationMap.getView().fit(disambiguationLayer.getSource().getExtent());
     //disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
     // add to selected layer
+    /*
     if (geomData.id == currentSelectedGeomId) {
         selectMapGeom(geomData.id);
     };
+    */
 };
+
+function zoomToDisambiguationLayer() {
+    extent = disambiguationLayer.getSource().getExtent();
+    paddedZoomToExtent(extent);
+}
+
+function zoomToSelectedLayer() {
+    extent = selectedLayer.getSource().getExtent();
+    paddedZoomToExtent(extent);
+}
+
+function zoomToDisambiguationId(adminId) {
+    feat = disambiguationLayer.getSource().getFeatureById(adminId);
+    extent = feat.getGeometry().getExtent();
+    paddedZoomToExtent(extent);
+}
+
+function paddedExtent(extent, padding=0.1) {
+    // add normal percent padding (doesnt consider left-right side of map)
+    extent = extent.slice(); // to avoid modifying original extent
+    // pad around extent
+    extentWidth = extent[2] - extent[0];
+    pad = extentWidth * padding;
+    extent = ol.extent.buffer(extent, pad, extent);
+    return extent;
+}
+
+function paddedZoomToExtent(extent, padding=0.1, animated=false) {
+    // adds padding to ensure the extent is centered on right side of map
+    extent = extent.slice(); // to avoid modifying original extent
+    // pad around extent
+    extentWidth = extent[2] - extent[0];
+    pad = extentWidth * padding;
+    extent = ol.extent.buffer(extent, pad, extent);
+    // offset extent to the left so geom shows on the right
+    offsetFactor = 1;
+    offsetLeft = extentWidth * offsetFactor;
+    extent[0] = extent[0] - offsetLeft;
+    // perform zoom
+    opts = {};
+    if (animated) {
+        opts['duration'] = 1000;
+    };
+    disambiguationMap.getView().fit(extent, opts);
+}
+
+function getPaddedMapExtent() {
+    extent = disambiguationMap.getView().calculateExtent();
+    extent = extent.slice();
+    // ignore leftmost half
+    w = extent[2] - extent[0];
+    extent[0] = extent[0] + (w/2.0)
+    return extent;
+}
 
 function selectMapGeom(adminId) {
     selectedLayer.getSource().clear();
@@ -158,17 +260,11 @@ function selectMapGeom(adminId) {
     feat = new ol.Feature(props);
     feat.setGeometry(fromFeat.getGeometry());
     selectedLayer.getSource().addFeature(feat);
-    // geom extent
-    extent = feat.getGeometry().getExtent();
-    // pad around extent
-    extentWidth = extent[2] - extent[0];
-    pad = extentWidth * 0.1;
-    extent = ol.extent.buffer(extent, pad, extent);
-    // offset extent to the left so geom shows on the right
-    offsetFactor = 1;
-    offsetLeft = extentWidth * offsetFactor;
-    extent[0] = extent[0] - offsetLeft;
-    disambiguationMap.getView().fit(extent);
-    //disambiguationMap.getView().setZoom(disambiguationMap.getView().getZoom()-1);
+    // make sure selected geom is within current extent
+    curExtent = getPaddedMapExtent();
+    geomExtent = feat.getGeometry().getExtent();
+    geomExtent = paddedExtent(geomExtent);
+    extent = ol.extent.extend(curExtent, geomExtent);
+    paddedZoomToExtent(extent, padding=0);
 }
 

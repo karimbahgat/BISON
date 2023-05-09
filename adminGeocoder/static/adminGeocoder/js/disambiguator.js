@@ -5,15 +5,7 @@ disambiguationSearchData = null;
 currentSelectedGeomId = null;
 currentSelectedGeomData = null;
 
-/*
-function openDisambiguationPopup(searchId2) {
-    document.getElementById('disambiguation-popup').className = 'popup';
-    disambiguationSearchData = resultsData[searchId2];
-    initDisambiguator(searchId2);
-}
-*/
-
-function requestUpdateDisambiguationPopup() {
+function requestUpdateDisambiguator() {
     // get search input and clear
     input = document.querySelector('#disambiguation-search-input');
     search = input.value;
@@ -30,7 +22,7 @@ function requestUpdateDisambiguationPopup() {
 
     // search for name
     apiSearchUrl = 'api/search/name_hierarchy?search='+search;
-    fetch(apiSearchUrl).then(result=>result.json()).then(data=>updateDisambiguationResults(data))
+    fetch(apiSearchUrl).then(result=>result.json()).then(data=>receiveDisambiguationData(data))
     return false;
 }
 
@@ -65,9 +57,7 @@ function updateDisambiguationResults(data) {
     };
 
     // process results
-    disambiguationSearchData = data;
-    autoSelectMatch(disambiguationSearchId, data); // still needed? 
-    initDisambiguator(disambiguationSearchId, data);
+    initDisambiguator(data);
 }
 
 function resetDisambiguator() {
@@ -88,10 +78,7 @@ function resetDisambiguator() {
     updateLoadStatus();
 }
 
-function initDisambiguator(searchId2, data=null) {
-    // read data from the provided 'data' arg
-    // otherwise read from the stored data in searchid
-    disambiguationSearchId = searchId2;
+function initDisambiguator(data) {
     // clear map
     selectedLayer.getSource().clear();
     disambiguationLayer.getSource().clear();
@@ -100,9 +87,6 @@ function initDisambiguator(searchId2, data=null) {
     // clear geoms table
     document.querySelector('#disambiguation-geom-table tbody').innerHTML = '';
     // set search input value
-    if (data == null) {
-        data = resultsData[searchId2];
-    };
     document.getElementById('disambiguation-search-input').value = data.search;
     // init status
     disambiguatorCandidatesLoaded = 0;
@@ -110,27 +94,55 @@ function initDisambiguator(searchId2, data=null) {
     // set currently selected geom from stored data
     currentSelectedGeomId = data.chosen_geom_id;
     currentSelectedGeomData = data.chosen_geom_data;
-    // show currently selected geom on map
-    requestGeomForMap(currentSelectedGeomId);
     // show table
     document.querySelector('#disambiguation-geom-table').style.display = '';
     // add all possible geom candidates to table
     for (result of data.results) {
-        disambiguatorCandidatesLoaded += 1;
         addGeomToDisambiguationTable(result.id, result);
         updateLoadStatus();
     };
+    // start loading result geoms in background
+    requestGeomsFromDisambiguatorData();
     // also show all similar geoms to map
-    requestSimilarGeomsForMap(currentSelectedGeomId);
+    //requestSimilarGeomsForMap(currentSelectedGeomId);
 }
 
-function requestGeomForMap(adminId) {
+function requestGeomsFromDisambiguatorData() {
+    // get adminId for first entry in data
+    adminId = disambiguationSearchData.results[0].id;
+    // load next geom on success
+    function onSuccess() {
+        console.log('geom load success');
+        // increment load counter and status
+        disambiguatorCandidatesLoaded += 1;
+        updateLoadStatus();
+        // zoom to disambig layer
+        zoomToDisambiguationLayer();
+        // load next available geom
+        if (disambiguatorCandidatesLoaded < disambiguatorTotalCandidates) {
+            nxtId = disambiguationSearchData.results[disambiguatorCandidatesLoaded].id;
+            requestGeomForMap(nxtId, onSuccess);
+        };
+    };
+    // initiate
+    requestGeomForMap(adminId, onSuccess);
+}
+
+function requestGeomForMap(adminId, onSuccess=null) {
     // fetch full details of geom
-    url = '/api/get_admin/' + adminId;
-    fetch(url).then(result=>result.json()).then(data=>receiveGeomForMap(data));
+    url = '/api/get_geom/' + adminId;
+    promise = fetch(url).then(result=>result.json()).then(data=>receiveGeomForMap(adminId, data));
+    if (onSuccess) {
+        promise.then(onSuccess);
+    }
 }
 
-function receiveGeomForMap(data) {
+function receiveGeomForMap(adminId, geomData) {
+    // get admin attr data from id
+    data = getAdminById(adminId)
+    data = JSON.parse(JSON.stringify(data)); // copy the data
+    // add geom attr
+    data['geom'] = geomData;
     // add to map
     addGeomToDisambiguationMap(data);
 }
@@ -154,6 +166,9 @@ function addGeomToDisambiguationTable(adminId, result) {
     <td class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></td>
     <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${result.lineres.toFixed(1)}m</span></div></td>
     <div class="row-buttons">
+        <button type="button" class="button small" onclick="event.stopPropagation(); zoomToDisambiguationId(${adminId})">
+            <span>Zoom</span>
+        </button>
         <button type="button" class="button small add-to-cart" onclick="event.stopPropagation(); addToBasket(getAdminById(${adminId}))">
             <span>Add</span><img src="static/images/basket.png">
         </button>
@@ -241,10 +256,8 @@ function selectGeom(adminId) {
     };
     // remember
     currentSelectedGeomId = adminId;
-    // clear map
-    disambiguationLayer.getSource().clear();
-    // show currently selected geom on map
-    requestGeomForMap(currentSelectedGeomId);
+    // select and zoom to map geom
+    selectMapGeom(currentSelectedGeomId);
     // also show all similar geoms to map
     requestSimilarGeomsForMap(currentSelectedGeomId);
 }
@@ -387,6 +400,9 @@ function addSimilarGeomsToTable(entries) {
         <td class="similar-geom-match-percent" title="Boundary similarity"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
         <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${entry.lineres.toFixed(1)}m</span></div></td>
         <div class="row-buttons">
+            <button type="button" class="button small" onclick="event.stopPropagation(); zoomToDisambiguationId(${entry.id})">
+                <span>Zoom</span>
+            </button>
             <button type="button" class="button small add-to-cart" onclick="event.stopPropagation(); addToBasket(getAdminById(${entry.id}))">
                 <span>Add</span><img src="static/images/basket.png">
             </button>

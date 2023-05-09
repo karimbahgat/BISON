@@ -118,11 +118,17 @@
     visibility: visible;
 }
 
-.row-buttons button {
-    color: black !important;
+.row-buttons {
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+.row-buttons button {
+    color: black !important;
+    background-color: white;
+    box-shadow: none !important;
+    background-color: lightgrey;
 }
 
 .row-buttons button img {
@@ -137,10 +143,6 @@
     background-color: lightgrey;
 }
 
-.remove-from-cart:hover {
-    background-color: lightgrey;
-}
-
 #disambiguation-geom-table tr.in-basket .add-to-cart {
     display: none !important;
 }
@@ -148,7 +150,7 @@
 
 .remove-from-cart {
     display: none !important;
-    background-color: rgb(240, 178, 35);
+    background-color: rgb(240, 178, 35) !important;
     box-shadow: none !important;
 }
 

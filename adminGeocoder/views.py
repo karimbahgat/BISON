@@ -198,6 +198,20 @@ def api_get_admin(request, id):
 
     return JsonResponse(data, safe=False)
 
+def api_get_geom(request, id):
+    if ',' in id:
+        ids = [int(_id) for _id in id.split(',')]
+        admins = models.Admin.objects.filter(pk__in=ids)
+        # returned as list
+        data = [admin.geom.__geo_interface__ for admin in admins]
+    else:
+        id = int(id)
+        admin = models.Admin.objects.get(pk=id)
+        # returned as a single dict
+        data = admin.geom.__geo_interface__
+
+    return JsonResponse(data, safe=False)
+
 def api_get_similar_admins(request, id):
     admin = models.Admin.objects.get(pk=id)
     xmin,ymin,xmax,ymax = admin.minx,admin.miny,admin.maxx,admin.maxy
