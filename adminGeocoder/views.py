@@ -176,6 +176,138 @@ def api_search_name_hierarchy(request):
     data = {'search':search_query, 'count':len(results), 'results':results}
     return JsonResponse(data)
 
+def api_search_name_hierarchy(request):
+    # hierarchical input
+    search_query = request.GET.get('search')
+    searches = [s.strip() for s in search_query.split(',')]
+    sql_params = []
+    sql = 'WITH RECURSIVE'
+
+    def iter_table(sql, sql_params, table):
+        from django.db import connection
+        sql = sql + f'SELECT * FROM {table}'
+        print(sql)
+        curs = connection.cursor()
+        curs.execute(sql, sql_params)
+        for row in curs:
+            yield row
+
+    # find admins with matching names for each hierarchy subquery
+    thresh = 0.3 # text match threshold
+    name_queries = []
+    for search in searches:
+        sub = models.Admin.objects.values('id', 'level', 'parent', 'names__name', 'minx')
+        sub = sub.filter(names__name__istartswith=search)
+        sub = sub.annotate(simil=Value(float(len(search)))/Cast(Length('names__name'), FloatField()))
+        sub = sub.filter(simil__gte=thresh)
+        query = str(sub.query).replace(f'{search}%', "%s")
+        sql_params.append(search+'%') # important to add the wildcard at end
+        name_queries.append(query)
+    full_name_query = '\nUNION\n'.join(name_queries)
+    sql += f'\nmatches AS ({full_name_query})'
+
+    # recursive retrieve all parent admins to construct hierarchy for each leaf node in the matches
+    # start with leafs (those with geom/bbox)
+    # then recursively join all admins that match the parent_id of previous admins
+    # this gives a full tree for every leaf node and therefore duplicates for all parent nodes shared by multiple leaf nodes
+    sql += '''
+, recurs AS (
+    SELECT id AS leaf_id, id, parent_id, level FROM matches WHERE minx IS NOT NULL
+    UNION ALL
+    SELECT r.leaf_id, a.id, a.parent_id, a.level FROM adminManager_admin AS a
+    INNER JOIN recurs AS r
+    ON r.parent_id = a.id
+)'''
+
+    # join these to the matches
+    sql += '''
+, joined AS (
+    SELECT recurs.*, matches.simil FROM recurs LEFT JOIN matches ON matches.id = recurs.id
+)
+'''
+
+    # join these to names
+    # multiple names separated by pipe |
+    # collapsed to every unique leaf_id,adminid combination
+    sql += f'''
+, joined_names AS (
+    SELECT j.*, GROUP_CONCAT(n.name SEPARATOR '|') AS names
+    FROM joined AS j
+    INNER JOIN adminManager_admin_names AS link
+    ON j.id = link.admin_id 
+    INNER JOIN adminManager_adminname AS n
+    ON link.adminname_id = n.id
+    GROUP BY j.leaf_id, j.id
+)
+'''
+
+    # mayyyybe do some magic so we only keep admins where all hierarchy levels satisfy the thresh? 
+    # ...
+
+    # aggregate to leaf nodes along with additional columns we want for final results
+    # including creating an aggregate simil score for all hierarchy simil scores
+    sql += '''
+, final AS (
+    SELECT j.leaf_id AS id, 
+        a.valid_from, a.valid_to,
+        SUM(j.simil) AS simil,
+        GROUP_CONCAT(j.id) AS hierarchy_ids, 
+        GROUP_CONCAT(j.names) AS hierarchy_names, 
+        GROUP_CONCAT(j.level) AS hierarchy_levels
+    FROM adminManager_admin AS a
+    INNER JOIN joined_names AS j
+    ON a.id = j.leaf_id
+    GROUP BY j.leaf_id
+)
+'''
+
+    # add in sources
+    # ... 
+
+    # add in lineres
+    # ... 
+
+    # create final results structure
+    # dct = {'id':self.pk,
+    #         'hierarchy':hierarchy,
+    #         'source':{'name':source_name, 'id':source.pk},
+    #         'valid_from':self.valid_from,
+    #         'valid_to':self.valid_to,
+    #         'lineres':self.lineres,
+    #         }
+    # also 'simil' text match score
+    results = []
+    for row in iter_table(sql, sql_params, 'final'):
+        print(row)
+        id,valid_from,valid_to,simil,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+        hierarchy = []
+        zipped = zip(hierarchy_ids.split(','), 
+                    hierarchy_names.split(','),
+                    hierarchy_levels.split(','))
+        zipped = sorted(zipped, key=lambda z: z[-1], reverse=True) # sort by decreasing level
+        for hid,hnames,hlevel in zipped:
+            hnames = hnames.split('|')
+            hdict = {'id':hid, 'level':hlevel, 'names':hnames}
+            hierarchy.append(hdict)
+        entry = {'id':id,
+                'hierarchy':hierarchy,
+                'source':{'name':'', 'id':''},
+                'valid_from':valid_from,
+                'valid_to':valid_to,
+                'simil':float(simil),
+                'lineres':-99.0,
+                }
+        print('-->',entry)
+        results.append(entry)
+    print('calc and serialized',len(results))
+
+    # sort by similarity
+    results = sorted(results, key=lambda r: r['simil'], reverse=True)
+
+    # return
+    data = {'search':search_query, 'count':len(results), 'results':results}
+    return JsonResponse(data)
+
 def api_get_admin(request, id):
     geom_string = request.GET.get('geom', 'true')
     if geom_string.lower() in ('true','1'):
