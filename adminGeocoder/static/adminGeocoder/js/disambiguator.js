@@ -2,10 +2,14 @@
 // TODO: probably no longer needed... 
 disambiguationSearchId = null;
 disambiguationSearchData = null;
+disambiguationSearchTime = null;
 currentSelectedGeomId = null;
 currentSelectedGeomData = null;
 
 function requestUpdateDisambiguator() {
+    // set search time stamp
+    disambiguationSearchTime = Date.now();
+
     // get search input and clear
     input = document.querySelector('#disambiguation-search-input');
     search = input.value;
@@ -124,48 +128,6 @@ function addResultBboxToMap(entry) {
     addGeomToDisambiguationMap(entry);
 }
 
-/*
-function requestGeomsFromDisambiguatorData() {
-    // get adminId for first entry in data
-    adminId = disambiguationSearchData.results[0].id;
-    // load next geom on success
-    function onSuccess() {
-        console.log('geom load success');
-        // increment load counter and status
-        disambiguatorCandidatesLoaded += 1;
-        updateLoadStatus();
-        // zoom to disambig layer
-        zoomToDisambiguationLayer();
-        // load next available geom
-        if (disambiguatorCandidatesLoaded < disambiguatorTotalCandidates) {
-            nxtId = disambiguationSearchData.results[disambiguatorCandidatesLoaded].id;
-            requestGeomForMap(nxtId, onSuccess);
-        };
-    };
-    // initiate
-    requestGeomForMap(adminId, onSuccess);
-}
-
-function requestGeomForMap(adminId, onSuccess=null) {
-    // fetch full details of geom
-    url = '/api/get_geom/' + adminId;
-    promise = fetch(url).then(result=>result.json()).then(data=>receiveGeomForMap(adminId, data));
-    if (onSuccess) {
-        promise.then(onSuccess);
-    }
-}
-
-function receiveGeomForMap(adminId, geomData) {
-    // get admin attr data from id
-    data = getAdminById(adminId)
-    data = JSON.parse(JSON.stringify(data)); // copy the data
-    // add geom attr
-    data['geom'] = geomData;
-    // add to map
-    addGeomToDisambiguationMap(data);
-}
-*/
-
 function addGeomToDisambiguationTable(adminId, result) {
     //console.log(result)
     tbody = document.querySelector('#disambiguation-geom-table tbody');
@@ -204,52 +166,13 @@ function addGeomToDisambiguationTable(adminId, result) {
     };
 }
 
-/*
-function requestGeomCandidates(adminIds) {
-    // fetch full details of geom candidate
-    adminIds = adminIds.join(',');
-    url = '/api/get_admin/' + adminIds + '?geom=0';
-    console.log(url)
-    fetch(url).then(result=>result.json()).then(data=>receiveGeomCandidates(data));
-}
-
-function receiveGeomCandidates(geomDatas) {
-    console.log(geomDatas);
-
-    // update geom table entry
-    for (geomData of geomDatas) {
-        updateDisambiguationTableEntry(geomData);
-    };
-
-    // update status
-    updateLoadStatus();
-}
-
-function updateDisambiguationTableEntry(geomData) {
-    tr = document.getElementById('admin-candidate-id-' + geomData.id);
-    if (geomData.valid_from === null) {
-        validity = 'Unknown';
-    } else {
-        validity = `${geomData.valid_from} - ${geomData.valid_to}`;
-    };
-    tr.querySelector('.admin-name').innerHTML = `&#9654; ${getDisplayName(geomData)}`;
-    tr.querySelector('.admin-source').innerText = geomData.source.name;
-    tr.querySelector('.admin-level').innerHTML = `<img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(geomData)}`;
-    //tr.querySelector('admin-validity').innerText = validity;
-    // mark as selected
-    if (geomData.id == currentSelectedGeomId) {
-        tr.className = "admin-candidate-row selected-geom-row";
-        tr.scrollIntoView({block:'nearest', inline:'nearest'});
-    };
-}
-*/
-
 function updateLoadStatus() {
     // update status text
     if (disambiguatorTotalCandidates == null) {
         loadStatus = 'Searching...';
     } else if (disambiguatorCandidatesLoaded == disambiguatorTotalCandidates) {
-        loadStatus = `Found ${disambiguatorCandidatesLoaded} matches`;
+        timeDelta = (Date.now() - disambiguationSearchTime);
+        loadStatus = `Found ${disambiguatorCandidatesLoaded} matches in ${(timeDelta/1000.0).toFixed(2)} seconds`;
     } else {
         loadStatus = `Loading: ${disambiguatorCandidatesLoaded} of ${disambiguatorTotalCandidates} matches loaded`
     };
@@ -307,40 +230,6 @@ function selectSimilarGeom(adminId) {
     // mark the map geom as selected
     selectMapGeom(adminId);
 }
-
-/*
-function saveDisambiguator() {
-    saveSearchInput();
-    saveGeomSelection();
-}
-
-function saveSearchInput() {
-    resultsData[disambiguationSearchId] = disambiguationSearchData;
-}
-
-function saveGeomSelection() {
-    // change the stored geom selection
-    searchData = resultsData[disambiguationSearchId];
-    searchData.chosen_geom_id = currentSelectedGeomId;
-    searchData.chosen_geom_data = currentSelectedGeomData;
-    // set geom match
-    requestChosenGeomMatch(disambiguationSearchId, currentSelectedGeomId);
-    // set geom agreement
-    requestChosenGeomAgreement(disambiguationSearchId);
-    // close popup
-    document.getElementById('disambiguation-popup').className = 'popup is-hidden';
-}
-
-function cancelDisambiguator() {
-    // reset the temporary geom selection variable
-    // maybe not necessary
-    searchData = resultsData[disambiguationSearchId];
-    currentSelectedGeomId = searchData.chosen_geom_id;
-    currentSelectedGeomData = searchData.chosen_geom_data;
-    // close popup
-    document.getElementById('disambiguation-popup').className = 'popup is-hidden';
-}
-*/
 
 
 
