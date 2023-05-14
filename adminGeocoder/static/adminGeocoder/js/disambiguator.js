@@ -147,8 +147,10 @@ function addGeomToDisambiguationTable(adminId, result) {
     <td class="admin-level" title="Administrative level"><div><img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(result)}</div></td>
     <td class="admin-time" title="Representative of year(s)"><div><img src="static/images/time.png">${getAdminYears(result)}</div></td>
     <td class="admin-name-match-percent" title="Boundary name match"><div><img src="static/images/text-icon.png"><span>${(result.simil * 100).toFixed(1)}%</span></div></td>
+    <!--
     <td class="similar-geom-match-percent" title="Cross-source boundary agreement/certainty"><div><img src="static/images/square.png"><span>...</span></div></td>
     <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${result.lineres.toFixed(1)}m</span></div></td>
+    -->
     <div class="row-buttons">
         <button type="button" class="button small" onclick="event.stopPropagation(); zoomToDisambiguationId(${adminId})">
             <span>Zoom</span>
@@ -332,8 +334,10 @@ function addSimilarGeomsToTable(adminId, entries) {
         <td class="admin-level" title="Administrative level"><div><img src="static/images/hierarchy-structure.png">ADM${getAdminLevel(entry)}</div></td>
         <td class="admin-time" title="Representative of year(s)"><div><img src="static/images/time.png">${getAdminYears(entry)}</div></td>
         <td class="admin-name-match-percent"></td>
+        <!--
         <td class="similar-geom-match-percent" title="Boundary similarity"><div><img src="static/images/square.png"><span>${(entry.simil * 100).toFixed(1)}%</span></div></td>
         <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${entry.lineres.toFixed(1)}m</span></div></td>
+        -->
         <div class="row-buttons">
             <button type="button" class="button small" onclick="event.stopPropagation(); zoomToDisambiguationId(${entry.id})">
                 <span>Zoom</span>
