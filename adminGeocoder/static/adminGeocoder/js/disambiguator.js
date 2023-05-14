@@ -115,6 +115,8 @@ function initDisambiguator(data) {
     updateBasketButtons();
     // zoom to layer
     zoomToDisambiguationLayer();
+    // begin requesting similar geoms
+    requestAllSimilarGeoms();
 }
 
 function addResultBboxToMap(entry) {
@@ -190,7 +192,7 @@ function selectGeom(adminId) {
     // unmark any selected similar geom rows
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
     for (tr of rows) {
-        tr.classList.remove("similar-geom-admin");
+        tr.classList.remove("selected-geom-admin");
     };
     // mark the admin candidate table entry as selected
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .admin-candidate-row');
@@ -207,7 +209,7 @@ function selectGeom(adminId) {
     // select and zoom to map geom
     selectMapGeom(currentSelectedGeomId);
     // also get all similar geoms
-    requestSimilarGeoms(currentSelectedGeomId);
+    //requestSimilarGeoms(currentSelectedGeomId);
 }
 
 function selectSimilarGeom(adminId) {
@@ -237,14 +239,27 @@ function selectSimilarGeom(adminId) {
 ///////////////////
 // similar geoms
 
-function requestSimilarGeoms(adminId) {
+function requestAllSimilarGeoms() {
+    let cur, nxt;
+    cur = 0;
+    nxt = 1;
+    requestSimilarGeoms(disambiguationSearchData.results[cur].id, nxt);
+}
+
+function requestSimilarGeoms(adminId, nxt=null) {
+    console.log(`requesting similar for ${adminId}`)
     // clear any old similar geoms info
-    clearSimilarGeomsFromTable();
+    //clearSimilarGeomsFromTable();
     // indicate loading to the user
     showSimilarGeomsLoading(adminId);
     // fetch full details of geom
     url = '/api/get_similar_admins/' + adminId;
-    fetch(url).then(result=>result.json()).then(data=>receiveSimilarGeoms(data));
+    if ((nxt != null) & (nxt < disambiguationSearchData.results.length)) {    
+        let nxtnxt = nxt + 1;
+        fetch(url).then(result=>result.json()).then(data=>receiveSimilarGeoms(adminId, data)).then(function(){requestSimilarGeoms(disambiguationSearchData.results[nxt].id, nxtnxt)})
+    } else {
+        fetch(url).then(result=>result.json()).then(data=>receiveSimilarGeoms(adminId, data));
+    };
 }
 
 function clearSimilarGeomsFromTable() {
@@ -269,14 +284,14 @@ function showSimilarGeomsLoading(adminId) {
     loading_tr.appendChild(loading_td);
 }
 
-function receiveSimilarGeoms(data) {
+function receiveSimilarGeoms(adminId, data) {
     // remove loading text
     span = document.querySelector('.similar-geoms-loading');
     span.remove();
     // update total source agreement
-    updateSelectedTableEntryAgreement(data);
+    //updateSelectedTableEntryAgreement(data);
     // add similar geoms to table
-    addSimilarGeomsToTable(data.results);
+    addSimilarGeomsToTable(adminId, data.results);
     // add similar geoms to map
     addSimilarGeomsToMap(data.results);
 }
@@ -286,9 +301,9 @@ function updateSelectedTableEntryAgreement(data) {
     span.innerText = `${(data.agreement * 100).toFixed(1)}%`;
 }
 
-function addSimilarGeomsToTable(entries) {
-    selected_tr = document.querySelector('.selected-geom-row');
-    insertBefore = selected_tr.nextSibling;
+function addSimilarGeomsToTable(adminId, entries) {
+    admin_tr = document.querySelector(`#admin-candidate-id-${adminId}`);
+    insertBefore = admin_tr.nextSibling;
     for (let entry of entries) {
         console.log(entry)
         tr = document.createElement('tr');
@@ -323,7 +338,7 @@ function addSimilarGeomsToTable(entries) {
             </button>
         </div>
         `;
-        selected_tr.parentNode.insertBefore(tr, insertBefore);
+        admin_tr.parentNode.insertBefore(tr, insertBefore);
     };
     // update basket buttons
     updateBasketButtons();

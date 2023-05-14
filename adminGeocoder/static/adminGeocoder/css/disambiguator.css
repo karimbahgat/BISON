@@ -109,12 +109,12 @@
     color: #7f888f;
 }
 
-#disambiguation-geom-table tr a:hover {
-    color: #7f888f !important;
+#disambiguation-geom-table tr button:hover {
+    background-color: rgb(155,155,155);
 }
 
 #disambiguation-geom-table tbody tr:hover {
-    background-color: rgba(233, 233, 233, 0.8);
+    backdrop-filter: brightness(90%) !important;
 }
 
 .admin-candidate-row {
@@ -177,7 +177,7 @@
 }
 
 .remove-from-cart:hover {
-    background-color: rgb(240, 178, 35);
+    background-color: rgb(210, 148, 5) !important;
 }
 
 #disambiguation-geom-table tr.in-basket .remove-from-cart {
@@ -209,8 +209,11 @@
     margin: 5px;
 }
 
-.similar-geom-admin {
+/*
+.similar-geom-admin:not(.selected-geom-row) {
+    background-color: rgb(255,0,0,0.3) !important;
 }
+*/
 
 .admin-name {
     width: 20%;

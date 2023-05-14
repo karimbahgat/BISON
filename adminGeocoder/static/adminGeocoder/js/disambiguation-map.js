@@ -103,6 +103,15 @@ var similarStyle = new ol.style.Style({
         lineDash: [10,10]
     }),
 });
+var similarPointStyle = new ol.style.Style({
+    image: new ol.style.Circle({
+        radius: 10,
+        fill: new ol.style.Fill({
+            color: 'rgb(255, 0, 0)',
+        }),
+    }),
+    geometry: getFeatureCentroid
+});
 
 
 // layers
@@ -123,7 +132,7 @@ var selectedLayer = new ol.layer.Vector({
 
 var similarLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
-    style: similarStyle,
+    style: [similarStyle, similarPointStyle],
 });
 
 // labelling
@@ -161,10 +170,10 @@ var disambiguationMap = new ol.Map({
             maxZoom: 20,
             crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
         })}),
-        disambiguationLayer,
         basketLayer,
-        selectedLayer,
-        similarLayer
+        disambiguationLayer,
+        similarLayer,
+        selectedLayer
     ],
     view: new ol.View({
         center: ol.proj.fromLonLat([0,0]),
@@ -327,7 +336,7 @@ function removeFromBasketGeoms(adminId) {
 
 function addSimilarGeomsToMap(entries) {
     // first clear
-    similarLayer.getSource().clear();
+    //similarLayer.getSource().clear();
     // then add
     for (geomData of entries) {
         props = {'id': geomData.id,
