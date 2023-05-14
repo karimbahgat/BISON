@@ -248,22 +248,39 @@ def api_get_geom(request, id):
 
 def api_get_similar_admins(request, id):
     admin = models.Admin.objects.get(pk=id)
-    from django.db import connection
-    cur = connection.cursor()
     from time import time
     t=time()
     simil_thresh = 0.50
+    sql = 'with recursive'
 
-    # find all other admins whose bbox overlap
+    def iter_table(sql, sql_params, table):
+        from django.db import connection
+        sql = sql + f'SELECT * FROM {table}'
+        print(sql)
+        print('GO!')
+        curs = connection.cursor()
+        curs.execute(sql, sql_params)
+        return curs
+
+    def iter_sql(sql, sql_params):
+        from django.db import connection
+        print(sql)
+        print('GO!')
+        curs = connection.cursor()
+        curs.execute(sql, sql_params)
+        return curs
+
+    # find all other admins whose bbox overlap (excl self)
     #xmin,ymin,xmax,ymax = admin.minx,admin.miny,admin.maxx,admin.maxy
     #print(xmin,ymin,xmax,ymax)
-    sql = f'''
-    with current as (
+    sql += f'''
+    current as (
         select * from adminManager_admin
         where id = {id}
     )
     , bboxoverlap as (
-        select a.*
+        select 
+            a.*
         from adminManager_admin as a
         where a.minx <= {admin.maxx} and a.maxx >= {admin.minx}
         and a.miny <= {admin.maxy} and a.maxy >= {admin.miny}
@@ -283,7 +300,7 @@ def api_get_similar_admins(request, id):
     )
     , bboxsimils as (
         select
-            id, 
+            id,
             ((xoverlap * yoverlap) / (xunion * yunion)) as bbox_simil
         from bboxsimils_prep
     )
@@ -295,7 +312,7 @@ def api_get_similar_admins(request, id):
     , simils_prep as (
         select 
             b.*, 
-            a.geom, 
+            a.geom, a.level, a.parent_id, a.minx,
             st_intersection(a.geom, c.geom) as isec,
             st_union(a.geom, c.geom) as unio
         from bboxsimils as b, adminManager_admin as a, current as c
@@ -304,7 +321,7 @@ def api_get_similar_admins(request, id):
         and st_intersects(a.geom, c.geom)
     )
     '''
-    # calc simil
+    # 2: calc simil
     sql += f'''
     , simils as (
         select
@@ -318,12 +335,14 @@ def api_get_similar_admins(request, id):
         from simils_prep
     )
     '''
-    # filter by simil
+    # 3: get final matches by filtering on simil
     sql += f'''
-    select id,geom,simil
-    from simils
-    where simil >= {simil_thresh}
-    order by simil desc
+    , matches as (
+        select *
+        from simils
+        where simil >= {simil_thresh}
+        order by simil desc
+    )
     '''
     #sql += 'select id,st_geometrytype(isec),st_geometrytype(unio),bbox_simil,simil from simils'
     # TODO: for now doesnt filter by simil, only bbox_simil
@@ -332,7 +351,56 @@ def api_get_similar_admins(request, id):
     #order by bbox_simil desc
     #'''
 
-    # get extra attributes
+    # get all leaf parents
+    sql += '''
+    , recurs AS (
+        SELECT id AS leaf_id, id, parent_id, level FROM matches WHERE minx IS NOT NULL
+        UNION ALL
+        SELECT r.leaf_id, a.id, a.parent_id, a.level FROM adminManager_admin AS a
+        INNER JOIN recurs AS r
+        ON r.parent_id = a.id
+    )'''
+
+    # join these to the matches
+    sql += '''
+    , joined AS (
+        SELECT recurs.*, matches.simil FROM recurs LEFT JOIN matches ON matches.id = recurs.id
+    )
+    '''
+
+    # join these to names
+    # multiple names separated by pipe |
+    # collapsed to every unique leaf_id,adminid combination
+    sql += f'''
+    , joined_names AS (
+        SELECT j.*, GROUP_CONCAT(n.name SEPARATOR '|') AS names
+        FROM joined AS j
+        INNER JOIN adminManager_admin_names AS link
+        ON j.id = link.admin_id 
+        INNER JOIN adminManager_adminname AS n
+        ON link.adminname_id = n.id
+        GROUP BY j.leaf_id, j.id
+    )
+    '''
+
+    # aggregate to leaf nodes along with additional columns we want for final results
+    # including creating an aggregate simil score for all hierarchy simil scores
+    sql += '''
+    , final AS (
+        SELECT j.leaf_id AS id, 
+            a.valid_from, a.valid_to,
+            a.geom,
+            a.minx, a.miny, a.maxx, a.maxy,
+            AVG(j.simil) AS simil,
+            GROUP_CONCAT(j.id) AS hierarchy_ids, 
+            GROUP_CONCAT(j.names) AS hierarchy_names, 
+            GROUP_CONCAT(j.level) AS hierarchy_levels
+        FROM adminManager_admin AS a
+        INNER JOIN joined_names AS j
+        ON a.id = j.leaf_id
+        GROUP BY j.leaf_id
+    )
+    '''
 
     # final
     #sql += f'''
@@ -343,29 +411,31 @@ def api_get_similar_admins(request, id):
     #'''
 
     # execute
-    print(sql)
-    print('GO!')
-    cur.execute(sql)
     #for row in cur:
     #    print(row)
     #dfafadsfa
-    matches = list(cur)
+    matches = list(iter_table(sql, None, 'final'))
+    #matches = list(iter_sql(sql, None))
     print('comparisons finished in',time()-t,'seconds')
 
     # return list of admins as json
     results = []
     for row in matches:
-        #id,valid_from,valid_to, \
-        #    xmin,ymin,xmax,ymax, \
-        #    simil,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+        # print([repr(v)[:100] for v in row])
+        id,valid_from,valid_to, \
+            geom,xmin,ymin,xmax,ymax, \
+            simil,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+        if not geom:
+            print('weird, null geom, skipping')
+            continue
         
         # temp
-        id,geom,simil = row
-        valid_from = valid_to = None
-        xmin=ymin=xmax=ymax = None
-        hierarchy_ids = f'{id}'
-        hierarchy_names = 'Dummy Name'
-        hierarchy_levels = '1'
+        # id,geom,simil = row
+        # valid_from = valid_to = None
+        # xmin=ymin=xmax=ymax = None
+        # hierarchy_ids = f'{id}'
+        # hierarchy_names = 'Dummy Name'
+        # hierarchy_levels = '1'
 
         hierarchy = []
         zipped = zip(hierarchy_ids.split(','), 

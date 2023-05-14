@@ -70,6 +70,7 @@ function resetDisambiguator() {
     // clear map
     selectedLayer.getSource().clear();
     disambiguationLayer.getSource().clear();
+    similarLayer.getSource().clear();
     // fix bug where map that's initially hidden won't show
     disambiguationMap.updateSize(); // otherwise will remain hidden until window resize
     // clear and hide geoms table
