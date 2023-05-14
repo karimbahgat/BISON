@@ -9,3 +9,14 @@
     right: 0.5em;
     left: unset;
 }
+
+#map-loading {
+    position: absolute;
+    bottom: -0.8%;
+    right: 3%;
+}
+
+#map-loading img {
+    width: 40px;
+    height: 40px;
+}

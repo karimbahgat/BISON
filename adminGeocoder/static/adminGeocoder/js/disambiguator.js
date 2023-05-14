@@ -205,8 +205,8 @@ function selectGeom(adminId) {
     currentSelectedGeomId = adminId;
     // select and zoom to map geom
     selectMapGeom(currentSelectedGeomId);
-    // also show all similar geoms to map
-    requestSimilarGeomsForMap(currentSelectedGeomId);
+    // also get all similar geoms
+    requestSimilarGeoms(currentSelectedGeomId);
 }
 
 function selectSimilarGeom(adminId) {
@@ -236,14 +236,14 @@ function selectSimilarGeom(adminId) {
 ///////////////////
 // similar geoms
 
-function requestSimilarGeomsForMap(adminId) {
+function requestSimilarGeoms(adminId) {
     // clear any old similar geoms info
     clearSimilarGeomsFromTable();
     // indicate loading to the user
     showSimilarGeomsLoading(adminId);
     // fetch full details of geom
-    url = '/api/get_best_source_matches/' + adminId;
-    fetch(url).then(result=>result.json()).then(data=>receiveSimilarGeomsForMap(data));
+    url = '/api/get_similar_admins/' + adminId;
+    fetch(url).then(result=>result.json()).then(data=>receiveSimilarGeoms(data));
 }
 
 function clearSimilarGeomsFromTable() {
@@ -268,7 +268,7 @@ function showSimilarGeomsLoading(adminId) {
     loading_tr.appendChild(loading_td);
 }
 
-function receiveSimilarGeomsForMap(data) {
+function receiveSimilarGeoms(data) {
     // remove loading text
     span = document.querySelector('.similar-geoms-loading');
     span.remove();
@@ -277,9 +277,7 @@ function receiveSimilarGeomsForMap(data) {
     // add similar geoms to table
     addSimilarGeomsToTable(data.results);
     // add similar geoms to map
-    for (entry of data.results) {
-        requestGeomForMap(entry.id);
-    };
+    addSimilarGeomsToMap(data.results);
 }
 
 function updateSelectedTableEntryAgreement(data) {

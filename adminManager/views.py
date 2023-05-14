@@ -521,3 +521,164 @@ def api_admin_data(request):
         # return as json
         print('returning')
         return JsonResponse(result)
+
+# not sure if should require permissions or not... 
+def api_admin_data(request):
+    from django.db import connection
+    from django.http import JsonResponse
+    import json
+    cur = connection.cursor()
+
+    params = request.GET
+    sql = ''
+
+    # decide universe of admins
+    ids = params.get('ids', '')
+    source_id = params.get('source', None)
+    admin_table = models.Admin._meta.db_table
+
+    # A. limit to specified admin ids
+    if ids:
+        sql += f'''
+        WITH admins AS (
+            select a.id, minx, miny, maxx, maxy
+            from {admin_table} as a
+            where a.id in ({ids})
+            and minx is not null
+        '''
+
+    # B. limit to admins by source
+    elif source_id:
+        # get all child source ids
+        sql += f'''
+        WITH RECURSIVE
+        recurs AS (
+                SELECT id FROM adminManager_adminsource WHERE id = {source_id}
+
+                UNION ALL
+
+                SELECT s.id FROM recurs
+                INNER JOIN adminManager_adminsource AS s
+                ON s.parent_id = recurs.id
+        )'''
+
+        # sql to get admins belonging to sources and has geom
+        admin_table = models.Admin._meta.db_table
+        sql += f'''
+        WITH admins AS (
+            select a.id, minx, miny, maxx, maxy
+            from {admin_table} as a, recurs as r
+            where a.source_id = r.id
+            and minx is not null
+        '''
+
+    # C. don't limit, consider all admins
+    else:
+        sql += f'''
+        WITH admins AS (
+            select a.id, minx, miny, maxx, maxy
+            from {admin_table} as a
+            where minx is not null
+        '''
+
+    # limit to bbox if given
+    xmin,ymin,xmax,ymax = params.get('xmin'),params.get('ymin'),params.get('xmax'),params.get('ymax')
+    if xmin != None:
+        # limit to bbox
+        sql += f'''
+        and minx < {xmax} and maxx >= {xmin}
+        and miny < {ymax} and maxy >= {ymin}
+        '''
+    
+    # close admin table
+    sql += '\n)'
+
+    # limit to minimum area compared to bbox
+    # doesnt filter, only marks and renders simplified bbox geom (later)
+    extent_frac = params.get('minimum_extent_fraction', None)
+    if xmin != None and extent_frac != None:
+        w,h = float(xmax)-float(xmin),float(ymax)-float(ymin)
+        dx,dy = w/float(extent_frac), h/float(extent_frac)
+        sql += f'''
+        , admins2 as (
+        select *, ((maxx-minx) > {dx} and (maxy-miny) > {dy}) as isvisible
+        from admins
+        )
+        '''
+    else:
+        sql += f'''
+        , admins2 as (
+        select *, TRUE as isvisible
+        from admins
+        )
+        '''
+
+    if params.get('summary_only', None):
+        # sql summarize
+        sql = f'''
+        select count(id),min(minx),min(miny),max(maxx),max(maxy)
+        from ({sql}) as sub
+        '''
+        print(sql)
+        cur.execute(sql)
+        count,xmin,ymin,xmax,ymax = cur.fetchone()
+        print('summarized',count)
+        if count:
+            bbox = xmin,ymin,xmax,ymax
+        else:
+            bbox = None
+        # result data
+        result = {'count':count, 'bbox':bbox, 'result':[]}
+
+    else:
+        # get admins
+
+        # determine wkt expr
+        if params.get('geom', 'true') == 'true':
+            # convert geom to bbox if geom size is too large
+            # or if bbox is not visible
+            geom_size_limit = params.get('geom_size_limit', 100000)
+            wkt_expr = f'''
+                case when isvisible and length(geom) < {geom_size_limit} 
+                then st_aswkt(geom)
+                else st_aswkt(st_envelope(multipoint(point(a.minx,a.miny), point(a.maxx,a.maxy)))) end
+            '''
+        else:
+            wkt_expr = 'null'
+
+        # based on previous filtered tables, get original admin info incl geom wkt
+        sql += f'''
+        select orig.id,orig.level,a.minx,a.miny,a.maxx,a.maxy,({wkt_expr}) as wkt
+        from adminManager_admin as orig
+        inner join admins2 as a
+        on a.id = orig.id
+        '''
+
+        # execute
+        print(sql)
+        cur.execute(sql)
+
+        # create result
+        print('building results')
+        result_list = [];
+        for row in cur:
+            id, level, xmin, ymin, xmax, ymax, wkt = row
+            info = {'level':level, 'id':id, 'bbox':[xmin,ymin,xmax,ymax]}
+            info['wkt'] = wkt
+            result_list.append(info)
+        key = lambda x: x['level']
+        result_list = sorted(result_list, key=key, reverse=True)
+
+        # get total bbox
+        if result_list:
+            xmins,ymins,xmaxs,ymaxs = zip(*(info['bbox'] for info in result_list))
+            bbox = min(xmins),min(ymins),max(xmaxs),max(ymaxs)
+        else:
+            bbox = [None,None,None,None]
+
+        # return data
+        result = {'count':len(result_list), 'bbox':bbox, 'result':result_list}
+
+    # return as json
+    print('returning')
+    return JsonResponse(result)

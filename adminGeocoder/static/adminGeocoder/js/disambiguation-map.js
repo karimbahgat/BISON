@@ -98,8 +98,8 @@ var similarStyle = new ol.style.Style({
         color: 'rgba(255, 255, 255, 0)', // fully transparent
     }),
     stroke: new ol.style.Stroke({
-        color: 'rgba(255, 0, 0, 0.8)',
-        width: 1.5,
+        color: 'rgb(255, 0, 0)',
+        width: 2.5,
         lineDash: [10,10]
     }),
 });
@@ -119,6 +119,11 @@ var basketLayer = new ol.layer.Vector({
 var selectedLayer = new ol.layer.Vector({
     source: new ol.source.Vector(),
     style: [selectedStyle, selectedPointStyle],
+});
+
+var similarLayer = new ol.layer.Vector({
+    source: new ol.source.Vector(),
+    style: similarStyle,
 });
 
 // labelling
@@ -158,7 +163,8 @@ var disambiguationMap = new ol.Map({
         })}),
         disambiguationLayer,
         basketLayer,
-        selectedLayer
+        selectedLayer,
+        similarLayer
     ],
     view: new ol.View({
         center: ol.proj.fromLonLat([0,0]),
@@ -318,3 +324,97 @@ function removeFromBasketGeoms(adminId) {
     feat = basketLayer.getSource().getFeatureById(adminId);
     basketLayer.getSource().removeFeature(feat);
 }
+
+function addSimilarGeomsToMap(entries) {
+    // first clear
+    similarLayer.getSource().clear();
+    // then add
+    for (geomData of entries) {
+        props = {'id': geomData.id,
+            'displayName': getDisplayName(geomData)
+        };
+        feat = {'type': 'Feature',
+            'id': geomData.id,
+            'properties': props,
+            'geometry': geomData['geom']};
+        feat = new ol.format.GeoJSON().readFeature(feat, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+        similarLayer.getSource().addFeature(feat);
+    };
+}
+
+////////////////
+
+function onMoveEnd() {
+    fetchAdmins();
+}
+
+function getMapBounds() {
+    extent = disambiguationMap.getView().calculateExtent();
+    return ol.proj.transformExtent(extent, 'EPSG:3857','EPSG:4326');
+}
+
+function getAdminIds() {
+    ids = [];
+    disambiguationLayer.getSource().forEachFeature(function (feat) {
+        ids.push(feat.get('id'));
+    });
+    return ids;
+}
+
+function fetchAdmins() {
+    adminIds = getAdminIds();
+    if (adminIds.length == 0) {
+        return;
+    };
+
+    // indicate fetching start
+    fetchingTime = Date.now();
+    document.getElementById('map-loading').style.visibility = 'visible';
+
+    [minx, miny, maxx, maxy] = getMapBounds();
+    urlParams = new URLSearchParams();
+    urlParams.set('ids', adminIds.join(','));
+    urlParams.set('xmin', minx);
+    urlParams.set('ymin', miny);
+    urlParams.set('xmax', maxx);
+    urlParams.set('ymax', maxy);
+    urlParams.set('geom_size_limit', 100000*1000);
+    urlParams.set('minimum_extent_fraction', 30);
+    url = '/api/admins?' + urlParams.toString();
+    console.log(url);
+    let requested = fetchingTime; // pass along the requested timestamp
+    fetch(url).then(resp=>resp.json()).then(data=>receiveAdmins(requested, data));
+}
+
+function receiveAdmins(requested, data) {
+    console.log(data)
+    // update map geoms
+    updateLayerGeometry(data);
+    // stop loading icon if no newer requests have been made
+    if (requested == fetchingTime) {
+        document.getElementById('map-loading').style.visibility = 'hidden';
+    };
+}
+
+function updateLayerGeometry(data) {
+    src = disambiguationLayer.getSource();
+    // add to layer
+    wktReader = new ol.format.WKT();
+    for (info of data.result) {
+        id = info.id;
+        feat = src.getFeatureById(id);
+        geom = wktReader.readGeometry(info.wkt, {dataProjection:'EPSG:4326', featureProjection:'EPSG:3857'});
+        feat.setGeometry(geom);
+    };
+}
+
+// fetch admins when map has moved
+fetchingTime = null;
+disambiguationMap.on('moveend', onMoveEnd);
+
+// hacky fix to disable map loading animation on startup
+// has to be visible on startup to be visible later
+setTimeout(function() {
+    document.getElementById('map-loading').style.visibility = 'hidden';
+}, 10)
+
