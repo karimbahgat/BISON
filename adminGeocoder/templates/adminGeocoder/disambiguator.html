@@ -16,10 +16,10 @@
         </div>
 
         <div id="basket-nav">
-            <button type="button" class="button small" onclick="zoomToBasketLayer()">
-                Zoom all
-                <!--<img src="{% static 'images/zoom-out.png' %}">-->
-            </button>
+            <span id="basket-zoom" onclick="zoomToBasketLayer()">
+                <!--Zoom all-->
+                <img src="{% static 'images/zoom-out.png' %}">
+            </span>
             <span id="basket-toggler" onclick="toggleBasket()">
                 <img src="{% static 'images/basket.png' %}">
                 <span class="basket-count" data-count="0">0</span>

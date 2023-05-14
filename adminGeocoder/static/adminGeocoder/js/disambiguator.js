@@ -189,10 +189,15 @@ function updateLoadStatus() {
 }
 
 function selectGeom(adminId) {
+    // unmark any selected admin candidate
+    rows = document.querySelectorAll('#disambiguation-geom-table tbody .admin-candidate-row');
+    for (tr of rows) {
+        tr.classList.remove("selected-geom-row");
+    };
     // unmark any selected similar geom rows
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
     for (tr of rows) {
-        tr.classList.remove("selected-geom-admin");
+        tr.classList.remove("selected-geom-row");
     };
     // mark the admin candidate table entry as selected
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .admin-candidate-row');
@@ -200,8 +205,7 @@ function selectGeom(adminId) {
         if (tr.id == `admin-candidate-id-${adminId}`) {
             tr.classList.add("selected-geom-row");
             tr.scrollIntoView({block:'nearest', inline:'nearest'});
-        } else {
-            tr.classList.remove("selected-geom-row");
+            break;
         };
     };
     // remember
@@ -218,14 +222,18 @@ function selectSimilarGeom(adminId) {
     for (tr of rows) {
         tr.classList.remove("selected-geom-row");
     };
+    // unmark any selected similar geom rows
+    rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
+    for (tr of rows) {
+        tr.classList.remove("selected-geom-row");
+    };
     // mark the similar geom table entry as selected
     rows = document.querySelectorAll('#disambiguation-geom-table tbody .similar-geom-admin');
     for (tr of rows) {
         if (tr.id == `similar-geom-id-${adminId}`) {
             tr.classList.add("selected-geom-row");
             tr.scrollIntoView({block:'nearest', inline:'nearest'});
-        } else {
-            tr.classList.remove("selected-geom-row");
+            break;
         };
     };
     // remember

@@ -170,9 +170,9 @@ var disambiguationMap = new ol.Map({
             maxZoom: 20,
             crossOrigin: 'anonymous' // necessary for converting map to img during pdf generation: https://stackoverflow.com/questions/66671183/how-to-export-map-image-in-openlayer-6-without-cors-problems-tainted-canvas-iss
         })}),
-        basketLayer,
         disambiguationLayer,
         similarLayer,
+        basketLayer,
         selectedLayer
     ],
     view: new ol.View({

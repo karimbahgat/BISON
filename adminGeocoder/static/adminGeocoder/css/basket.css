@@ -10,6 +10,19 @@
     border-radius: 3px;
 }
 
+#basket-zoom {
+    display: flex;
+    align-items: center;
+    flex-grow: 0;
+    cursor: pointer;
+}
+
+#basket-zoom img {
+    width: 15px;
+    height: 15px;
+    margin: 5px;
+}
+
 #basket-toggler {
     display: flex;
     align-items: center;
