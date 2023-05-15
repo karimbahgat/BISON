@@ -121,8 +121,26 @@
     position: relative;
 }
 
+.admin-candidate-row .symbol {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 10px;
+    margin-right: 7px;
+    background-color: rgb(29,107,191);
+}
+
 .similar-geom-admin {
     position: relative;
+}
+
+.similar-geom-admin .symbol {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 10px;
+    margin-right: 7px;
+    background-color: red;
 }
 
 .row-buttons {

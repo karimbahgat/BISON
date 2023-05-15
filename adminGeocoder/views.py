@@ -93,6 +93,7 @@ def api_search_name_hierarchy(request):
         a.valid_from, a.valid_to,
         a.minx, a.miny, a.maxx, a.maxy,
         SUM(j.simil) AS simil,
+        COUNT(j.simil) AS simil_max,
         GROUP_CONCAT(j.id) AS hierarchy_ids, 
         GROUP_CONCAT(j.names) AS hierarchy_names, 
         GROUP_CONCAT(j.level) AS hierarchy_levels
@@ -122,7 +123,11 @@ def api_search_name_hierarchy(request):
     for row in iter_table(sql, sql_params, 'final'):
         id,valid_from,valid_to, \
             xmin,ymin,xmax,ymax, \
-            simil,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+            simil,simil_max,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+        # name simil as percent of highest possible score (highest count of search input vs admin parents)
+        simil_max = max(simil_max, len(searches))
+        simil = float(simil) / float(simil_max)
+        # build hierarchy
         hierarchy = []
         zipped = zip(hierarchy_ids.split(','), 
                     hierarchy_names.split(','),
@@ -132,6 +137,7 @@ def api_search_name_hierarchy(request):
             hnames = hnames.split('|')
             hdict = {'id':hid, 'level':hlevel, 'names':hnames}
             hierarchy.append(hdict)
+        # make entry
         entry = {'id':id,
                 'hierarchy':hierarchy,
                 'source':{'name':'', 'id':''},
@@ -387,7 +393,7 @@ def api_get_similar_admins(request, id):
     # including creating an aggregate simil score for all hierarchy simil scores
     sql += '''
     , final AS (
-        SELECT j.leaf_id AS id, 
+        SELECT j.leaf_id AS id,
             a.valid_from, a.valid_to,
             a.geom,
             a.minx, a.miny, a.maxx, a.maxy,
@@ -411,12 +417,14 @@ def api_get_similar_admins(request, id):
     #'''
 
     # execute
-    #for row in cur:
-    #    print(row)
-    #dfafadsfa
-    matches = list(iter_table(sql, None, 'final'))
-    #matches = list(iter_sql(sql, None))
-    print('comparisons finished in',time()-t,'seconds')
+    try: 
+        matches = list(iter_table(sql, None, 'final'))
+        #matches = list(iter_sql(sql, None))
+        print('comparisons finished in',time()-t,'seconds')
+    except Exception as err:
+        print('ERROR executing sql:', err)
+        data = {'count': 0, 'results':[], 'error':str(err)}
+        return JsonResponse(data)
 
     # return list of admins as json
     results = []
@@ -465,98 +473,3 @@ def api_get_similar_admins(request, id):
     data = {'count': len(results), 'results':results}
     return JsonResponse(data)
 
-def api_get_best_source_matches(request, id):
-    admin = models.Admin.objects.get(pk=id)
-    xmin,ymin,xmax,ymax = admin.minx,admin.miny,admin.maxx,admin.maxy
-    #print(xmin,ymin,xmax,ymax)
-
-    # find all other admins whose bbox overlap
-    from time import time
-    t = time()
-    matches = models.Admin.objects.filter(minx__lte=xmax, maxx__gte=xmin,
-                                          miny__lte=ymax, maxy__gte=ymin)
-    matches = matches.exclude(source=admin.source)
-    print(matches.count(), 'bbox overlaps')
-
-    # calc bbox simil
-    ## bbox xoverlap = max(minx,xmin) - min(maxx,xmax)
-    ## bbox yoverlap = max(miny,ymin) - min(maxy,ymax)
-    matches = matches.annotate(xoverlap=Greatest('minx',Value(xmin)) - Least('maxx',Value(xmax)),
-                                yoverlap=Greatest('miny',Value(ymin)) - Least('maxy',Value(ymax)),
-                                xunion=Least('minx',Value(xmin)) - Greatest('maxx',Value(xmax)),
-                                yunion=Least('miny',Value(ymin)) - Greatest('maxy',Value(ymax)),
-                                )
-    ## bbox overlap = xoverlap * yoverlap
-    matches = matches.annotate(union=F('xunion') * F('yunion'),
-                                overlap=F('xoverlap') * F('yoverlap'),
-                                )
-    ## bbox similarity
-    matches = matches.annotate(bbox_simil=F('overlap')/F('union'))
-
-    # get the admin w highest bbox simil in each source group
-    matches = list(matches.values('id', 'names__name', 'source__id', 'source__name', 'bbox_simil'))
-    best_matches = {}
-    key = lambda m: m['source__id']
-    grouped = itertools.groupby(sorted(matches, key=key), key=key)
-    for src_id,group in grouped:
-        #print(src)
-        group = list(group)
-        most_similar = sorted(group, key=lambda m: m['bbox_simil'], reverse=True)
-        #print(most_similar)
-        best_match = most_similar[0]
-        best_matches[src_id] = best_match
-    print('bbox overlaps done')
-
-    # calc true overlap for the best source matches
-    def getshp(obj, simplify=False):
-        shp = wkb_loads(obj.geom.wkb)
-        if simplify:
-            return shp.simplify(0.001)
-        else:
-            return shp
-    def similarity(shp1, shp2):
-        if not shp1.intersects(shp2):
-            return 0
-        isec = shp1.intersection(shp2)
-        union = shp1.union(shp2)
-        simil = isec.area / union.area
-        return simil
-    # begin
-    shp = getshp(admin, simplify=True)
-    for src_id,best in best_matches.items():
-        print(src_id,best)
-        best_obj = models.Admin.objects.get(pk=best['id'])
-        best['obj'] = best_obj
-        best['simil'] = similarity(shp, getshp(best_obj))
-    print('comparisons finished in',time()-t,'seconds')
-
-    # return as list of sources with best match info, sorted by simil
-    key = lambda v: v['simil']
-    results = sorted(best_matches.values(), key=key, reverse=True)
-
-    # get list of sources with best match admin, sorted by simil
-    # filter by similarity thresh
-    key = lambda v: v['simil']
-    thresh = 0.05
-    results = []
-    for best_match in sorted(best_matches.values(), key=key, reverse=True):
-        m = best_match['obj']
-        entry = m.serialize(geom=False)
-        entry['bbox_simil'] = best_match['bbox_simil']
-        entry['simil'] = best_match['simil']
-        if entry['simil'] >= thresh:
-            #print(admin,m,simil)
-            results.append(entry)
-    print(len(results), 'geom overlaps serialized')
-
-    # calc total cross-source agreement
-    # ie prob that a randomly chosen point in the selected geom
-    # will land in the matched geom from a randomly chosen source
-    # is calc as the average of probabilities
-    # this assumes equal probability of choosing each source
-    simils = [e['simil'] for e in results]
-    agreement = sum(simils) / len(simils) if simils else 1.0
-
-    # return as json
-    data = {'count': len(results), 'results':results, 'agreement':agreement}
-    return JsonResponse(data)
