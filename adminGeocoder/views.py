@@ -37,7 +37,7 @@ def api_search_name_hierarchy(request):
     thresh = 0.3 # text match threshold
     name_queries = []
     for search in searches:
-        sub = models.Admin.objects.values('id', 'level', 'parent', 'names__name', 'minx')
+        sub = models.Admin.objects.values('id', 'level', 'parent', 'names__name', 'source_id', 'minx')
         sub = sub.filter(names__name__istartswith=search)
         sub = sub.annotate(simil=Value(float(len(search)))/Cast(Length('names__name'), FloatField()))
         sub = sub.filter(simil__gte=thresh)
@@ -85,6 +85,29 @@ def api_search_name_hierarchy(request):
     # mayyyybe do some magic so we only keep admins where all hierarchy levels satisfy the thresh? 
     # ...
 
+    # recursive get all source names starting with the match source
+    sql += '''
+, sourceparents AS (
+    SELECT m.id AS admin_id, s.id AS leaf_id, s.id, s.name, s.parent_id, 0 AS source_level
+    FROM matches AS m
+    INNER JOIN adminManager_adminSource AS s ON s.id = m.source_id
+    WHERE m.minx IS NOT NULL
+
+    UNION ALL
+    
+    SELECT p.admin_id, p.leaf_id, s.id, s.name, s.parent_id, (p.source_level + 1) AS source_level
+    FROM adminManager_adminSource AS s
+    INNER JOIN sourceparents AS p
+    ON s.id = p.parent_id
+)'''
+    sql += '''
+, sourceparents_agg AS (
+    SELECT admin_id, leaf_id AS source_id, GROUP_CONCAT(name SEPARATOR '|') AS source_names
+    FROM sourceparents
+    GROUP BY admin_id
+    ORDER BY admin_id,source_level DESC
+)'''
+
     # aggregate to leaf nodes along with additional columns we want for final results
     # including creating an aggregate simil score for all hierarchy simil scores
     sql += '''
@@ -96,16 +119,17 @@ def api_search_name_hierarchy(request):
         COUNT(j.simil) AS simil_max,
         GROUP_CONCAT(j.id) AS hierarchy_ids, 
         GROUP_CONCAT(j.names) AS hierarchy_names, 
-        GROUP_CONCAT(j.level) AS hierarchy_levels
+        GROUP_CONCAT(j.level) AS hierarchy_levels,
+        s.source_id,
+        s.source_names
     FROM adminManager_admin AS a
     INNER JOIN joined_names AS j
     ON a.id = j.leaf_id
+    INNER JOIN sourceparents_agg AS s
+    ON a.id = s.admin_id
     GROUP BY j.leaf_id
 )
 '''
-
-    # add in sources
-    # ... 
 
     # add in lineres
     # ... 
@@ -119,11 +143,18 @@ def api_search_name_hierarchy(request):
     #         'lineres':self.lineres,
     #         }
     # also 'simil' text match score
+    
+    #for row in iter_table(sql, sql_params, 'sourceparents_agg'):
+    #    print(row)
+    #fdsfds
+    
     results = []
     for row in iter_table(sql, sql_params, 'final'):
         id,valid_from,valid_to, \
             xmin,ymin,xmax,ymax, \
-            simil,simil_max,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+            simil,simil_max, \
+            hierarchy_ids,hierarchy_names,hierarchy_levels, \
+            source_id,source_names = row
         # name simil as percent of highest possible score (highest count of search input vs admin parents)
         simil_max = max(simil_max, len(searches))
         simil = float(simil) / float(simil_max)
@@ -138,9 +169,10 @@ def api_search_name_hierarchy(request):
             hdict = {'id':hid, 'level':hlevel, 'names':hnames}
             hierarchy.append(hdict)
         # make entry
+        source_names = ' - '.join(source_names.split('|'))
         entry = {'id':id,
                 'hierarchy':hierarchy,
-                'source':{'name':'', 'id':''},
+                'source':{'name':source_names, 'id':source_id},
                 'valid_from':valid_from,
                 'valid_to':valid_to,
                 'simil':float(simil),
@@ -193,64 +225,6 @@ def api_get_geom(request, id):
         data = admin.geom.__geo_interface__
 
     return JsonResponse(data, safe=False)
-
-# def api_get_similar_admins(request, id):
-#     admin = models.Admin.objects.get(pk=id)
-#     xmin,ymin,xmax,ymax = admin.minx,admin.miny,admin.maxx,admin.maxy
-#     #print(xmin,ymin,xmax,ymax)
-
-#     # find all other admins whose bbox overlap
-#     matches = models.Admin.objects.filter(minx__lte=xmax, maxx__gte=xmin,
-#                                           miny__lte=ymax, maxy__gte=ymin)
-#     matches = matches.exclude(source=admin.source)
-#     print(matches.count(), 'bbox overlaps')
-
-#     # calculate geom overlap/similarity
-#     # PAPER NOTE: scatterplot of bbox overlap vs geom overlap
-#     def getshp(obj, simplify=False):
-#         shp = wkb_loads(obj.geom.wkb)
-#         if simplify:
-#             return shp.simplify(0.001)
-#         else:
-#             return shp
-#     def similarity(shp1, shp2):
-#         if not shp1.intersects(shp2):
-#             return 0
-#         isec = shp1.intersection(shp2)
-#         union = shp1.union(shp2)
-#         simil = isec.area / union.area
-#         return simil
-#     from time import time
-#     t=time()
-#     shp = getshp(admin, simplify=True)
-#     matches = [(m,similarity(shp, getshp(m)))
-#                 for m in matches]
-#     print('comparisons finished in',time()-t,'seconds')
-
-#     # sort simil by source, only return best simil in source
-
-#     # maybe also quick filter based on total area of B, or
-#     # combined area of A plus B (compared to intersection area of
-#     # another we can know the max possible overlap and so can skip)
-
-#     # filter to overlapping geoms
-#     matches = [(m,simil) for m,simil in matches
-#                 if simil > 0.01]
-
-#     # sort by similarity
-#     matches = sorted(matches, key=lambda x: -x[1])
-
-#     # return list of admins as json
-#     results = []
-#     for m,simil in matches:
-#         entry = m.serialize(geom=False)
-#         entry['simil'] = simil
-#         #print(admin,m,simil)
-#         results.append(entry)
-#     print(len(results), 'geom overlaps serialized')
-
-#     data = {'count': len(results), 'results':results}
-#     return JsonResponse(data)
 
 def api_get_similar_admins(request, id):
     admin = models.Admin.objects.get(pk=id)
@@ -389,6 +363,30 @@ def api_get_similar_admins(request, id):
     )
     '''
 
+    # recursive get all source names starting with the match source
+    sql += '''
+    , sourceparents AS (
+        SELECT m.id AS admin_id, s.id AS leaf_id, s.id, s.name, s.parent_id, 0 AS source_level
+        FROM matches AS m
+        INNER JOIN adminManager_admin AS a ON a.id = m.id
+        INNER JOIN adminManager_adminSource AS s ON s.id = a.source_id
+        WHERE m.minx IS NOT NULL
+
+        UNION ALL
+        
+        SELECT p.admin_id, p.leaf_id, s.id, s.name, s.parent_id, (p.source_level + 1) AS source_level
+        FROM adminManager_adminSource AS s
+        INNER JOIN sourceparents AS p
+        ON s.id = p.parent_id
+    )'''
+    sql += '''
+    , sourceparents_agg AS (
+        SELECT admin_id, leaf_id AS source_id, GROUP_CONCAT(name SEPARATOR '|') AS source_names
+        FROM sourceparents
+        GROUP BY admin_id
+        ORDER BY admin_id,source_level DESC
+    )'''
+
     # aggregate to leaf nodes along with additional columns we want for final results
     # including creating an aggregate simil score for all hierarchy simil scores
     sql += '''
@@ -398,12 +396,16 @@ def api_get_similar_admins(request, id):
             a.geom,
             a.minx, a.miny, a.maxx, a.maxy,
             AVG(j.simil) AS simil,
+            s.source_id,
+            s.source_names,
             GROUP_CONCAT(j.id) AS hierarchy_ids, 
             GROUP_CONCAT(j.names) AS hierarchy_names, 
             GROUP_CONCAT(j.level) AS hierarchy_levels
         FROM adminManager_admin AS a
         INNER JOIN joined_names AS j
         ON a.id = j.leaf_id
+        INNER JOIN sourceparents_agg AS s
+        ON a.id = s.admin_id
         GROUP BY j.leaf_id
     )
     '''
@@ -432,7 +434,8 @@ def api_get_similar_admins(request, id):
         # print([repr(v)[:100] for v in row])
         id,valid_from,valid_to, \
             geom,xmin,ymin,xmax,ymax, \
-            simil,hierarchy_ids,hierarchy_names,hierarchy_levels = row
+            simil,source_id,source_names, \
+            hierarchy_ids,hierarchy_names,hierarchy_levels = row
         if not geom:
             print('weird, null geom, skipping')
             continue
@@ -456,9 +459,10 @@ def api_get_similar_admins(request, id):
             hierarchy.append(hdict)
 
         from adminManager.geometry import WKBGeometry
+        source_names = ' - '.join(source_names.split('|'))
         entry = {'id':id,
                 'hierarchy':hierarchy,
-                'source':{'name':'', 'id':''},
+                'source':{'name':source_names, 'id':source_id},
                 'valid_from':valid_from,
                 'valid_to':valid_to,
                 'simil':float(simil),
