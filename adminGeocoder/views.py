@@ -90,13 +90,13 @@ def api_search_name_hierarchy(request):
 , sourceparents AS (
     SELECT m.id AS admin_id, s.id AS leaf_id, s.id, s.name, s.parent_id, 0 AS source_level
     FROM matches AS m
-    INNER JOIN adminManager_adminSource AS s ON s.id = m.source_id
+    INNER JOIN adminManager_adminsource AS s ON s.id = m.source_id
     WHERE m.minx IS NOT NULL
 
     UNION ALL
     
     SELECT p.admin_id, p.leaf_id, s.id, s.name, s.parent_id, (p.source_level + 1) AS source_level
-    FROM adminManager_adminSource AS s
+    FROM adminManager_adminsource AS s
     INNER JOIN sourceparents AS p
     ON s.id = p.parent_id
 )'''
@@ -369,13 +369,13 @@ def api_get_similar_admins(request, id):
         SELECT m.id AS admin_id, s.id AS leaf_id, s.id, s.name, s.parent_id, 0 AS source_level
         FROM matches AS m
         INNER JOIN adminManager_admin AS a ON a.id = m.id
-        INNER JOIN adminManager_adminSource AS s ON s.id = a.source_id
+        INNER JOIN adminManager_adminsource AS s ON s.id = a.source_id
         WHERE m.minx IS NOT NULL
 
         UNION ALL
         
         SELECT p.admin_id, p.leaf_id, s.id, s.name, s.parent_id, (p.source_level + 1) AS source_level
-        FROM adminManager_adminSource AS s
+        FROM adminManager_adminsource AS s
         INNER JOIN sourceparents AS p
         ON s.id = p.parent_id
     )'''
