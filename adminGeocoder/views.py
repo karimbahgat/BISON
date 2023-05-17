@@ -85,48 +85,21 @@ def api_search_name_hierarchy(request):
     # mayyyybe do some magic so we only keep admins where all hierarchy levels satisfy the thresh? 
     # ...
 
-    # recursive get all source names starting with the match source
-    sql += '''
-, sourceparents AS (
-    SELECT m.id AS admin_id, s.id AS leaf_id, s.id, s.name, s.parent_id, 0 AS source_level
-    FROM matches AS m
-    INNER JOIN adminManager_adminsource AS s ON s.id = m.source_id
-    WHERE m.minx IS NOT NULL
-
-    UNION ALL
-    
-    SELECT p.admin_id, p.leaf_id, s.id, s.name, s.parent_id, (p.source_level + 1) AS source_level
-    FROM adminManager_adminsource AS s
-    INNER JOIN sourceparents AS p
-    ON s.id = p.parent_id
-)'''
-    sql += '''
-, sourceparents_agg AS (
-    SELECT admin_id, leaf_id AS source_id, GROUP_CONCAT(name SEPARATOR '|') AS source_names
-    FROM sourceparents
-    GROUP BY admin_id
-    ORDER BY admin_id,source_level DESC
-)'''
-
     # aggregate to leaf nodes along with additional columns we want for final results
     # including creating an aggregate simil score for all hierarchy simil scores
     sql += '''
 , final AS (
-    SELECT j.leaf_id AS id, 
+    SELECT j.leaf_id AS id, a.source_id,
         a.valid_from, a.valid_to,
         a.minx, a.miny, a.maxx, a.maxy,
         SUM(j.simil) AS simil,
         COUNT(j.simil) AS simil_max,
         GROUP_CONCAT(j.id) AS hierarchy_ids, 
         GROUP_CONCAT(j.names) AS hierarchy_names, 
-        GROUP_CONCAT(j.level) AS hierarchy_levels,
-        s.source_id,
-        s.source_names
+        GROUP_CONCAT(j.level) AS hierarchy_levels
     FROM adminManager_admin AS a
     INNER JOIN joined_names AS j
     ON a.id = j.leaf_id
-    INNER JOIN sourceparents_agg AS s
-    ON a.id = s.admin_id
     GROUP BY j.leaf_id
 )
 '''
@@ -149,12 +122,15 @@ def api_search_name_hierarchy(request):
     #fdsfds
     
     results = []
-    for row in iter_table(sql, sql_params, 'final'):
-        id,valid_from,valid_to, \
+    rows = list(iter_table(sql, sql_params, 'final'))
+    source_ids = [r[1] for r in rows]
+    source_lookup = _get_source_names(source_ids)
+    for row in rows:
+        id,source_id, \
+            valid_from,valid_to, \
             xmin,ymin,xmax,ymax, \
             simil,simil_max, \
-            hierarchy_ids,hierarchy_names,hierarchy_levels, \
-            source_id,source_names = row
+            hierarchy_ids,hierarchy_names,hierarchy_levels = row
         # name simil as percent of highest possible score (highest count of search input vs admin parents)
         simil_max = max(simil_max, len(searches))
         simil = float(simil) / float(simil_max)
@@ -169,6 +145,7 @@ def api_search_name_hierarchy(request):
             hdict = {'id':hid, 'level':hlevel, 'names':hnames}
             hierarchy.append(hdict)
         # make entry
+        source_names = source_lookup[source_id]
         source_names = ' - '.join(source_names.split('|'))
         entry = {'id':id,
                 'hierarchy':hierarchy,
@@ -189,6 +166,45 @@ def api_search_name_hierarchy(request):
     # return
     data = {'search':search_query, 'count':len(results), 'results':results}
     return JsonResponse(data)
+
+def _get_source_names(ids):
+
+    if not ids:
+        return {}
+
+    def iter_table(sql, sql_params, table):
+        from django.db import connection
+        sql = sql + f'SELECT * FROM {table}'
+        print(sql)
+        curs = connection.cursor()
+        curs.execute(sql, sql_params)
+        return curs
+
+    # recursive get all source names starting with the match source
+    source_ids_string = ','.join((str(id) for id in ids))
+    sql = f'''with recursive
+    sourceparents AS (
+        SELECT s.id AS leaf_id, s.id, s.name, s.parent_id, 0 AS source_level
+        FROM adminManager_adminsource AS s
+        WHERE s.id IN ({source_ids_string})
+
+        UNION ALL
+        
+        SELECT p.leaf_id, s.id, s.name, s.parent_id, (p.source_level + 1) AS source_level
+        FROM adminManager_adminsource AS s
+        INNER JOIN sourceparents AS p
+        ON s.id = p.parent_id
+    )
+    '''
+    sql += '''
+    , sourceparents_agg AS (
+        SELECT leaf_id AS source_id, GROUP_CONCAT(name ORDER BY source_level DESC SEPARATOR '|') AS source_names
+        FROM sourceparents
+        GROUP BY leaf_id
+    )
+    '''
+    lookup = {id:names for id,names in iter_table(sql, None, 'sourceparents_agg')}
+    return lookup
 
 def api_get_admin(request, id):
     geom_string = request.GET.get('geom', 'true')
@@ -362,61 +378,25 @@ def api_get_similar_admins(request, id):
         GROUP BY j.leaf_id, j.id
     )
     '''
-
-    # recursive get all source names starting with the match source
-    sql += '''
-    , sourceparents AS (
-        SELECT m.id AS admin_id, s.id AS leaf_id, s.id, s.name, s.parent_id, 0 AS source_level
-        FROM matches AS m
-        INNER JOIN adminManager_admin AS a ON a.id = m.id
-        INNER JOIN adminManager_adminsource AS s ON s.id = a.source_id
-        WHERE m.minx IS NOT NULL
-
-        UNION ALL
-        
-        SELECT p.admin_id, p.leaf_id, s.id, s.name, s.parent_id, (p.source_level + 1) AS source_level
-        FROM adminManager_adminsource AS s
-        INNER JOIN sourceparents AS p
-        ON s.id = p.parent_id
-    )'''
-    sql += '''
-    , sourceparents_agg AS (
-        SELECT admin_id, leaf_id AS source_id, GROUP_CONCAT(name SEPARATOR '|') AS source_names
-        FROM sourceparents
-        GROUP BY admin_id
-        ORDER BY admin_id,source_level DESC
-    )'''
-
+    
     # aggregate to leaf nodes along with additional columns we want for final results
     # including creating an aggregate simil score for all hierarchy simil scores
     sql += '''
     , final AS (
-        SELECT j.leaf_id AS id,
+        SELECT j.leaf_id AS id, a.source_id,
             a.valid_from, a.valid_to,
             a.geom,
             a.minx, a.miny, a.maxx, a.maxy,
             AVG(j.simil) AS simil,
-            s.source_id,
-            s.source_names,
             GROUP_CONCAT(j.id) AS hierarchy_ids, 
             GROUP_CONCAT(j.names) AS hierarchy_names, 
             GROUP_CONCAT(j.level) AS hierarchy_levels
         FROM adminManager_admin AS a
         INNER JOIN joined_names AS j
         ON a.id = j.leaf_id
-        INNER JOIN sourceparents_agg AS s
-        ON a.id = s.admin_id
         GROUP BY j.leaf_id
     )
     '''
-
-    # final
-    #sql += f'''
-    #select id, valid_from, valid_to, 
-    #    xmin,ymin,xmax,ymax,
-    #    simil,hierarchy_ids,hierarchy_names,hierarchy_levels
-    #from ...
-    #'''
 
     # execute
     try: 
@@ -430,11 +410,14 @@ def api_get_similar_admins(request, id):
 
     # return list of admins as json
     results = []
+    source_ids = [r[1] for r in matches]
+    source_lookup = _get_source_names(source_ids)
     for row in matches:
         # print([repr(v)[:100] for v in row])
-        id,valid_from,valid_to, \
+        id, source_id, \
+            valid_from,valid_to, \
             geom,xmin,ymin,xmax,ymax, \
-            simil,source_id,source_names, \
+            simil, \
             hierarchy_ids,hierarchy_names,hierarchy_levels = row
         if not geom:
             print('weird, null geom, skipping')
@@ -459,6 +442,7 @@ def api_get_similar_admins(request, id):
             hierarchy.append(hdict)
 
         from adminManager.geometry import WKBGeometry
+        source_names = source_lookup[source_id]
         source_names = ' - '.join(source_names.split('|'))
         entry = {'id':id,
                 'hierarchy':hierarchy,
