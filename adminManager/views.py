@@ -648,7 +648,7 @@ def api_admin_data(request):
 
         # based on previous filtered tables, get original admin info incl geom wkt
         sql += f'''
-        select orig.id,orig.level,a.minx,a.miny,a.maxx,a.maxy,({wkt_expr}) as wkt
+        select orig.id,orig.level,a.minx,a.miny,a.maxx,a.maxy,a.isvisible,({wkt_expr}) as wkt
         from adminManager_admin as orig
         inner join admins2 as a
         on a.id = orig.id
@@ -662,8 +662,8 @@ def api_admin_data(request):
         print('building results')
         result_list = [];
         for row in cur:
-            id, level, xmin, ymin, xmax, ymax, wkt = row
-            info = {'level':level, 'id':id, 'bbox':[xmin,ymin,xmax,ymax]}
+            id, level, xmin, ymin, xmax, ymax, isvisible, wkt = row
+            info = {'level':level, 'id':id, 'bbox':[xmin,ymin,xmax,ymax], 'isvisible':isvisible}
             info['wkt'] = wkt
             result_list.append(info)
         key = lambda x: x['level']

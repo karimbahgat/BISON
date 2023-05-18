@@ -362,16 +362,28 @@ function getMapBounds() {
     return ol.proj.transformExtent(extent, 'EPSG:3857','EPSG:4326');
 }
 
-function getAdminIds() {
+function getAdminIdsToLoad() {
+    // only get those within map view and large enough to see
+    minimumExtentFraction = 50;
+    extent = disambiguationMap.getView().calculateExtent();
+    [minx,miny,maxx,maxy] = extent;
+    [w,h] = [maxx-minx, maxy-miny];
+    [dx,dy] = [w/minimumExtentFraction, h/minimumExtentFraction];
     ids = [];
-    disambiguationLayer.getSource().forEachFeature(function (feat) {
-        ids.push(feat.get('id'));
+    disambiguationLayer.getSource().forEachFeatureInExtent(extent, function (feat) {
+        extent = feat.getGeometry().getExtent();
+        [minx,miny,maxx,maxy] = extent;
+        isVisible = ((maxx-minx) > dx) & ((maxy-miny) > dy); // whether the geom should be loaded
+        notLoaded = !(feat.get('isvisible')==true); // whether the returned result is not visible, ie geom has not been loaded
+        if (isVisible & notLoaded) {
+            ids.push(feat.get('id'));
+        };
     });
     return ids;
 }
 
 function fetchAdmins() {
-    adminIds = getAdminIds();
+    adminIds = getAdminIdsToLoad();
     if (adminIds.length == 0) {
         return;
     };
@@ -388,7 +400,7 @@ function fetchAdmins() {
     urlParams.set('xmax', maxx);
     urlParams.set('ymax', maxy);
     urlParams.set('geom_size_limit', 100000*1000);
-    urlParams.set('minimum_extent_fraction', 30);
+    //urlParams.set('minimum_extent_fraction', 30);
     url = '/api/admins?' + urlParams.toString();
     console.log(url);
     let requested = fetchingTime; // pass along the requested timestamp
@@ -412,6 +424,7 @@ function updateLayerGeometry(data) {
     for (info of data.result) {
         id = info.id;
         feat = src.getFeatureById(id);
+        feat.setProperties(info);
         geom = wktReader.readGeometry(info.wkt, {dataProjection:'EPSG:4326', featureProjection:'EPSG:3857'});
         feat.setGeometry(geom);
     };
