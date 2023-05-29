@@ -5,6 +5,7 @@ disambiguationSearchData = null;
 disambiguationSearchTime = null;
 currentSelectedGeomId = null;
 currentSelectedGeomData = null;
+currentExpandedGeomId = null;
 
 function requestUpdateDisambiguator() {
     // set search time stamp
@@ -116,7 +117,7 @@ function initDisambiguator(data) {
     // zoom to layer
     zoomToDisambiguationLayer();
     // begin requesting similar geoms
-    requestAllSimilarGeoms();
+    //requestAllSimilarGeoms();
 }
 
 function addResultBboxToMap(entry) {
@@ -214,8 +215,11 @@ function selectGeom(adminId) {
     currentSelectedGeomId = adminId;
     // select and zoom to map geom
     selectMapGeom(currentSelectedGeomId);
-    // also get all similar geoms
-    //requestSimilarGeoms(currentSelectedGeomId);
+    // also get all similar geoms (if not already expanded)
+    if (currentSelectedGeomId != currentExpandedGeomId) {
+        requestSimilarGeoms(currentSelectedGeomId);
+        currentExpandedGeomId = adminId;
+    };
 }
 
 function selectSimilarGeom(adminId) {
@@ -249,17 +253,24 @@ function selectSimilarGeom(adminId) {
 ///////////////////
 // similar geoms
 
+/*
 function requestAllSimilarGeoms() {
     let cur, nxt;
     cur = 0;
     nxt = 1;
     requestSimilarGeoms(disambiguationSearchData.results[cur].id, nxt);
 }
+*/
 
 function requestSimilarGeoms(adminId, nxt=null) {
     console.log(`requesting similar for ${adminId}`)
     // clear any old similar geoms info
-    //clearSimilarGeomsFromTable();
+    clearSimilarGeomsFromTable();
+    clearSimilarGeomsFromMap();
+    // clear any previous loading text
+    for (elem of document.querySelectorAll('.similar-geoms-loading')) {
+        elem.remove();
+    };
     // indicate loading to the user
     showSimilarGeomsLoading(adminId);
     // fetch full details of geom
@@ -298,6 +309,10 @@ function receiveSimilarGeoms(adminId, data) {
     // remove loading text
     span = document.querySelector('.similar-geoms-loading');
     span.remove();
+    // ignore if not the latest
+    if (adminId != currentExpandedGeomId) {
+        return;
+    };
     // update total source agreement
     //updateSelectedTableEntryAgreement(data);
     // add similar geoms to table

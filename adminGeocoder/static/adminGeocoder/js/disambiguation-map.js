@@ -35,11 +35,11 @@ function getFeatureCentroid(feature) {
 // disambiguation style
 var disambiguationStyle = new ol.style.Style({
     fill: new ol.style.Fill({
-        color: 'rgba(220, 220, 255, 0.3)',
+        color: 'rgba(255, 255, 255, 0)', // fully transparent
     }),
     stroke: new ol.style.Stroke({
         color: 'rgb(29,107,191)', //'rgb(49, 127, 211)',
-        width: 2.5,
+        width: 4.5,
     }),
 });
 var disambiguationPointStyle = new ol.style.Style({
@@ -59,7 +59,7 @@ var basketStyle = new ol.style.Style({
     }),
     stroke: new ol.style.Stroke({
         color: 'rgb(240, 178, 35)', 
-        width: 2.5,
+        width: 4.5,
     }),
 });
 var basketPointStyle = new ol.style.Style({
@@ -75,11 +75,11 @@ var basketPointStyle = new ol.style.Style({
 // selected style
 var selectedStyle = new ol.style.Style({
     fill: new ol.style.Fill({
-        color: 'rgba(255, 255, 255, 0)', // fully transparent
+        color: 'rgba(220, 220, 255, 0.3)',
     }),
     stroke: new ol.style.Stroke({
         color: 'rgb(0, 240, 252)', //'rgb(49, 127, 211)',
-        width: 2.5,
+        width: 4.5,
     }),
 });
 var selectedPointStyle = new ol.style.Style({
@@ -99,7 +99,7 @@ var similarStyle = new ol.style.Style({
     }),
     stroke: new ol.style.Stroke({
         color: 'rgb(255, 0, 0)',
-        width: 2.5,
+        width: 4.5,
         lineDash: [10,10]
     }),
 });
@@ -335,9 +335,7 @@ function removeFromBasketGeoms(adminId) {
 }
 
 function addSimilarGeomsToMap(entries) {
-    // first clear
-    //similarLayer.getSource().clear();
-    // then add
+    // add
     for (geomData of entries) {
         props = {'id': geomData.id,
             'displayName': getDisplayName(geomData)
@@ -349,6 +347,10 @@ function addSimilarGeomsToMap(entries) {
         feat = new ol.format.GeoJSON().readFeature(feat, {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
         similarLayer.getSource().addFeature(feat);
     };
+}
+
+function clearSimilarGeomsFromMap() {
+    similarLayer.getSource().clear();
 }
 
 ////////////////
