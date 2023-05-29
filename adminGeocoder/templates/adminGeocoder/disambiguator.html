@@ -15,25 +15,7 @@
             <img src="{% static 'images/Spinner-1s-200px.gif' %}" title="Fetching boundaries...">
         </div>
 
-        <div id="basket-nav">
-            <span id="basket-zoom" onclick="zoomToBasketLayer()">
-                <!--Zoom all-->
-                <img src="{% static 'images/zoom-out.png' %}">
-            </span>
-            <span id="basket-toggler" onclick="toggleBasket()">
-                <img src="{% static 'images/basket.png' %}">
-                <span class="basket-count" data-count="0">0</span>
-            </span>
-        </div>
-
         <div id="disambiguation-pane">
-
-            <header id="header">
-                <span class="logo"><a href="{% url 'home' %}">
-                    <strong>Boundary Finder</strong></a> built by 
-                    <a href="http://geolab.wm.edu">W&M geoLab</a>
-                </span>
-            </header>
         
             <form id="disambiguation-form" onsubmit="return requestUpdateDisambiguator()">
                 <div id="disambiguation-search-bar">

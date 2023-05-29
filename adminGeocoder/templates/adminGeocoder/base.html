@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<!--
+	Editorial by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license - html5up.net/license
+-->
+<html>
+
+{% load static %}
+
+<head>
+	<title>AdminSystem</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" type="text/css" href="{% static 'js/slick/slick.css' %}" />
+	<link rel="stylesheet" href="{% static 'css/main.css' %}" />
+	<link rel="stylesheet" href="{% static 'css/extra.css' %}" />
+	<link rel="stylesheet" href="{% static 'css/tabulator.css' %}">
+	<script type="text/javascript" src="{% static 'js/tabulator.js' %}"></script>
+	<script src="{% static 'js/jquery.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'js/jquery.easytabs.js' %}"></script>
+	<!-- Scripts -->
+	<script async defer src="https://buttons.github.io/buttons.js"></script>
+	<style>
+		@media only screen and (max-width: 736px) {
+			#imageRotate {
+				display: none;
+			}
+
+			#banner .image {
+				display: none;
+			}
+		}
+	</style>
+
+	<style>
+		.lightHighlight {
+			background-color: #eefcc7a9;
+		}
+
+		.openHighlight {
+			background-color: #cdfac2a9 !important;
+		}
+
+		.ochaHighlight {
+			background-color: #fcbcbca9 !important;
+		}
+
+		.salbHighlight {
+			background-color: #becdffa9 !important;
+		}
+
+		.greyHighlight {
+			background-color: rgba(238, 238, 238, 0.33)!important;
+		}
+	</style>
+</head>
+
+<body class="is-preload">
+
+    <!-- Top bar -->
+    <header id="header">
+        <span class="logo"><a href="{% url 'home' %}">
+            <strong>Boundary Finder</strong></a> built by 
+            <a href="http://geolab.wm.edu">W&M geoLab</a>
+        </span>
+
+        <div id="basket-nav">
+            <span id="basket-zoom" onclick="zoomToBasketLayer()">
+                <!--Zoom all-->
+                <img src="{% static 'images/zoom-out.png' %}">
+            </span>
+            <span id="basket-toggler" onclick="toggleBasket()">
+                <img src="{% static 'images/basket.png' %}">
+                <span class="basket-count" data-count="0">0</span>
+            </span>
+        </div>
+        
+    </header>
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Main -->
+		<div id="main">
+
+			<!-- Page Contents -->
+			{% block page_content %}{% endblock %}
+		
+		</div>
+
+	</div>
+
+</body>
+
+</html>
