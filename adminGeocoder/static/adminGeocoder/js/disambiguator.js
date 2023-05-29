@@ -153,9 +153,6 @@ function addGeomToDisambiguationTable(adminId, result) {
     <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${result.lineres.toFixed(1)}m</span></div></td>
     -->
     <div class="row-buttons">
-        <button type="button" class="button small" onclick="event.stopPropagation(); zoomToDisambiguationId(${adminId})">
-            <span>Zoom</span>
-        </button>
         <button type="button" class="button small add-to-cart" onclick="event.stopPropagation(); addToBasket(getAdminById(${adminId}))">
             <span>Add</span><img src="static/images/basket.png">
         </button>
@@ -211,6 +208,10 @@ function selectGeom(adminId) {
             break;
         };
     };
+    // zoom if already selected (2nd click)
+    if (adminId == currentSelectedGeomId) {
+        zoomToDisambiguationId(adminId);
+    };
     // remember
     currentSelectedGeomId = adminId;
     // select and zoom to map geom
@@ -241,6 +242,10 @@ function selectSimilarGeom(adminId) {
             tr.scrollIntoView({block:'nearest', inline:'nearest'});
             break;
         };
+    };
+    // zoom if already selected (2nd click)
+    if (adminId == currentSelectedGeomId) {
+        zoomToDisambiguationId(adminId);
     };
     // remember
     currentSelectedGeomId = adminId;
@@ -354,9 +359,6 @@ function addSimilarGeomsToTable(adminId, entries) {
         <td class="admin-geom-lineres" title="Average distance between line vertices"><div><img src="static/images/shape.png"><span>${entry.lineres.toFixed(1)}m</span></div></td>
         -->
         <div class="row-buttons">
-            <button type="button" class="button small" onclick="event.stopPropagation(); zoomToDisambiguationId(${entry.id})">
-                <span>Zoom</span>
-            </button>
             <button type="button" class="button small add-to-cart" onclick="event.stopPropagation(); addToBasket(getAdminById(${entry.id}))">
                 <span>Add</span><img src="static/images/basket.png">
             </button>

@@ -304,6 +304,7 @@ function selectMapGeom(adminId) {
     fromFeat = disambiguationLayer.getSource().getFeatureById(adminId);
     props = fromFeat.getProperties();
     feat = new ol.Feature(props);
+    feat.setId(adminId);
     feat.setGeometry(fromFeat.getGeometry());
     selectedLayer.getSource().addFeature(feat);
     // make sure selected geom is within current extent
@@ -429,6 +430,11 @@ function updateLayerGeometry(data) {
         feat.setProperties(info);
         geom = wktReader.readGeometry(info.wkt, {dataProjection:'EPSG:4326', featureProjection:'EPSG:3857'});
         feat.setGeometry(geom);
+        // also update selected layer if selected
+        if (id == currentSelectedGeomId) {
+            feat = selectedLayer.getSource().getFeatureById(id);
+            feat.setGeometry(geom);
+        };
     };
 }
 
