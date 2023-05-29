@@ -15,29 +15,31 @@
             <img src="{% static 'images/Spinner-1s-200px.gif' %}" title="Fetching boundaries...">
         </div>
 
-        <div id="disambiguation-pane">
-        
-            <form id="disambiguation-form" onsubmit="return requestUpdateDisambiguator()">
-                <div id="disambiguation-search-bar">
-                    <input id="disambiguation-search-input" type="text" placeholder='Search a boundary name, e.g. "Virginia, USA"' autofocus>
-                    <button type="submit">
-                        <span>Search</span>
-                        <img style="visibility:hidden" src="{% static 'images/Spinner-1s-200px.gif' %}">
+        <div id="disambiguation-search-div">
+        <form id="disambiguation-form" onsubmit="return requestUpdateDisambiguator()">
+            <div id="disambiguation-search-bar">
+                <input id="disambiguation-search-input" type="text" placeholder='Search a boundary name, e.g. "Virginia, USA"' autofocus>
+                <button type="submit">
+                    <span>Search</span>
+                    <img style="visibility:hidden" src="{% static 'images/Spinner-1s-200px.gif' %}">
+                </button>
+            </div>
+            <div id="disambiguation-results-bar">
+                <div id="disambiguation-status"></div>
+                <div id="disambiguation-buttons" style="display:none">
+                    <button type="button" class="button small" onclick="zoomToDisambiguationLayer()">
+                        Zoom all
+                        <!--<img src="{% static 'images/zoom-out.png' %}">-->
                     </button>
                 </div>
-                <div id="disambiguation-results-bar">
-                    <div id="disambiguation-status"></div>
-                    <div id="disambiguation-buttons" style="display:none">
-                        <button type="button" class="button small" onclick="zoomToDisambiguationLayer()">
-                            Zoom all
-                            <!--<img src="{% static 'images/zoom-out.png' %}">-->
-                        </button>
-                    </div>
-                </div>
-            </form>
+            </div>
+        </form>
+        </div>
+
+        <div id="disambiguation-pane" style="display:none">
 
             <div id="disambiguation-geoms">
-                <table id="disambiguation-geom-table" style="display:none">
+                <table id="disambiguation-geom-table">
                     <thead>
                         <tr>
                             <th>Boundary</th>

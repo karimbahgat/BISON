@@ -72,11 +72,11 @@ function resetDisambiguator() {
     selectedLayer.getSource().clear();
     disambiguationLayer.getSource().clear();
     similarLayer.getSource().clear();
+    // clear and hide geoms table
+    document.querySelector('#disambiguation-pane').style.display = 'none';
+    document.querySelector('#disambiguation-geom-table tbody').innerHTML = '';
     // fix bug where map that's initially hidden won't show
     disambiguationMap.updateSize(); // otherwise will remain hidden until window resize
-    // clear and hide geoms table
-    document.querySelector('#disambiguation-geom-table').style.display = 'none';
-    document.querySelector('#disambiguation-geom-table tbody').innerHTML = '';
     // init status
     disambiguatorCandidatesLoaded = null;
     disambiguatorTotalCandidates = null;
@@ -101,7 +101,8 @@ function initDisambiguator(data) {
     currentSelectedGeomId = data.chosen_geom_id;
     currentSelectedGeomData = data.chosen_geom_data;
     // show table
-    document.querySelector('#disambiguation-geom-table').style.display = '';
+    document.querySelector('#disambiguation-pane').style.display = '';
+    disambiguationMap.updateSize(); // to reflect new map size
     // add all possible geom candidates to table
     for (result of data.results) {
         // add to table

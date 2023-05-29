@@ -1,11 +1,18 @@
 
 #header {
     padding: 0.5em !important;
+    justify-content: flex-start;
+    gap: 2em;
+}
+
+#header .logo {
+    flex-grow: 0;
+    white-space: nowrap;
+    width: fit-content;
 }
 
 #disambiguation-content {
     width: 100%;
-    height: 93%;
     display: flex;
     flex-direction: column;
 }
@@ -14,10 +21,21 @@
     margin-bottom: 0;
 }
 
+#disambiguation-search-div {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 25em;
+    padding: 10px;
+    background-color: white;
+    z-index: 1;
+}
+
 #disambiguation-search-bar {
     display: flex;
     flex-direction: row;
     margin: 0 0;
+    flex-grow: 1;
 }
 
 #disambiguation-search-bar > button {
@@ -69,29 +87,30 @@
 }
 */
 #disambiguation-main {
+    display: flex;
+    flex-direction: row-reverse;
     position: relative;
     width: 100%;
-    height: 100%;
+    height: 600px;
+    align-items: stretch;
 }
 
 #disambiguation-map {
-    position: absolute;
     width: 100%;
     height: 100%;
     flex-grow: 1;
-    flex-shrink: 0;
 }
 
 #disambiguation-pane {
-    position: absolute;
     display: flex;
     flex-direction: column;
     top: 0;
     left: 0;
-    width: 35%;
-    max-height: 90%;
+    width: 35em;
     background-color: white;
     padding: 20px;
+    flex-grow: 1;
+    padding-top: 10%;
 }
 
 #disambiguation-pane header {
@@ -100,7 +119,6 @@
 }
 
 #disambiguation-geoms {
-    height: 100%;
     overflow: auto;
     flex-grow: 1;
 }

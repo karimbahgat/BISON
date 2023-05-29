@@ -262,7 +262,7 @@ function zoomToDisambiguationId(adminId) {
 }
 
 function paddedExtent(extent, padding=0.1) {
-    // add normal percent padding (doesnt consider left-right side of map)
+    // add normal percent padding
     extent = extent.slice(); // to avoid modifying original extent
     // pad around extent
     extentWidth = extent[2] - extent[0];
@@ -272,16 +272,11 @@ function paddedExtent(extent, padding=0.1) {
 }
 
 function paddedZoomToExtent(extent, padding=0.1, animated=false) {
-    // adds padding to ensure the extent is centered on right side of map
     extent = extent.slice(); // to avoid modifying original extent
     // pad around extent
     extentWidth = extent[2] - extent[0];
     pad = extentWidth * padding;
     extent = ol.extent.buffer(extent, pad, extent);
-    // offset extent to the left so geom shows on the right
-    offsetFactor = 1;
-    offsetLeft = extentWidth * offsetFactor;
-    extent[0] = extent[0] - offsetLeft;
     // perform zoom
     opts = {};
     if (animated) {
@@ -290,12 +285,9 @@ function paddedZoomToExtent(extent, padding=0.1, animated=false) {
     disambiguationMap.getView().fit(extent, opts);
 }
 
-function getPaddedMapExtent() {
+function getMapExtent() {
     extent = disambiguationMap.getView().calculateExtent();
     extent = extent.slice();
-    // ignore leftmost half
-    w = extent[2] - extent[0];
-    extent[0] = extent[0] + (w/2.0)
     return extent;
 }
 
@@ -308,11 +300,10 @@ function selectMapGeom(adminId) {
     feat.setGeometry(fromFeat.getGeometry());
     selectedLayer.getSource().addFeature(feat);
     // make sure selected geom is within current extent
-    curExtent = getPaddedMapExtent();
+    curExtent = getMapExtent();
     geomExtent = feat.getGeometry().getExtent();
-    geomExtent = paddedExtent(geomExtent);
     extent = ol.extent.extend(curExtent, geomExtent);
-    paddedZoomToExtent(extent, padding=0);
+    paddedZoomToExtent(extent);
 }
 
 function addToBasketGeoms(adminId) {
@@ -323,11 +314,10 @@ function addToBasketGeoms(adminId) {
     feat.setId(fromFeat.getId())
     basketLayer.getSource().addFeature(feat);
     // make sure selected geom is within current extent
-    curExtent = getPaddedMapExtent();
+    curExtent = getMapExtent();
     geomExtent = feat.getGeometry().getExtent();
-    geomExtent = paddedExtent(geomExtent);
     extent = ol.extent.extend(curExtent, geomExtent);
-    paddedZoomToExtent(extent, padding=0);
+    paddedZoomToExtent(extent);
 }
 
 function removeFromBasketGeoms(adminId) {
