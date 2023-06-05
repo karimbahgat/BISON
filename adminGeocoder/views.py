@@ -33,14 +33,14 @@ def api_search_name_hierarchy(request):
         for row in curs:
             yield row
 
-    # find admins with matching names for each hierarchy subquery
-    thresh = 0.3 # text match threshold
+    # find admins with matching names for each hierarchy subquery (above thresh)
+    simil_thresh = 0.3 # text match threshold
     name_queries = []
     for search in searches:
         sub = models.Admin.objects.values('id', 'level', 'parent', 'names__name', 'source_id', 'minx')
         sub = sub.filter(names__name__istartswith=search)
         sub = sub.annotate(simil=Value(float(len(search)))/Cast(Length('names__name'), FloatField()))
-        sub = sub.filter(simil__gte=thresh)
+        sub = sub.filter(simil__gte=simil_thresh)
         query = str(sub.query).replace(f'{search}%', "%s")
         sql_params.append(search+'%') # important to add the wildcard at end
         name_queries.append(query)
@@ -61,9 +61,11 @@ def api_search_name_hierarchy(request):
 )'''
 
     # join these to the matches
+    # (CASE WHEN matches.simil >= 0 THEN matches.simil ELSE 0.0 END) AS simil
     sql += '''
 , joined AS (
-    SELECT recurs.*, matches.simil FROM recurs LEFT JOIN matches ON matches.id = recurs.id
+    SELECT recurs.*, matches.simil
+    FROM recurs LEFT JOIN matches ON matches.id = recurs.id
 )
 '''
 
@@ -93,9 +95,10 @@ def api_search_name_hierarchy(request):
         a.valid_from, a.valid_to,
         a.minx, a.miny, a.maxx, a.maxy,
         SUM(j.simil) AS simil,
-        COUNT(j.simil) AS simil_max,
-        GROUP_CONCAT(j.id) AS hierarchy_ids, 
-        GROUP_CONCAT(j.names) AS hierarchy_names, 
+        MIN(j.simil) AS simil_min,
+        SUM(j.simil >= 0) AS simil_count,
+        GROUP_CONCAT(j.id) AS hierarchy_ids,
+        GROUP_CONCAT(j.names) AS hierarchy_names,
         GROUP_CONCAT(j.level) AS hierarchy_levels
     FROM adminManager_admin AS a
     INNER JOIN joined_names AS j
@@ -129,11 +132,21 @@ def api_search_name_hierarchy(request):
         id,source_id, \
             valid_from,valid_to, \
             xmin,ymin,xmax,ymax, \
-            simil,simil_max, \
+            simil,simil_min,simil_count, \
             hierarchy_ids,hierarchy_names,hierarchy_levels = row
+        # ignore matches not all search components had a match (num of matched admins must match search components)
+        if simil_count < len(searches):
+            print('at least one search component didnt have a match, skipping', hierarchy_names, simil_min)
+            continue
+        # ignore matches where max adm level is below num of search components
+        lvls = [int(lvl) for lvl in hierarchy_levels.split(',')]
+        if (max(lvls)+1) < len(searches):
+            print('match adm level lower than number of search components, skipping', hierarchy_names, lvls)
+            continue
         # name simil as percent of highest possible score (highest count of search input vs admin parents)
-        simil_max = max(simil_max, len(searches))
-        simil = float(simil) / float(simil_max)
+        count = len(lvls)
+        simil_max_possible = max(count, len(searches))
+        simil = float(simil) / float(simil_max_possible)
         # build hierarchy
         hierarchy = []
         zipped = zip(hierarchy_ids.split(','), 
@@ -378,7 +391,7 @@ def api_get_similar_admins(request, id):
         GROUP BY j.leaf_id, j.id
     )
     '''
-    
+
     # aggregate to leaf nodes along with additional columns we want for final results
     # including creating an aggregate simil score for all hierarchy simil scores
     sql += '''
